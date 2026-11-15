@@ -1,0 +1,2 @@
+CREATE FUNCTION public.kalzo_enrollment_count() RETURNS bigint LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT count(*) FROM public.artist_profiles $$;
+REVOKE ALL ON FUNCTION public.kalzo_enrollment_count() FROM PUBLIC; GRANT EXECUTE ON FUNCTION public.kalzo_enrollment_count() TO anon,authenticated;

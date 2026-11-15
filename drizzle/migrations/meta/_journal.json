@@ -1,0 +1,104 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794429569972,
+      "tag": "0000_kalzo_core",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794510950892,
+      "tag": "0001_kalzo_real_accounts_support_admin",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794511112429,
+      "tag": "0002_kalzo_atomic_booking_steps",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794511421620,
+      "tag": "0003_kalzo_real_enrollment_count",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794515238426,
+      "tag": "0004_kalzo_face_video_verification",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794559031402,
+      "tag": "0005_kalzo_artist_panel",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794566789087,
+      "tag": "0006_artist_profile_locations_and_cancellation",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794567185878,
+      "tag": "0007_four_digit_booking_codes",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794568183588,
+      "tag": "0008_artist_location_preferences",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794568248038,
+      "tag": "0009_patron_favorites_chats_and_meetings",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794569454668,
+      "tag": "0010_bind_artist_media_ownership",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794577448491,
+      "tag": "0011_admin_cancellation_review",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794661619231,
+      "tag": "0012_invitation_response_deadlines",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794661700871,
+      "tag": "0013_enable_invitation_scheduler",
+      "breakpoints": true
+    }
+  ]
+}
