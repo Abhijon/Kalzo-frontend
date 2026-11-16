@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Music, UsersRound } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import "./gate.css";
-import { cleanEmailCode, emailCodeError, signupError, signupMetadata, type AccountAudience } from "./signupRules";
+import { cleanEmailCode, emailCodeError, signupError, type AccountAudience } from "./signupRules";
 
 type Patron = { name: string; email: string; phone: string; city: string; type: string; industry: string; reason: string };
 const TYPES = ["Individual / family", "Hotel or resort", "Corporate", "Café or restaurant", "Event company", "Other business"];
@@ -47,25 +47,55 @@ export function PatronGate({ onBack, audience: initialAudience = "patron", initi
     if (mode === "create" && audience === "patron" && otherReason && !reasonOther.trim()) return setErr("Please write what you are booking for.");
     if (mode === "create" && audience === "patron" && p.type === "Other business" && !p.industry.trim()) return setErr("Please write what kind of business or individual you are.");
     const sendP = otherReason && reasonOther.trim() ? { ...p, reason: "Other: " + reasonOther.trim().slice(0, 200) } : p;
+
     if (mode === "create") {
       const validation = signupError(sendP, audience);
       if (validation) return setErr(validation);
     } else if (!isEmail(p.email)) return setErr("Enter the email you signed up with.");
+
     setBusy(true); setErr("");
-    const { error } = await api.auth.signInWithOtp({
-      email: p.email.trim(),
-      options: mode === "create"
-        ? { shouldCreateUser: true, emailRedirectTo: window.location.origin, data: signupMetadata(sendP, audience) }
-        : { shouldCreateUser: false, emailRedirectTo: window.location.origin },
-    });
-    setBusy(false);
-    if (error) return setErr(emailCodeError(error.message, "send", mode));
+
+    if (mode === "create") {
+      // ── Signup: POST /api/v1/customer-signup  or  POST /api/v1/artist-signup ──
+      let res;
+      if (audience === "artist") {
+        res = await api.auth.signupArtist({ email: sendP.email.trim(), mobileNumber: sendP.phone });
+      } else {
+        res = await api.auth.signupCustomer({
+          email: sendP.email.trim(),
+          fullName: sendP.name.trim(),
+          location: sendP.city.trim(),
+          customerType: sendP.type,
+          reasonForBooking: sendP.reason,
+          mobileNumber: sendP.phone,
+          businessName: sendP.industry.trim() || undefined,
+        });
+      }
+      setBusy(false);
+      if (res.error) return setErr(emailCodeError(res.error.message, "send", mode));
+    } else {
+      // ── Login: POST /api/v1/login ─────────────────────────────────────────────
+      const res = await api.auth.login(p.email.trim());
+      setBusy(false);
+      if (res.error) return setErr(emailCodeError(res.error.message, "send", mode));
+    }
+
     setSent(true); setCode(""); setWait(60);
   };
+
+  const resend = async () => {
+    // POST /api/v1/resend-otp
+    setBusy(true);
+    await api.auth.resendOtp(p.email.trim());
+    setBusy(false);
+    setWait(60);
+  };
+
   const verify = async () => {
     if (code.length !== 6) return setErr("Enter the 6-digit code from your email.");
     setBusy(true); setErr("");
-    const { error } = await api.auth.verifyOtp({ email: p.email.trim(), token: code, type: "email" });
+    // POST /api/v1/verify-otp
+    const { error } = await api.auth.verifyOtp({ email: p.email.trim(), otp: code });
     setBusy(false);
     if (error) setErr(emailCodeError(error.message, "verify", mode));
   };
@@ -119,7 +149,7 @@ export function PatronGate({ onBack, audience: initialAudience = "patron", initi
             </div>
             <p id="kp-code-hint" className="kx-small">Enter the 6-digit code from your Kalzo email.</p>
             <div className="kp-code-links">
-              <button type="button" className="kx-btn kx-ghost" disabled={wait > 0 || busy} onClick={sendCode}>
+              <button type="button" className="kx-btn kx-ghost" disabled={wait > 0 || busy} onClick={resend}>
                 {wait > 0 ? `RESEND CODE IN ${wait}s` : "RESEND CODE"}
               </button>
               <button type="button" className="kx-btn kx-ghost" onClick={changeEmail}>CHANGE EMAIL</button>

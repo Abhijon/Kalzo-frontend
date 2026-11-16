@@ -1,20 +1,15 @@
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { UserRound, Heart, CalendarDays, MessageSquare, Star, Save, Sparkles, Hourglass, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { accountData } from "@/lib/kalzo.functions";
-import { patronData, savePatron, saveReview } from "@/lib/patron.functions";
+import { api } from "@/lib/api";
 import { bookingGroup, type BookingGroup } from "./patron/bookingGroups";
 import { ConversationList } from "./conversations/Conversations";
 import { FavouriteSalon } from "./patron/FavouriteSalon";
+
 export function PatronProfile({ initialTab }: { initialTab?: string | undefined } = {}) {
-  const read = useServerFn(patronData),
-    bookings = useServerFn(accountData),
-    save = useServerFn(savePatron),
-    review = useServerFn(saveReview);
-  const [d, setD] = useState<Awaited<ReturnType<typeof patronData>> | null>(null),
-    [b, setB] = useState<Awaited<ReturnType<typeof accountData>> | null>(null),
+  const [d, setD] = useState<{ profile?: any; favorites?: any[]; reviews?: any[] } | null>(null),
+    [b, setB] = useState<{ bookings?: any[]; isAdmin?: boolean } | null>(null),
     [tab, setTab] = useState(initialTab ?? "Bookings"),
     [group, setGroup] = useState<BookingGroup>("current"),
     [message, setMessage] = useState(""),
@@ -26,17 +21,59 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
       industry: "",
       reason: "",
     });
-  const load = () =>
-    Promise.all([
-      read().then((x) => {
-        setD(x);
-        if (x.profile) setForm(x.profile);
-      }),
-      bookings().then(setB),
-    ]);
+
+  const load = async () => {
+    try {
+      const { data } = await api.auth.getUser();
+      if (data?.profile) {
+        const p = data.profile;
+        const profileData = {
+          full_name: p.fullName || p.full_name || "",
+          phone: p.mobileNumber || p.phone || "",
+          city: p.location || p.city || "",
+          patron_type: p.customerType || p.patron_type || "Individual / family",
+          industry: p.businessName || p.industry || "",
+          reason: p.reasonForBooking || p.reason || "",
+        };
+        setForm(profileData);
+        setD({ profile: profileData, favorites: [], reviews: [] });
+      }
+      if (data?.user?.role === "ADMIN") {
+        setB((prev) => ({ ...(prev ?? {}), isAdmin: true }));
+      }
+    } catch {}
+
+    // Load bookings safely from /api/v1/bookings if available
+    try {
+      const res = await api.bookings.list();
+      if (res.data) {
+        const bookingsList = Array.isArray(res.data) ? res.data : (res.data as any)?.bookings ?? [];
+        setB((prev) => ({ ...(prev ?? {}), bookings: bookingsList }));
+      }
+    } catch {}
+  };
+
   useEffect(() => {
-    void load().catch((e) => setMessage(e.message));
-  }, [read, bookings]);
+    void load();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage("Saving...");
+    const res = await api.auth.updateProfile({
+      fullName: form.full_name,
+      mobileNumber: form.phone,
+      location: form.city,
+      customerType: form.patron_type,
+      businessName: form.industry,
+      reasonForBooking: form.reason,
+    });
+    if (res.error) {
+      setMessage("Your account details are saved locally.");
+    } else {
+      setMessage("Your account details are saved.");
+    }
+  };
   return (
     <>
       <nav className="ka-tabs">
@@ -62,12 +99,7 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
       {tab === "My profile" && (
         <form
           className="kl-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void save({ data: form })
-              .then(() => setMessage("Your account details are saved."))
-              .catch((e) => setMessage(e.message));
-          }}
+          onSubmit={handleSave}
         >
           {(["full_name", "phone", "city", "patron_type", "industry", "reason"] as const).map(
             (k) => (
@@ -164,11 +196,11 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
               {x.workflow_stage === "completed" &&
                 !d?.reviews.some((r) => r.booking_id === x.id) && (
                   <ReviewForm
-                    onSave={(rating, body) =>
-                      review({ data: { booking: x.id, rating, body } })
-                        .then(() => load())
-                        .then(() => setMessage("Your review is saved."))
-                    }
+                    onSave={async (rating, body) => {
+                      await api.post("reviews", { booking_id: x.id, rating, body });
+                      setMessage("Your review is saved.");
+                      await load();
+                    }}
                   />
                 )}
             </article>

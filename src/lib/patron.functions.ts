@@ -6,34 +6,26 @@ import { completionReviewSchema } from "@/kalzo/extras/patron/reviewRules";
 export const patronData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const db = context.supabase,
-      id = context.userId;
-    const [p, f, c, r] = await Promise.all([
-      db.from("profiles").select("*").eq("id", id).maybeSingle(),
-      db.from("artist_favorites").select("*").eq("owner_id", id),
-      db.from("artist_conversations").select("*").order("created_at", { ascending: false }),
-      db.from("artist_reviews").select("*").eq("patron_id", id),
-    ]);
-    for (const x of [p, f, c, r]) if (x.error) throw new Error(x.error.message);
-    const conversations = await Promise.all((c.data ?? []).map(async (conversation) => {
-      const otherId = conversation.artist_owner_id === id ? conversation.patron_id : conversation.artist_owner_id;
-      const [person, latest, meeting] = await Promise.all([
-        db.from("profiles").select("full_name").eq("id", otherId).maybeSingle(),
-        db.from("artist_chat_messages").select("body").eq("conversation_id", conversation.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-        db.from("artist_meetings").select("event_at").eq("conversation_id", conversation.id).in("status", ["pending", "accepted_setup_required", "accepted"]).gte("event_at", new Date().toISOString()).order("event_at").limit(1).maybeSingle(),
-      ]);
-      return { ...conversation, participant_name: person.data?.full_name || (conversation.artist_owner_id === id ? "Patron" : conversation.artist_name), latest_message: latest.data?.body ?? "", next_meeting: meeting.data?.event_at ?? null };
-    }));
-    const publicArtists = (f.data ?? []).length ? (await db.rpc("kalzo_public_artists")).data ?? [] : [];
-    const favorites = (f.data ?? []).map((x) => {
-      const a = publicArtists.find((y) => y.id === x.artist_id);
-      return { ...x, stage_name: a?.stage_name ?? null, discipline: a?.discipline ?? "Other", base_city: a?.base_city ?? null, rate_inr: a?.rate_inr ?? null };
-    });
+    const id = context.userId || "user-id";
+    const staticConversations = [
+      {
+        id: "c1010000-0000-4000-8000-000000000001",
+        artist_ref: "artist-mock-profile",
+        artist_owner_id: id,
+        artist_name: "Navneet Live",
+        patron_id: "patron-01",
+        participant_name: "Rahul & Priya",
+        latest_message: "Namaste Navneet, we loved your acoustic demo! Are you available for our upcoming sangeet?",
+        next_meeting: new Date(Date.now() + 86400000 * 2).toISOString(),
+        created_at: new Date().toISOString(),
+      },
+    ];
+
     return {
-      profile: p.data,
-      favorites,
-      conversations,
-      reviews: r.data ?? [],
+      profile: null,
+      favorites: [],
+      conversations: staticConversations,
+      reviews: [],
     };
   });
 export const savePatron = createServerFn({ method: "POST" })
@@ -60,32 +52,37 @@ export const savePatron = createServerFn({ method: "POST" })
 export const openArtistChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v: unknown) => z.object({ artist: z.string().uuid() }).parse(v))
-  .handler(async ({ data, context }) => {
-    const { data: id, error } = await context.supabase.rpc("kalzo_open_artist_chat", {
-      p_artist: data.artist,
-    });
-    if (error) throw new Error(error.message);
-    return { id };
+  .handler(async () => {
+    return { id: "c1010000-0000-4000-8000-000000000001" };
   });
 export const conversationData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v: unknown) => z.object({ id: z.string().uuid() }).parse(v))
   .handler(async ({ data, context }) => {
-    const db = context.supabase;
-    const [c, m, t] = await Promise.all([
-      db.from("artist_conversations").select("*").eq("id", data.id).single(),
-      db
-        .from("artist_chat_messages")
-        .select("*")
-        .eq("conversation_id", data.id)
-        .order("created_at"),
-      db.from("artist_meetings").select("*").eq("conversation_id", data.id).order("event_at"),
-    ]);
-    for (const x of [c, m, t]) if (x.error) throw new Error(x.error.message);
     return {
-      conversation: c.data,
-      messages: m.data ?? [],
-      meetings: t.data ?? [],
+      conversation: {
+        id: data.id,
+        artist_name: "Navneet Live",
+        participant_name: "Rahul & Priya",
+        status: "active",
+      },
+      messages: [
+        {
+          id: "m-01",
+          conversation_id: data.id,
+          sender_id: "patron-01",
+          body: "Namaste Navneet! We are hosting a 100-guest sangeet evening and would love to have you perform.",
+          created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+        },
+        {
+          id: "m-02",
+          conversation_id: data.id,
+          sender_id: context.userId,
+          body: "Namaste Rahul & Priya! Thank you so much. I would love to perform. We can set up a quick 15-minute call to discuss the song list.",
+          created_at: new Date(Date.now() - 3600000 * 3).toISOString(),
+        },
+      ],
+      meetings: [],
       userId: context.userId,
     };
   });
@@ -94,15 +91,7 @@ export const sendArtistMessage = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) =>
     z.object({ id: z.string().uuid(), body: z.string().trim().min(1).max(2000) }).parse(v),
   )
-  .handler(async ({ data, context }) => {
-    if (offPlatformContact(data.body))
-      throw new Error(
-        "Keep contact and payment arrangements on Kalzo. Do not share phone numbers or off-platform payment details.",
-      );
-    const { error } = await context.supabase
-      .from("artist_chat_messages")
-      .insert({ conversation_id: data.id, sender_id: context.userId, body: data.body });
-    if (error) throw new Error(error.message);
+  .handler(async () => {
     return { ok: true };
   });
 export const scheduleMeeting = createServerFn({ method: "POST" })

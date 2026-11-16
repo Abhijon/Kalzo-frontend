@@ -23,6 +23,7 @@ export function AccountShell({
   const [signed, setSigned] = useState<boolean | null>(null);
   const [logoutError, setLogoutError] = useState("");
   const [kind, setKind] = useState<"artist" | "patron" | "admin" | null>(null);
+  const [paperLoaded, setPaperLoaded] = useState(false);
   const logout = async () => {
     const { error } = await api.auth.signOut();
     if (error) { setLogoutError(error.message); return; }
@@ -32,13 +33,11 @@ export function AccountShell({
     api.auth.getUser().then(async ({ data }) => {
       setSigned(!!data?.user);
       if (!data?.user) return;
-      const [{ data: artist }, { data: role }] = await Promise.all([
-        api.from("artist_profiles").select("id").eq("owner_id", data.user.id).maybeSingle(),
-        api.from("user_roles").select("role").eq("user_id", data.user.id).eq("role", "admin").maybeSingle(),
-      ]);
-      if (role) { setKind("admin"); return; }
-      const dest = accountDestination(!!artist, data.user.user_metadata?.["account_audience"]);
-      const k = dest === "/artist" ? "artist" : "patron";
+      // Use role directly from /me response — no extra table lookups needed
+      const role = (data.user.role as string | undefined)?.toUpperCase();
+      if (role === "ADMIN") { setKind("admin"); return; }
+      const isArtist = role === "ARTIST";
+      const k = isArtist ? "artist" : "patron";
       setKind(k);
       if (audience === "artist" && k === "patron") void navigate({ to: "/account" });
       if (audience === "patron" && k === "artist" && title === "Your Kalzo") void navigate({ to: "/artist" });
@@ -48,7 +47,14 @@ export function AccountShell({
   }, []);
   return (
     <main className="kl-account kl-heritage">
-      <img className="kl-paper-bg" src={paper.url} alt="" loading="lazy" />
+      <img
+        className="kl-paper-bg"
+        src={paper.url}
+        alt=""
+        loading="lazy"
+        onLoad={() => setPaperLoaded(true)}
+        style={{ display: paperLoaded ? "block" : "none" }}
+      />
       <KalzoAtmosphere />
       <div className="kl-inner">
         <nav className="kl-nav">

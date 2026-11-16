@@ -1,9 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { api } from "@/lib/api";
-import { accountData } from "@/lib/kalzo.functions";
-import { accountDestination } from "@/kalzo/extras/accountDestination";
 import "@/kalzo/extras/account.css";
 import { ArtistWelcome } from "@/kalzo/Kalzo";
 const T = "Become a Kalzo artist";
@@ -23,15 +20,16 @@ export const Route = createFileRoute("/for-artists")({
   component: ForArtists,
 });
 function ForArtists() {
-  const navigate = useNavigate(), read = useServerFn(accountData);
+  const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
   useEffect(() => {
     let active = true;
     const resolve = async () => {
       const { data } = await api.auth.getUser();
       if (data?.user) {
-        const account = await read();
-        if (active && accountDestination(!!account.artist, data.user.user_metadata?.["account_audience"]) === "/artist") {
+        // Use role from /me directly — no extra API calls
+        const role = (data.user.role as string | undefined)?.toUpperCase();
+        if (active && role === "ARTIST") {
           await navigate({ to: "/artist", replace: true }); return;
         }
       }
@@ -39,7 +37,7 @@ function ForArtists() {
     };
     void resolve().catch(() => { if (active) setChecking(false); });
     return () => { active = false; };
-  }, [navigate, read]);
+  }, [navigate]);
   return (
     <main className="kl-account">
       <div className="kl-inner">

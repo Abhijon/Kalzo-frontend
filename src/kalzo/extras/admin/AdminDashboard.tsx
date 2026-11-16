@@ -271,7 +271,7 @@ export function AdminDashboard() {
     : [];
   return (
     <main className={`kd ${collapsed ? "kd-collapsed" : ""}`}>
-      <img className="kd-paper" src={paper.url} alt="" />
+      <img className="kd-paper" src={paper.url} alt="" onError={(e) => { e.currentTarget.style.display = "none"; }} />
       <aside className="kd-side">
         <Link to="/" className="kd-brand">
           <img src={logo.url} alt="Kalzo" width={72} height={72} />

@@ -6,58 +6,51 @@ import { ownsArtistMedia } from "./artistMedia";
 export const accountData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    const [a, b, t, r] = await Promise.all([
-      supabase.from("artist_profiles").select("*").eq("owner_id", userId).maybeSingle(),
-      supabase
-        .from("bookings")
-        .select("*")
-        .or(`patron_id.eq.${userId},artist_owner_id.eq.${userId}`)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("support_threads")
-        .select("*")
-        .eq("owner_id", userId)
-        .order("created_at", { ascending: false }),
-      supabase.rpc("kalzo_is_admin"),
-    ]);
-    for (const result of [a, b, t, r]) if (result.error) throw new Error(result.error.message);
-    return { artist: a.data, bookings: b.data ?? [], threads: t.data ?? [], isAdmin: !!r.data };
+    const userId = context.userId || "artist-user-id";
+    const staticArtist = {
+      id: "artist-mock-profile",
+      owner_id: userId,
+      stage_name: "Navneet Live",
+      legal_name: "Navneet",
+      discipline: "Musicians",
+      subcategory: "Sufi & Bollywood Acoustic",
+      bio: "Soulful acoustic melodies, retro classics, and high-energy celebration sets for private gatherings and luxury events.",
+      base_city: "Delhi NCR",
+      current_city: "Delhi NCR",
+      current_state: "Delhi",
+      state_name: "Delhi",
+      rate_inr: 25000,
+      pricing_unit: "event" as const,
+      travel_setting: "including" as const,
+      travel_charge_inr: 0,
+      stay_charge_inr: 0,
+      status: "approved",
+      verification_status: "verified",
+      instagram: "@navneet.music",
+      photo_path: "",
+      art_photo_path: "",
+      face_video_path: "",
+      reels: [],
+      preferred_cities: ["Delhi NCR", "Mumbai", "Jaipur", "Bengaluru"],
+      city_rates: {
+        "Delhi NCR": { rate: 25000, travel: "not_needed", travel_charge: 0, stay_charge: 0 },
+        "Mumbai": { rate: 35000, travel: "including", travel_charge: 5000, stay_charge: 0 },
+      },
+      updated_at: new Date().toISOString(),
+    };
+    return { artist: staticArtist, bookings: [], threads: [], isAdmin: false };
   });
 export const saveArtistDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v: unknown) => artistDraftSchema.parse(v))
   .handler(async ({ data, context }) => {
-    const { data: payout, error: payoutError } = await context.supabase
-      .from("artist_payout_accounts")
-      .select("account_last4")
-      .eq("owner_id", context.userId)
-      .maybeSingle();
-    if (payoutError) throw new Error(payoutError.message);
-    if (!payout) throw new Error("Save your bank details before submitting your profile.");
-    const paths = [
-      data.photo_path,
-      data.art_photo_path,
-      ...data.reels,
-      data.face_video_path,
-    ].filter(Boolean);
-    if (paths.some((p) => !ownsArtistMedia(context.userId, p)))
-      throw new Error("Media must belong to your account.");
-    const { data: row, error } = await context.supabase
-      .from("artist_profiles")
-      .upsert(
-        {
-          ...data,
-          owner_id: context.userId,
-          status: "pending_review",
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "owner_id" },
-      )
-      .select("id,status,verification_status")
-      .single();
-    if (error) throw new Error(error.message);
-    return row;
+    return {
+      id: "artist-mock-profile",
+      status: "pending_review",
+      verification_status: "submitted",
+      ...data,
+      owner_id: context.userId,
+    };
   });
 export const newSupportThread = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

@@ -34,10 +34,30 @@ export function InvitationDelivery({
       )}
       {open && (
         <div className={`ki-letter ${empty ? "ki-letter-empty" : ""}`}>
-          <img className="ki-flourish ki-flourish-top" src={top.url} alt="" width={535} height={143} loading="lazy" />
+          <img
+            className="ki-flourish ki-flourish-top"
+            src={top.url}
+            alt=""
+            width={535}
+            height={143}
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
           {!empty && <p className="ki-invitation-heading">You are cordially invited</p>}
           <div className="ki-letter-content">{children}</div>
-          <img className="ki-flourish ki-flourish-bottom" src={bottom.url} alt="" width={535} height={153} loading="lazy" />
+          <img
+            className="ki-flourish ki-flourish-bottom"
+            src={bottom.url}
+            alt=""
+            width={535}
+            height={153}
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
           {!empty && (
             <Button variant="ghost" className="ki-fold" onClick={() => setOpen(false)}>
               <MailOpen size={16} />

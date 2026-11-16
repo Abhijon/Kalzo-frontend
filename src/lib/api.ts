@@ -1,22 +1,32 @@
 /**
- * Centralized API Client for Kalzo Frontend
- * Connects all frontend endpoints to your separate backend using a single base URL.
+ * Kalzo API Client
+ * Base URL: VITE_API_BASE_URL (defaults to http://localhost:8000)
+ * All REST calls are routed through /api/v1
  *
- * Configurable via VITE_API_BASE_URL (defaults to http://localhost:8000).
+ * Backend routes (from swagger at http://localhost:8000/docs/):
+ *  GET  /health
+ *  POST /customer-signup
+ *  POST /artist-signup
+ *  POST /login            → request login OTP for existing user
+ *  POST /resend-otp       → resend OTP after signup or login
+ *  POST /verify-otp       → verify OTP → returns JWT
+ *  GET  /me               → get logged-in user + profile (Bearer required)
  */
 
 export const API_BASE_URL = (
-  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL) ||
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_BASE_URL) ||
   (typeof process !== "undefined" && process.env?.VITE_API_BASE_URL) ||
-  "http://localhost:8000"
+  "http://localhost:8000/api/v1"
 ).replace(/\/+$/, "");
+
+/** All REST calls go through the base URL (which already includes /api/v1) */
+const API_V1 = API_BASE_URL;
 
 const TOKEN_KEY = "kalzo_auth_token";
 const USER_KEY = "kalzo_auth_user";
+const PROFILE_KEY = "kalzo_auth_profile";
 
-// Event system for reactive auth state changes across the frontend
-type AuthEventListener = (event: "SIGNED_IN" | "SIGNED_OUT" | "TOKEN_REFRESHED", session: any) => void;
-const authListeners = new Set<AuthEventListener>();
+// ─── Token / User Helpers ────────────────────────────────────────────────────
 
 export function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -25,297 +35,197 @@ export function getAuthToken(): string | null {
 
 export function setAuthToken(token: string | null) {
   if (typeof window === "undefined") return;
-  if (token) {
-    localStorage.setItem(TOKEN_KEY, token);
-  } else {
-    localStorage.removeItem(TOKEN_KEY);
-  }
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
 }
 
 export function getStoredUser(): any | null {
   if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(USER_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
+  try { return JSON.parse(localStorage.getItem(USER_KEY) ?? "null"); } catch { return null; }
 }
 
 export function setStoredUser(user: any | null) {
   if (typeof window === "undefined") return;
-  if (user) {
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
-  } else {
-    localStorage.removeItem(USER_KEY);
-  }
+  if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+  else localStorage.removeItem(USER_KEY);
 }
 
-function notifyAuthChange(event: "SIGNED_IN" | "SIGNED_OUT" | "TOKEN_REFRESHED", session: any) {
-  authListeners.forEach((listener) => {
-    try {
-      listener(event, session);
-    } catch (e) {
-      console.error("[API Auth Event Error]", e);
-    }
-  });
+export function getStoredProfile(): any | null {
+  if (typeof window === "undefined") return null;
+  try { return JSON.parse(localStorage.getItem(PROFILE_KEY) ?? "null"); } catch { return null; }
 }
 
-export interface ApiFetchOptions extends RequestInit {
-  params?: Record<string, string | number | boolean | undefined>;
+export function setStoredProfile(profile: any | null) {
+  if (typeof window === "undefined") return;
+  if (profile) localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  else localStorage.removeItem(PROFILE_KEY);
 }
+
+// ─── Auth Event Bus ───────────────────────────────────────────────────────────
+
+type AuthEvent = "SIGNED_IN" | "SIGNED_OUT" | "TOKEN_REFRESHED";
+type AuthListener = (event: AuthEvent, session: { access_token: string; user: any } | null) => void;
+const authListeners = new Set<AuthListener>();
+
+function notifyAuth(event: AuthEvent, session: { access_token: string; user: any } | null) {
+  authListeners.forEach((fn) => { try { fn(event, session); } catch {} });
+}
+
+// ─── Generic HTTP Fetch ───────────────────────────────────────────────────────
 
 export interface ApiResponse<T = any> {
   data: T | null;
   error: { message: string; status?: number; raw?: any } | null;
 }
 
-/**
- * Core HTTP Request Wrapper
- */
-export async function apiRequest<T = any>(
-  endpoint: string,
-  options: ApiFetchOptions = {}
+async function req<T = any>(
+  url: string,
+  opts: RequestInit & { params?: Record<string, any> } = {}
 ): Promise<ApiResponse<T>> {
-  const { params, headers: customHeaders, body, ...restOptions } = options;
+  const { params, body, headers: extraHeaders, ...rest } = opts;
 
-  let url = endpoint.startsWith("http://") || endpoint.startsWith("https://")
-    ? endpoint
-    : `${API_BASE_URL}/${endpoint.replace(/^\/+/, "")}`;
-
+  let fullUrl = url;
   if (params) {
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, val]) => {
-      if (val !== undefined) searchParams.append(key, String(val));
-    });
-    const qs = searchParams.toString();
-    if (qs) url += (url.includes("?") ? "&" : "?") + qs;
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))
+    ).toString();
+    if (qs) fullUrl += (fullUrl.includes("?") ? "&" : "?") + qs;
   }
 
+  const headers = new Headers(extraHeaders);
   const token = getAuthToken();
-  const headers = new Headers(customHeaders);
-
-  if (token && !headers.has("Authorization")) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  // Set Content-Type only if not sending FormData
-  if (!(body instanceof FormData) && !headers.has("Content-Type") && body) {
+  if (token && !headers.has("Authorization")) headers.set("Authorization", `Bearer ${token}`);
+  if (body && !(body instanceof FormData) && !headers.has("Content-Type"))
     headers.set("Content-Type", "application/json");
-  }
 
   try {
-    const res = await fetch(url, {
-      ...restOptions,
+    const res = await fetch(fullUrl, {
+      ...rest,
       headers,
-      body: body instanceof FormData || typeof body === "string" || !body ? body : JSON.stringify(body),
+      body: body instanceof FormData || typeof body === "string" || !body
+        ? body
+        : JSON.stringify(body),
     });
 
-    const isJson = (res.headers.get("content-type") || "").includes("application/json");
+    const isJson = (res.headers.get("content-type") ?? "").includes("application/json");
     const data = isJson ? await res.json().catch(() => null) : await res.text();
 
     if (!res.ok) {
-      const message =
-        (typeof data === "object" && data && (data.error || data.message)) ||
-        `Request failed with status ${res.status}`;
-      return {
-        data: null,
-        error: { message: String(message), status: res.status, raw: data },
-      };
+      const message = (typeof data === "object" && data)
+        ? (data.message || data.error || `HTTP ${res.status}`)
+        : `HTTP ${res.status}`;
+      return { data: null, error: { message: String(message), status: res.status, raw: data } };
     }
 
     return { data: data as T, error: null };
   } catch (err: any) {
-    const message = err?.message || "Network request failed. Is the backend running at " + API_BASE_URL + "?";
-    return { data: null, error: { message, status: 0, raw: err } };
+    return { data: null, error: { message: err?.message ?? "Network error", status: 0, raw: err } };
   }
 }
 
-/**
- * Chainable Table Query Builder
- * Maps table CRUD operations directly to your REST backend (e.g. GET /bookings, POST /bookings).
- */
-class TableQueryBuilder<T = any> {
-  private tableName: string;
-  private selectFields = "*";
-  private filters: Record<string, string> = {};
-  private orderField?: string;
-  private orderAscending = true;
-  private isSingle = false;
-  private isMaybeSingle = false;
+// ─── Auth Module ──────────────────────────────────────────────────────────────
+// Maps to actual backend routes under /api/v1
 
-  constructor(tableName: string) {
-    this.tableName = tableName;
-  }
-
-  select(fields = "*") {
-    this.selectFields = fields;
-    return this;
-  }
-
-  eq(field: string, value: any) {
-    this.filters[field] = String(value);
-    return this;
-  }
-
-  or(filterStr: string) {
-    this.filters["_or"] = filterStr;
-    return this;
-  }
-
-  order(field: string, opts?: { ascending?: boolean }) {
-    this.orderField = field;
-    this.orderAscending = opts?.ascending ?? true;
-    return this;
-  }
-
-  single() {
-    this.isSingle = true;
-    return this;
-  }
-
-  maybeSingle() {
-    this.isMaybeSingle = true;
-    return this;
-  }
-
-  async then<TResult1 = ApiResponse<T>, TResult2 = never>(
-    onfulfilled?: ((value: ApiResponse<T>) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
-  ): Promise<TResult1 | TResult2> {
-    const params: Record<string, string> = { ...this.filters };
-    if (this.selectFields && this.selectFields !== "*") params["_select"] = this.selectFields;
-    if (this.orderField) {
-      params["_sort"] = this.orderField;
-      params["_order"] = this.orderAscending ? "asc" : "desc";
-    }
-
-    // If querying by specific id via eq("id", val) or single(), point to /tableName/:id if applicable
-    let endpoint = this.tableName;
-    if (this.filters["id"] && (this.isSingle || this.isMaybeSingle)) {
-      endpoint = `${this.tableName}/${encodeURIComponent(this.filters["id"])}`;
-      delete params["id"];
-    }
-
-    const res = await apiRequest<T>(endpoint, { method: "GET", params });
-    if (this.isSingle && res.data && Array.isArray(res.data)) {
-      res.data = (res.data[0] ?? null) as unknown as T;
-    }
-    if (this.isMaybeSingle && res.data && Array.isArray(res.data)) {
-      res.data = (res.data[0] ?? null) as unknown as T;
-    }
-
-    if (onfulfilled) return Promise.resolve(onfulfilled(res));
-    return res as unknown as TResult1;
-  }
-
-  async insert(data: any) {
-    return apiRequest<T>(this.tableName, {
-      method: "POST",
-      body: data,
-    });
-  }
-
-  async upsert(data: any, _options?: { onConflict?: string }) {
-    return apiRequest<T>(this.tableName, {
-      method: "PUT",
-      body: data,
-    });
-  }
-
-  async update(data: any) {
-    let endpoint = this.tableName;
-    if (this.filters["id"]) {
-      endpoint = `${this.tableName}/${encodeURIComponent(this.filters["id"])}`;
-    }
-    return apiRequest<T>(endpoint, {
-      method: "PATCH",
-      params: this.filters,
-      body: data,
-    });
-  }
-
-  async delete() {
-    let endpoint = this.tableName;
-    if (this.filters["id"]) {
-      endpoint = `${this.tableName}/${encodeURIComponent(this.filters["id"])}`;
-    }
-    return apiRequest<T>(endpoint, {
-      method: "DELETE",
-      params: this.filters,
-    });
-  }
-}
-
-/**
- * Storage adapter for media assets (Face videos, reels, photos)
- */
-const storageAdapter = {
-  from(_bucket = "kalzo-media") {
-    return {
-      async upload(path: string, file: Blob | File | ArrayBuffer) {
-        const formData = new FormData();
-        const blob = file instanceof Blob ? file : new Blob([file]);
-        formData.append("file", blob);
-        formData.append("path", path);
-
-        return apiRequest<{ path: string; url: string }>("media/upload", {
-          method: "POST",
-          body: formData,
-        });
-      },
-
-      async createSignedUrl(path: string, expiresIn = 3600) {
-        // If the backend returns URLs directly or signs them:
-        const res = await apiRequest<{ signedUrl?: string; url?: string }>("media/url", {
-          method: "GET",
-          params: { path, expires: expiresIn },
-        });
-
-        const signedUrl = res.data?.signedUrl || res.data?.url || `${API_BASE_URL}/media/${path}`;
-        return { data: { signedUrl }, error: res.error };
-      },
-
-      getPublicUrl(path: string) {
-        return {
-          data: { publicUrl: `${API_BASE_URL}/media/${path}` },
-        };
-      },
-    };
-  },
-};
-
-/**
- * High-Level Auth Module
- */
 const authModule = {
-  async getUser(): Promise<{ data: { user: any | null }; error: any }> {
-    const token = getAuthToken();
-    if (!token) {
-      setStoredUser(null);
-      return { data: { user: null }, error: null };
-    }
+  /**
+   * Customer signup → POST /api/v1/customer-signup
+   * Body: { email, fullName, location, customerType, reasonForBooking, mobileNumber, businessName? }
+   * Response: { success, data: { message, user, profile } }
+   * NOTE: account is created but NOT yet active; must call verify-otp next.
+   */
+  async signupCustomer(params: {
+    email: string;
+    fullName: string;
+    location: string;
+    customerType: string;
+    reasonForBooking: string;
+    mobileNumber: string;
+    businessName?: string;
+  }): Promise<ApiResponse<{ message: string; user: any; profile: any }>> {
+    const res = await req(`${API_V1}/customer-signup`, { method: "POST", body: params as any });
+    return res as ApiResponse<{ message: string; user: any; profile: any }>;
+  },
 
-    // Return stored user immediately for instant UI rendering, while verifying in background
-    const cachedUser = getStoredUser();
+  /**
+   * Artist signup → POST /api/v1/artist-signup
+   * Body: { email, mobileNumber }
+   * Response: { success, data: { message, user, profile } }
+   * NOTE: account is created but NOT yet active; must call verify-otp next.
+   */
+  async signupArtist(params: {
+    email: string;
+    mobileNumber: string;
+  }): Promise<ApiResponse<{ message: string; user: any; profile: any }>> {
+    const res = await req(`${API_V1}/artist-signup`, { method: "POST", body: params as any });
+    return res as ApiResponse<{ message: string; user: any; profile: any }>;
+  },
 
-    // Verify / refresh user details from backend
-    const res = await apiRequest<any>("auth/me", { method: "GET" });
+  /**
+   * Login (request OTP for existing account) → POST /api/v1/login
+   * Body: { email }
+   * Response: { success, data: { message } }
+   */
+  async login(email: string): Promise<ApiResponse<{ message: string }>> {
+    return req(`${API_V1}/login`, { method: "POST", body: { email } as any });
+  },
+
+  /**
+   * Resend OTP → POST /api/v1/resend-otp
+   * Body: { email }
+   */
+  async resendOtp(email: string): Promise<ApiResponse<{ message: string }>> {
+    return req(`${API_V1}/resend-otp`, { method: "POST", body: { email } as any });
+  },
+
+  /**
+   * Verify OTP → POST /api/v1/verify-otp
+   * Body: { email, otp }
+   * Response: { success, data: { token, user } }
+   * Saves JWT + user to localStorage and fires SIGNED_IN.
+   */
+  async verifyOtp(params: { email: string; otp: string }): Promise<ApiResponse<{ token: string; user: any }>> {
+    const res = await req<{ success: boolean; data: { token: string; user: any } }>(
+      `${API_V1}/verify-otp`,
+      { method: "POST", body: params as any }
+    );
     if (res.data) {
-      const user = res.data.user || res.data;
+      // Backend wraps in { success, data: { token, user } }
+      const payload = (res.data as any)?.data ?? res.data;
+      const token: string = payload?.token;
+      const user: any = payload?.user;
+      if (token) { setAuthToken(token); setStoredUser(user); notifyAuth("SIGNED_IN", { access_token: token, user }); }
+      return { data: { token, user }, error: null };
+    }
+    return res as ApiResponse<{ token: string; user: any }>;
+  },
+
+  /**
+   * Get current user and profile → GET /api/v1/me  (Bearer required)
+   * Response: { success, data: { user, profile } }
+   */
+  async getUser(): Promise<{ data: { user: any | null; profile?: any | null }; error: any }> {
+    const token = getAuthToken();
+    if (!token) return { data: { user: null, profile: null }, error: null };
+
+    const res = await req<{ success: boolean; data: { user: any; profile: any } }>(`${API_V1}/me`);
+    if (res.data) {
+      const payload = (res.data as any)?.data ?? res.data;
+      const user = payload?.user ?? payload;
+      const profile = payload?.profile ?? null;
       setStoredUser(user);
-      return { data: { user }, error: null };
+      setStoredProfile(profile);
+      return { data: { user, profile }, error: null };
     }
-
-    if (res.error && res.error.status === 401) {
-      setAuthToken(null);
-      setStoredUser(null);
-      notifyAuthChange("SIGNED_OUT", null);
-      return { data: { user: null }, error: res.error };
+    if (res.error?.status === 401) {
+      setAuthToken(null); setStoredUser(null); setStoredProfile(null);
+      notifyAuth("SIGNED_OUT", null);
     }
+    // Fallback to cached user and profile to avoid UI flicker on transient errors
+    return { data: { user: getStoredUser(), profile: getStoredProfile() }, error: res.error };
+  },
 
-    return { data: { user: cachedUser }, error: null };
+  async getMe() {
+    return this.getUser();
   },
 
   async getSession(): Promise<{ data: { session: { access_token: string; user: any } | null }; error: any }> {
@@ -323,147 +233,203 @@ const authModule = {
     if (!token) return { data: { session: null }, error: null };
     const { data } = await this.getUser();
     if (!data.user) return { data: { session: null }, error: null };
-
-    return {
-      data: {
-        session: {
-          access_token: token,
-          user: data.user,
-        },
-      },
-      error: null,
-    };
-  },
-
-  async signInWithOtp(params: { email: string; options?: any }): Promise<{ error: any }> {
-    const res = await apiRequest("auth/send-otp", {
-      method: "POST",
-      body: {
-        email: params.email,
-        options: params.options,
-      },
-    });
-    return { error: res.error };
-  },
-
-  async verifyOtp(params: { email: string; token: string; type?: string }): Promise<{ error: any; data?: any }> {
-    const res = await apiRequest<{ token?: string; access_token?: string; user?: any }>("auth/verify-otp", {
-      method: "POST",
-      body: {
-        email: params.email,
-        code: params.token,
-        type: params.type || "email",
-      },
-    });
-
-    if (res.error) return { error: res.error };
-
-    const token = res.data?.token || res.data?.access_token;
-    const user = res.data?.user || { email: params.email };
-
-    if (token) setAuthToken(token);
-    if (user) setStoredUser(user);
-
-    notifyAuthChange("SIGNED_IN", { access_token: token, user });
-    return { error: null, data: res.data };
-  },
-
-  async signInWithOAuth(provider: string, options?: { redirect_uri?: string }): Promise<{ error: any }> {
-    // Redirect to backend OAuth initiation endpoint
-    const redirect = options?.redirect_uri || (typeof window !== "undefined" ? window.location.origin : "");
-    window.location.href = `${API_BASE_URL}/auth/${provider}?redirect_uri=${encodeURIComponent(redirect)}`;
-    return { error: null };
-  },
-
-  async updateUser(attributes: { password?: string; data?: any }): Promise<{ error: any }> {
-    const res = await apiRequest("auth/me", {
-      method: "PUT",
-      body: attributes,
-    });
-    if (res.data?.user) setStoredUser(res.data.user);
-    return { error: res.error };
+    return { data: { session: { access_token: token, user: data.user } }, error: null };
   },
 
   async signOut(): Promise<{ error: any }> {
-    try {
-      await apiRequest("auth/logout", { method: "POST" });
-    } catch {
-      // Ignore network errors on logout
-    }
-    setAuthToken(null);
-    setStoredUser(null);
-    notifyAuthChange("SIGNED_OUT", null);
+    setAuthToken(null); setStoredUser(null); setStoredProfile(null);
+    notifyAuth("SIGNED_OUT", null);
     return { error: null };
   },
 
-  onAuthStateChange(callback: (event: "SIGNED_IN" | "SIGNED_OUT" | "TOKEN_REFRESHED", session: any) => void) {
-    authListeners.add(callback);
+  /** OAuth: redirect to backend OAuth initiation endpoint (Google etc.) */
+  async signInWithOAuth(provider: string, options?: { redirect_uri?: string }): Promise<{ error: any }> {
+    const redirect = options?.redirect_uri ?? (typeof window !== "undefined" ? window.location.origin : "");
+    if (typeof window !== "undefined")
+      window.location.href = `${API_V1}/auth/${provider}?redirect_uri=${encodeURIComponent(redirect)}`;
+    return { error: null };
+  },
+
+  /** Update user profile */
+  async updateProfile(attrs: Record<string, any>): Promise<ApiResponse<any>> {
+    const res = await req(`${API_V1}/me`, { method: "PATCH", body: attrs as any });
+    if (res.data) {
+      const payload = (res.data as any)?.data ?? res.data;
+      if (payload?.user) setStoredUser(payload.user);
+      if (payload?.profile) setStoredProfile(payload.profile);
+    } else {
+      // Optimistically update cached profile if backend doesn't reject
+      const cached = getStoredProfile() ?? {};
+      setStoredProfile({ ...cached, ...attrs });
+    }
+    return res;
+  },
+
+  /** Update user (e.g. password) */
+  async updateUser(attrs: { password?: string; data?: any }): Promise<{ error: any }> {
+    const res = await req(`${API_V1}/me`, { method: "PATCH", body: attrs as any });
+    if (res.data) {
+      const payload = (res.data as any)?.data ?? res.data;
+      if (payload?.user) setStoredUser(payload.user);
+    }
+    return { error: res.error };
+  },
+
+  onAuthStateChange(cb: (event: AuthEvent, session: { access_token: string; user: any } | null) => void) {
+    authListeners.add(cb);
+    return { data: { subscription: { unsubscribe: () => authListeners.delete(cb) } } };
+  },
+};
+
+// ─── Storage Module ───────────────────────────────────────────────────────────
+
+const storageAdapter = {
+  from(_bucket = "kalzo-media") {
     return {
-      data: {
-        subscription: {
-          unsubscribe: () => {
-            authListeners.delete(callback);
-          },
-        },
+      async upload(path: string, file: Blob | File | ArrayBuffer) {
+        const fd = new FormData();
+        const blob = file instanceof Blob ? file : new Blob([file]);
+        fd.append("file", blob);
+        fd.append("path", path);
+        return req<{ path: string; url: string }>(`${API_V1}/media/upload`, { method: "POST", body: fd });
+      },
+
+      async createSignedUrl(path: string, expiresIn = 3600) {
+        const res = await req<{ signedUrl?: string; url?: string }>(
+          `${API_V1}/media/url`, { params: { path, expires: expiresIn } }
+        );
+        const signedUrl = res.data?.signedUrl ?? res.data?.url ?? `${API_BASE_URL}/media/${path}`;
+        return { data: { signedUrl }, error: res.error };
+      },
+
+      getPublicUrl(path: string) {
+        return { data: { publicUrl: `${API_BASE_URL}/media/${path}` } };
       },
     };
   },
 };
 
-/**
- * Universal RPC procedure caller
- */
-async function rpc(procedureName: string, params: Record<string, any> = {}): Promise<{ data: any; error: any }> {
-  const res = await apiRequest(`rpc/${procedureName}`, {
-    method: "POST",
-    body: params,
-  });
-  return { data: res.data, error: res.error };
+// ─── Table Query Builder ──────────────────────────────────────────────────────
+
+class TableQueryBuilder<T = any> {
+  private filters: Record<string, string> = {};
+  private selectFields = "*";
+  private orderField?: string;
+  private orderAsc = true;
+  private returnSingle = false;
+  private returnMaybe = false;
+  private limitCount?: number;
+
+  constructor(private tableName: string) {}
+
+  select(f = "*") { this.selectFields = f; return this; }
+  eq(field: string, value: any) { this.filters[field] = String(value); return this; }
+  neq(field: string, value: any) { this.filters[`${field}_neq`] = String(value); return this; }
+  gt(field: string, value: any) { this.filters[`${field}_gt`] = String(value); return this; }
+  gte(field: string, value: any) { this.filters[`${field}_gte`] = String(value); return this; }
+  lt(field: string, value: any) { this.filters[`${field}_lt`] = String(value); return this; }
+  lte(field: string, value: any) { this.filters[`${field}_lte`] = String(value); return this; }
+  in(field: string, values: any[]) { this.filters[`${field}_in`] = values.join(","); return this; }
+  or(f: string) { this.filters["_or"] = f; return this; }
+  order(field: string, opts?: { ascending?: boolean }) { this.orderField = field; this.orderAsc = opts?.ascending ?? true; return this; }
+  limit(n: number) { this.limitCount = n; return this; }
+  single() { this.returnSingle = true; return this; }
+  maybeSingle() { this.returnMaybe = true; return this; }
+
+  async then<R1 = ApiResponse<T>, R2 = never>(
+    ok?: ((v: ApiResponse<T>) => R1 | PromiseLike<R1>) | null,
+    fail?: ((e: any) => R2 | PromiseLike<R2>) | null
+  ): Promise<R1 | R2> {
+    const params: Record<string, string> = { ...this.filters };
+    if (this.selectFields !== "*") params["_select"] = this.selectFields;
+    if (this.orderField) { params["_sort"] = this.orderField; params["_order"] = this.orderAsc ? "asc" : "desc"; }
+    if (this.limitCount) params["_limit"] = String(this.limitCount);
+
+    let endpoint = `${API_V1}/${this.tableName}`;
+    if (this.filters["id"] && (this.returnSingle || this.returnMaybe)) {
+      endpoint += `/${encodeURIComponent(this.filters["id"])}`;
+      delete params["id"];
+    }
+
+    const res = await req<T>(endpoint, { params });
+    if ((this.returnSingle || this.returnMaybe) && Array.isArray(res.data))
+      (res as any).data = res.data[0] ?? null;
+
+    if (ok) return Promise.resolve(ok(res));
+    return res as unknown as R1;
+  }
+
+  async insert(data: any) { return req<T>(`${API_V1}/${this.tableName}`, { method: "POST", body: data }); }
+  async upsert(data: any, _opts?: { onConflict?: string }) { return req<T>(`${API_V1}/${this.tableName}`, { method: "PUT", body: data }); }
+  async update(data: any) {
+    const id = this.filters["id"];
+    const endpoint = id ? `${API_V1}/${this.tableName}/${encodeURIComponent(id)}` : `${API_V1}/${this.tableName}`;
+    return req<T>(endpoint, { method: "PATCH", params: this.filters, body: data });
+  }
+  async delete() {
+    const id = this.filters["id"];
+    const endpoint = id ? `${API_V1}/${this.tableName}/${encodeURIComponent(id)}` : `${API_V1}/${this.tableName}`;
+    return req<T>(endpoint, { method: "DELETE", params: this.filters });
+  }
 }
 
-/**
- * The Central API Object
- * Provides both structured domain methods and a fluent table builder.
- */
+// ─── Main API Object ──────────────────────────────────────────────────────────
+
 export const api = {
+  /** Base URL (no trailing slash), e.g. "http://localhost:8000" */
   baseUrl: API_BASE_URL,
-  get: <T = any>(endpoint: string, options?: ApiFetchOptions) => apiRequest<T>(endpoint, { ...options, method: "GET" }),
-  post: <T = any>(endpoint: string, body?: any, options?: ApiFetchOptions) => apiRequest<T>(endpoint, { ...options, method: "POST", body }),
-  put: <T = any>(endpoint: string, body?: any, options?: ApiFetchOptions) => apiRequest<T>(endpoint, { ...options, method: "PUT", body }),
-  patch: <T = any>(endpoint: string, body?: any, options?: ApiFetchOptions) => apiRequest<T>(endpoint, { ...options, method: "PATCH", body }),
-  delete: <T = any>(endpoint: string, options?: ApiFetchOptions) => apiRequest<T>(endpoint, { ...options, method: "DELETE" }),
+  /** Base URL with /api/v1 prefix */
+  v1: API_V1,
 
-  auth: authModule,
+  // HTTP verbs (raw, for custom endpoints not in the builder)
+  get:    <T = any>(path: string, opts?: RequestInit & { params?: Record<string, any> }) => req<T>(`${API_V1}/${path.replace(/^\//, "")}`, { ...opts, method: "GET" }),
+  post:   <T = any>(path: string, body?: any, opts?: RequestInit) => req<T>(`${API_V1}/${path.replace(/^\//, "")}`, { ...opts, method: "POST", body }),
+  patch:  <T = any>(path: string, body?: any, opts?: RequestInit) => req<T>(`${API_V1}/${path.replace(/^\//, "")}`, { ...opts, method: "PATCH", body }),
+  put:    <T = any>(path: string, body?: any, opts?: RequestInit) => req<T>(`${API_V1}/${path.replace(/^\//, "")}`, { ...opts, method: "PUT", body }),
+  delete: <T = any>(path: string, opts?: RequestInit) => req<T>(`${API_V1}/${path.replace(/^\//, "")}`, { ...opts, method: "DELETE" }),
+
+  // Modules
+  auth:    authModule,
   storage: storageAdapter,
-  from: <T = any>(tableName: string) => new TableQueryBuilder<T>(tableName),
-  rpc,
 
-  // Direct domain helpers
+  /** Fluent table query builder (maps to REST CRUD on /api/v1/:table) */
+  from: <T = any>(table: string) => new TableQueryBuilder<T>(table),
+
+  /** RPC-style procedures → POST /api/v1/rpc/:name */
+  rpc: async (name: string, args: Record<string, any> = {}) => {
+    const res = await req(`${API_V1}/rpc/${name}`, { method: "POST", body: args as any });
+    return { data: res.data, error: res.error };
+  },
+
+  // ─── Domain helpers ───────────────────────────────────────────────────────
+
+  health: () => req(`${API_BASE_URL.replace(/\/api\/v1$/, "")}/health`),
+
   artists: {
-    list: (params?: Record<string, any>) => apiRequest("artists", { method: "GET", params }),
-    getById: (id: string) => apiRequest(`artists/${id}`, { method: "GET" }),
-    saveDraft: (data: any) => apiRequest("artists/draft", { method: "POST", body: data }),
-    updateLocation: (data: any) => apiRequest("artists/location", { method: "PUT", body: data }),
+    list:           (params?: Record<string, any>) => req(`${API_V1}/artists`, { params }),
+    getById:        (id: string)                   => req(`${API_V1}/artists/${id}`),
+    saveDraft:      (data: any)                    => req(`${API_V1}/artists/draft`,    { method: "POST",  body: data }),
+    updateLocation: (data: any)                    => req(`${API_V1}/artists/location`, { method: "PUT",   body: data }),
   },
 
   bookings: {
-    list: (params?: Record<string, any>) => apiRequest("bookings", { method: "GET", params }),
-    getById: (id: string) => apiRequest(`bookings/${id}`, { method: "GET" }),
-    create: (data: any) => apiRequest("bookings", { method: "POST", body: data }),
-    cancel: (id: string, reason?: string) => apiRequest(`bookings/${id}/cancel`, { method: "POST", body: { reason } }),
-  },
-
-  admin: {
-    getStats: () => apiRequest("admin/stats", { method: "GET" }),
-    listBookings: (params?: Record<string, any>) => apiRequest("admin/bookings", { method: "GET", params }),
-    listArtists: (params?: Record<string, any>) => apiRequest("admin/artists", { method: "GET", params }),
-    approveArtist: (id: string) => apiRequest(`admin/artists/${id}/approve`, { method: "POST" }),
-    rejectArtist: (id: string, reason: string) => apiRequest(`admin/artists/${id}/reject`, { method: "POST", body: { reason } }),
+    list:    (params?: Record<string, any>) => req(`${API_V1}/bookings`,             { params }),
+    getById: (id: string)                   => req(`${API_V1}/bookings/${id}`),
+    create:  (data: any)                    => req(`${API_V1}/bookings`,             { method: "POST", body: data }),
+    cancel:  (id: string, reason?: string)  => req(`${API_V1}/bookings/${id}/cancel`,{ method: "POST", body: { reason } }),
   },
 
   payments: {
-    createOrder: (data: any) => apiRequest("payments/create-order", { method: "POST", body: data }),
-    verifyPayment: (data: any) => apiRequest("payments/verify", { method: "POST", body: data }),
+    createOrder:   (data: any) => req(`${API_V1}/payments/create-order`, { method: "POST", body: data }),
+    verifyPayment: (data: any) => req(`${API_V1}/payments/verify`,       { method: "POST", body: data }),
+  },
+
+  admin: {
+    getStats:     ()                            => req(`${API_V1}/admin/stats`),
+    listBookings: (params?: Record<string, any>) => req(`${API_V1}/admin/bookings`,     { params }),
+    listArtists:  (params?: Record<string, any>) => req(`${API_V1}/admin/artists`,      { params }),
+    approveArtist:(id: string)                   => req(`${API_V1}/admin/artists/${id}/approve`, { method: "POST" }),
+    rejectArtist: (id: string, reason: string)  => req(`${API_V1}/admin/artists/${id}/reject`,  { method: "POST", body: { reason } }),
   },
 };
 

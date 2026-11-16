@@ -1,9 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { api } from "@/lib/api";
-import { accountData } from "@/lib/kalzo.functions";
-import { accountDestination } from "@/kalzo/extras/accountDestination";
 import { PatronGate } from "@/kalzo/extras/PatronGate";
 import { kalzoHead } from "@/lib/routeHead";
 export const Route = createFileRoute("/profile")({
@@ -14,7 +11,7 @@ export const Route = createFileRoute("/profile")({
 });
 function Profile() {
   const { mode } = Route.useSearch();
-  const read = useServerFn(accountData), navigate = useNavigate();
+  const navigate = useNavigate();
   const [ready, setReady] = useState(false), [error, setError] = useState("");
   useEffect(() => {
     let active = true;
@@ -23,15 +20,17 @@ function Profile() {
       if (!active) return;
       if (!data?.user) { setReady(true); return; }
       if (authError) throw authError;
-      const account = await read();
-      if (active) await navigate({ to: accountDestination(!!account.artist, data.user.user_metadata?.["account_audience"]) });
+      // Navigate based on role from /me — no extra API calls needed
+      const role = (data.user.role as string | undefined)?.toUpperCase();
+      const dest = role === "ARTIST" ? "/artist" : "/account";
+      if (active) await navigate({ to: dest });
     };
     void resolve().catch(e => setError(e.message));
     const { data } = api.auth.onAuthStateChange(event => {
       if (event === "SIGNED_IN") setTimeout(() => void resolve().catch(e => setError(e.message)), 0);
     });
     return () => { active = false; data.subscription.unsubscribe(); };
-  }, [read, navigate]);
+  }, [navigate]);
   return <main className="kl-account"><div className="kl-inner"><h1>Your Kalzo profile</h1>
     {error && <p role="alert">{error}</p>}
     {ready ? <PatronGate initialMode={mode ?? "create"} chooseAudience onBack={() => navigate({ to: "/" })} /> : <p>Opening your account…</p>}

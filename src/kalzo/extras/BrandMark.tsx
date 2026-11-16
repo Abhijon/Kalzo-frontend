@@ -5,7 +5,14 @@ import logo from "@/assets/kalzo-logo.png.asset.json";
 export function BrandMark({ onHome }: { onHome?: () => void }) {
   return (
     <button type="button" onClick={onHome} aria-label="Kalzo home" className="kbrand">
-      <img src={logo.url} alt="Kalzo logo" className="kbrand-logo" />
+      <img
+        src={logo.url}
+        alt="Kalzo logo"
+        className="kbrand-logo"
+        onError={(e) => {
+          e.currentTarget.style.display = "none";
+        }}
+      />
       <span className="kbrand-tag">where every mehfil finds its artist</span>
     </button>
   );

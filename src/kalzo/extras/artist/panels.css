@@ -268,30 +268,51 @@
   }
 }
 .ka-chat-messages {
-  height: 360px;
-  overflow: auto;
-  border-block: 1px solid var(--artist-border);
-  padding: 14px 0;
+  height: 380px;
+  overflow-y: auto;
+  border: 1px solid var(--artist-border);
+  background: color-mix(in oklab, var(--artist-wash) 30%, #ffffff);
+  border-radius: 8px;
+  padding: 16px;
   margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 .ka-chat-messages p {
-  max-width: 90%;
-  padding: 12px 16px;
-  background: var(--artist-wash);
-  margin: 10px 0;
+  max-width: 85%;
+  padding: 12px 18px;
+  background: #fdfbf7;
+  border: 1px solid var(--artist-border);
+  margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  border-radius: 6px;
+  border-radius: 10px;
+  border-bottom-left-radius: 2px;
+  color: var(--artist-black-ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 .ka-chat-messages small {
   display: block;
   font-size: 11px;
   margin-bottom: 6px;
+  color: var(--artist-muted);
 }
 .ka-chat-messages .ka-chat-own {
   margin-left: auto;
-  background: var(--desk-ink);
-  color: var(--walkthrough-paper);
+  background: #251b14;
+  border-color: #3d2d22;
+  border-radius: 10px;
+  border-bottom-right-radius: 2px;
+  color: #fff9f0 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.kl-account .ka-chat-messages .ka-chat-own,
+.kl-account .ka-chat-messages .ka-chat-own :is(small, span, p, strong, em) {
+  color: #fff9f0 !important;
+}
+.kl-account .ka-chat-messages .ka-chat-own small {
+  color: rgba(255, 249, 240, 0.75) !important;
 }
 .kl-account .ka-invitation-empty {
   background: var(--artist-wash);
