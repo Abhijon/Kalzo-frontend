@@ -9,7 +9,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { api, normalizeArtist, unwrapData } from "@/lib/api";
+import { api, artistFrom } from "@/lib/api";
 import {
   type ArtistProfileAlert,
   type ArtistProfileField,
@@ -121,6 +121,29 @@ function FieldError({ id, message }: { id?: string; message?: string }) {
   );
 }
 
+function maskAccount(value: string) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.length <= 4) return "*".repeat(digits.length);
+  return `${digits.slice(0, 4)}${"*".repeat(digits.length - 4)}`;
+}
+
+function maskIfsc(value: string) {
+  const code = String(value || "").toUpperCase();
+  if (code.length < 4) return code;
+  return `${code.slice(0, 4)}${"*".repeat(Math.max(0, code.length - 4))}`;
+}
+
+/** Profile already has the media from POST /artist/profile — edits wait for PATCH. */
+function isSubmittedProfile(a: {
+  photo_path?: string;
+  face_video_path?: string;
+  reels?: unknown;
+}) {
+  const reels = Array.isArray(a.reels) ? a.reels.filter((r) => typeof r === "string" && r) : [];
+  return !!(a.photo_path && a.face_video_path && reels.length >= 2);
+}
+
 export function ArtistProfileEditor() {
   const locationRead = useServerFn(artistPanelData);
   const alertRef = useRef<HTMLDivElement>(null);
@@ -129,8 +152,10 @@ export function ArtistProfileEditor() {
   const [alert, setAlert] = useState<ArtistProfileAlert | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<ArtistProfileField, string>>>({});
   const [busy, setBusy] = useState(false),
+    [loading, setLoading] = useState(true),
+    [submitted, setSubmitted] = useState(false),
     [preview, setPreview] = useState<Record<string, string>>({}),
-    [verification, setVerification] = useState("not_started"),
+    [verification, setVerification] = useState("unverified"),
     [savedCity, setSavedCity] = useState(""),
     [cityAsk, setCityAsk] = useState<({ city: string } & CityRate) | null>(null),
     [customSub, setCustomSub] = useState(false);
@@ -157,9 +182,10 @@ export function ArtistProfileEditor() {
 
   useEffect(() => {
     void (async () => {
+      setLoading(true);
       const res = await api.artists.getProfile();
       if (res.error) {
-        // No profile yet — seed early location preference if available.
+        // Row exists after signup even before POST; 404 is rare. Seed early location if empty.
         if (res.error.status === 404) {
           void locationRead().then((x) => {
             if (!x.location) return;
@@ -172,6 +198,7 @@ export function ArtistProfileEditor() {
               city_rates: p.success ? { [x.location?.city ?? ""]: p.data } : f.city_rates,
             }));
           });
+          setLoading(false);
           return;
         }
         showAlert({
@@ -179,42 +206,55 @@ export function ArtistProfileEditor() {
           title: "Could not load your profile",
           message: res.error.message || "Please refresh and try again.",
         });
+        setLoading(false);
         return;
       }
-      const a = normalizeArtist(unwrapData(res.data));
-      if (!a) return;
+      const a = artistFrom(res.data);
+      if (!a) {
+        setLoading(false);
+        return;
+      }
       const opts = ART_FORMS[a.discipline] ?? [];
+      const reels = Array.isArray(a.reels)
+        ? a.reels.filter((r: unknown): r is string => typeof r === "string" && !!r)
+        : [];
+      const alreadySubmitted = isSubmittedProfile(a);
       setCustomSub(!!a.subcategory && !opts.includes(a.subcategory));
       setForm({
         ...empty,
-        stage_name: a.stage_name,
-        legal_name: a.legal_name,
+        stage_name: a.stage_name || "",
+        legal_name: a.legal_name || "",
         current_state: a.current_state || stateForCity(a.current_city),
-        preferred_states: a.preferred_states,
-        discipline: a.discipline,
-        subcategory: a.subcategory,
-        bio: a.bio,
-        base_city: a.base_city,
-        state_name: a.state_name,
-        current_city: a.current_city,
-        rate_inr: a.rate_inr,
-        instagram: a.instagram,
-        photo_path: a.photo_path,
-        art_photo_path: a.art_photo_path,
-        face_video_path: a.face_video_path,
-        reels: Array.isArray(a.reels)
-          ? a.reels.filter((r: unknown): r is string => typeof r === "string")
-          : [],
-        primary_reel: a.primary_reel,
-        pricing_unit: a.pricing_unit as "hour",
-        travel_setting: a.travel_setting as "including",
-        travel_charge_inr: a.travel_charge_inr,
-        stay_charge_inr: a.stay_charge_inr,
-        preferred_cities: a.preferred_cities,
+        preferred_states: Array.isArray(a.preferred_states) ? a.preferred_states : [],
+        discipline: a.discipline || empty.discipline,
+        subcategory: a.subcategory || "",
+        bio: a.bio || "",
+        base_city: a.base_city || "",
+        state_name: a.state_name || "",
+        current_city: a.current_city || "",
+        rate_inr: a.rate_inr || empty.rate_inr,
+        instagram: a.instagram || "",
+        photo_path: a.photo_path || "",
+        art_photo_path: a.art_photo_path || "",
+        face_video_path: a.face_video_path || "",
+        reels,
+        primary_reel: a.primary_reel || 0,
+        pricing_unit: (a.pricing_unit as typeof empty.pricing_unit) || "hour",
+        travel_setting: (a.travel_setting as typeof empty.travel_setting) || "including",
+        travel_charge_inr: a.travel_charge_inr || 0,
+        stay_charge_inr: a.stay_charge_inr || 0,
+        preferred_cities: Array.isArray(a.preferred_cities) ? a.preferred_cities : [],
         city_rates: (a.city_rates ?? {}) as Record<string, CityRate>,
+        bank_account_holder: a.bank_account_holder || "",
+        bank_name: a.bank_name || "",
+        // Never show a full account number again after submit.
+        bank_account_number: alreadySubmitted ? maskAccount(a.bank_account_number || "") : "",
+        bank_ifsc: alreadySubmitted ? maskIfsc(a.bank_ifsc || "") : a.bank_ifsc || "",
       });
-      setSavedCity(a.current_city);
-      setVerification(a.verification_status);
+      setSavedCity(a.current_city || "");
+      setVerification(a.verification_status || "unverified");
+      setSubmitted(alreadySubmitted);
+      setLoading(false);
     })();
   }, [locationRead]);
 
@@ -366,6 +406,14 @@ export function ArtistProfileEditor() {
   }
 
   async function submit() {
+    if (submitted) {
+      showAlert({
+        kind: "info",
+        title: "Profile already submitted",
+        message: "Your submitted details are shown here. Profile edits and extra reels will use a PATCH update later.",
+      });
+      return;
+    }
     const result = runValidation();
     if (!result.ok) {
       setFieldErrors(result.fields);
@@ -411,16 +459,35 @@ export function ArtistProfileEditor() {
       fd.append("bankIfsc", form.bank_ifsc.trim().toUpperCase());
       fd.append("photo", files.photo!);
       fd.append("artPhoto", files.artPhoto!);
-      fd.append(
-        "faceVideo",
-        files.faceVideo instanceof File
-          ? files.faceVideo
-          : new File([files.faceVideo!], "face.webm", { type: files.faceVideo!.type || "video/webm" }),
-      );
+      {
+        const raw = files.faceVideo!;
+        const base = ((raw.type || "video/webm").split(";")[0] ?? "video/webm").trim().toLowerCase();
+        const type =
+          base === "video/mp4" || base === "video/quicktime"
+            ? base
+            : "video/webm"; // also maps Chrome's video/x-matroska
+        const ext = type === "video/mp4" ? "mp4" : type === "video/quicktime" ? "mov" : "webm";
+        fd.append(
+          "faceVideo",
+          raw instanceof File && raw.type === type
+            ? raw
+            : new File([raw], `face.${ext}`, { type }),
+        );
+      }
       const uploadedReels = files.reels
         .map((reel, i) => ({ reel, i }))
         .filter((x): x is { reel: File; i: number } => !!x.reel);
-      uploadedReels.forEach(({ reel }) => fd.append("reels", reel));
+      uploadedReels.forEach(({ reel }) => {
+        const base = ((reel.type || "").split(";")[0] ?? "").trim().toLowerCase();
+        if (["video/mp4", "video/webm", "video/quicktime"].includes(base)) {
+          fd.append("reels", reel);
+          return;
+        }
+        const ext = reel.name.match(/\.(mp4|webm|mov)$/i)?.[1]?.toLowerCase() ?? "mp4";
+        const type =
+          ext === "webm" ? "video/webm" : ext === "mov" ? "video/quicktime" : "video/mp4";
+        fd.append("reels", new File([reel], reel.name || `reel.${ext}`, { type }));
+      });
       const primaryAmong = uploadedReels.findIndex((x) => x.i === form.primary_reel);
       fd.append("primaryReel", String(primaryAmong >= 0 ? primaryAmong : 0));
 
@@ -434,19 +501,25 @@ export function ArtistProfileEditor() {
         return;
       }
 
-      const saved = normalizeArtist(unwrapData(res.data));
+      const saved = artistFrom(res.data);
       setSavedCity(form.current_city);
-      setVerification(saved?.verification_status ?? "submitted");
+      setVerification(saved?.verification_status ?? "unverified");
       setFiles(emptyFiles());
-      if (saved?.photo_path) setForm((f) => ({
-        ...f,
-        photo_path: saved.photo_path || f.photo_path,
-        art_photo_path: saved.art_photo_path || f.art_photo_path,
-        face_video_path: saved.face_video_path || f.face_video_path,
-        reels: Array.isArray(saved.reels) && saved.reels.length ? saved.reels : f.reels,
-        bank_account_number: "",
-        bank_ifsc: f.bank_ifsc ? f.bank_ifsc.slice(0, 4) + "*******" : "",
-      }));
+      setSubmitted(true);
+      if (saved?.photo_path) {
+        setForm((f) => ({
+          ...f,
+          photo_path: saved.photo_path || f.photo_path,
+          art_photo_path: saved.art_photo_path || f.art_photo_path,
+          face_video_path: saved.face_video_path || f.face_video_path,
+          reels: Array.isArray(saved.reels) && saved.reels.length ? saved.reels : f.reels,
+          primary_reel: saved.primary_reel ?? f.primary_reel,
+          bank_account_holder: saved.bank_account_holder || f.bank_account_holder,
+          bank_name: saved.bank_name || f.bank_name,
+          bank_account_number: maskAccount(saved.bank_account_number || f.bank_account_number),
+          bank_ifsc: maskIfsc(saved.bank_ifsc || f.bank_ifsc),
+        }));
+      }
       showAlert({
         kind: "success",
         title: "Profile submitted for verification",
@@ -465,9 +538,25 @@ export function ArtistProfileEditor() {
   }
   const subs = ART_FORMS[form.discipline] ?? [];
   const err = (field: ArtistProfileField) => fieldErrors[field];
+  const locked = submitted || busy;
+  if (loading) {
+    return <p className="kl-note">Loading your submitted profile…</p>;
+  }
   return (
     <>
       <div ref={alertRef}>{alert && <ProfileAlertBanner alert={alert} />}</div>
+      {submitted && (
+        <div className="ka-alert ka-alert-info" role="status">
+          <Info size={20} aria-hidden="true" />
+          <div>
+            <strong>Submitted profile</strong>
+            <p>
+              Showing the same data from your last POST submit. Edits and extra reels will come with
+              a PATCH update later. Identity status: {verification.replaceAll("_", " ")}.
+            </p>
+          </div>
+        </div>
+      )}
       <section className="kp-plaque" aria-label="Profile preview" style={{ backgroundImage: `url(${plaque.url})` }}>
         <div className="kp-photo">
           {previewSrc(form.photo_path) ? <img src={previewSrc(form.photo_path)} alt="You" /> : <span>Your photo</span>}
@@ -485,7 +574,7 @@ export function ArtistProfileEditor() {
         </div>
       </section>
 
-      <fieldset className="ka-card">
+      <fieldset className="ka-card" disabled={locked}>
         <legend>Who you are</legend>
         <div className="kl-form">
           <label data-field="stage_name" className={err("stage_name") ? "ka-field-invalid" : undefined}>
@@ -626,7 +715,7 @@ export function ArtistProfileEditor() {
         </div>
       </fieldset>
 
-      <fieldset className="ka-card">
+      <fieldset className="ka-card" disabled={locked}>
         <legend>The value of your performance</legend>
         <div className="kl-form">
           <label data-field="rate_inr" className={err("rate_inr") ? "ka-field-invalid" : undefined}>
@@ -732,7 +821,7 @@ export function ArtistProfileEditor() {
         </div>
       </fieldset>
 
-      <fieldset className="ka-card" data-field="photo">
+      <fieldset className="ka-card" data-field="photo" disabled={locked}>
         <legend>Photographs</legend>
         <div className="ka-photos">
           <label className={"ka-drop round" + (err("photo") ? " ka-input-invalid" : "")}>
@@ -773,7 +862,7 @@ export function ArtistProfileEditor() {
         <FieldError message={err("photo") || err("art_photo")} />
       </fieldset>
 
-      <fieldset className="ka-card" data-field="reels">
+      <fieldset className="ka-card" data-field="reels" disabled={locked}>
         <legend>Show us your work</legend>
         <p className="kl-note">
           Two reels required *, two optional. Choose your best reel as primary. The more of your
@@ -843,7 +932,7 @@ export function ArtistProfileEditor() {
         </div>
       </fieldset>
 
-      <fieldset className="ka-card" data-field="face_video">
+      <fieldset className="ka-card" data-field="face_video" disabled={locked}>
         <legend>Identity verification *</legend>
         <p>
           Status: <strong>{verification.replaceAll("_", " ")}</strong>
@@ -854,7 +943,7 @@ export function ArtistProfileEditor() {
           eyes. Only Kalzo sees this video.
         </p>
         <FieldError message={err("face_video")} />
-        <LiveRecorder kind="face" busy={busy} onDone={pickFace} />
+        {!submitted && <LiveRecorder kind="face" busy={busy} onDone={pickFace} />}
         {previewSrc(form.face_video_path) && (
           <video
             className="kl-photo"
@@ -876,7 +965,7 @@ export function ArtistProfileEditor() {
         </Button>
       </fieldset>
 
-      <fieldset className="ka-card">
+      <fieldset className="ka-card" disabled={locked}>
         <legend>Bank details for payouts</legend>
         <p className="kl-note">Submitted with your profile. Account number is not shown again after save.</p>
         <div className="kl-form">
@@ -934,8 +1023,12 @@ export function ArtistProfileEditor() {
       </fieldset>
 
       <div className="kl-actions">
-        <Button size="lg" disabled={busy} onClick={() => void submit()}>
-          {busy ? "Saving…" : "Submit profile for verification"}
+        <Button size="lg" disabled={busy || submitted} onClick={() => void submit()}>
+          {busy
+            ? "Saving…"
+            : submitted
+              ? "Profile submitted"
+              : "Submit profile for verification"}
         </Button>
       </div>
       {alert && <ProfileAlertBanner alert={alert} />}

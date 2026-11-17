@@ -29,7 +29,7 @@ import {
   adminSupportHistory,
   approveBookingCancellation,
 } from "@/lib/kalzo.functions";
-import { api, artistListFrom, normalizeArtist, unwrapData } from "@/lib/api";
+import { api, artistFrom, artistListFrom } from "@/lib/api";
 import { PatronGate } from "../PatronGate";
 import { canPublishArtist } from "../launchRules";
 import { awaitingVerification, dailyCounts, inLastDays, paidRevenue, needsRefundReview } from "./metrics";
@@ -149,20 +149,27 @@ export function AdminDashboard() {
     if (!artistId) return;
     let active = true;
     void (async () => {
+      setUrls({});
       const detail = await api.admin.getArtist(artistId);
       if (!active) return;
       let current = data?.artists.find((a) => a.id === artistId);
-      if (!detail.error && detail.data) {
-        const row = normalizeArtist(unwrapData(detail.data));
-        current = row as Artist;
-        setData((prev) =>
-          prev
-            ? {
-                ...prev,
-                artists: prev.artists.map((a) => (a.id === artistId ? { ...a, ...row } : a)),
-              }
-            : prev,
-        );
+      if (detail.error) {
+        setError(detail.error.message || "Could not load artist details.");
+      } else {
+        const row = artistFrom(detail.data);
+        if (row?.id) {
+          current = { ...(current ?? ({} as Artist)), ...row } as Artist;
+          setData((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  artists: prev.artists.some((a) => a.id === artistId)
+                    ? prev.artists.map((a) => (a.id === artistId ? { ...a, ...row } : a))
+                    : [...prev.artists, current as Artist],
+                }
+              : prev,
+          );
+        }
       }
       if (!current) return;
       const paths = [
@@ -175,6 +182,8 @@ export function AdminDashboard() {
       ].filter(Boolean) as string[];
       const entries = await Promise.all(
         paths.map(async (path) => {
+          // Absolute media URLs can be used directly; keys go through /media/url.
+          if (/^https?:\/\//i.test(path)) return [path, path] as const;
           const { data: signed } = await api.storage.from("kalzo-media").createSignedUrl(path, 600);
           return [path, signed?.signedUrl ?? ""] as const;
         }),
@@ -253,7 +262,7 @@ export function AdminDashboard() {
     )?.filter(
       (a) =>
         match(a.stage_name, a.legal_name, a.discipline, a.base_city) &&
-        (filter === "all" || a.status === filter || a.verification_status === filter),
+        (filter === "all" || a.verification_status === filter),
     ) ?? [];
   const selectedPatrons =
     data?.patrons.filter(
@@ -416,14 +425,14 @@ export function AdminDashboard() {
                       {
                         label: "Artists enrolled",
                         value: data.artists.length,
-                        note: `${data.artists.filter((a) => a.status === "approved").length} live profiles`,
+                        note: `${data.artists.filter((a) => a.verification_status === "verified").length} verified`,
                         icon: Palette,
                         to: "Artists" as Tab,
                       },
                       {
                         label: "Awaiting face review",
                         value: queue.length,
-                        note: `${data.artists.filter((a) => a.status === "pending_review").length} pending publication`,
+                        note: `${data.artists.filter((a) => a.verification_status === "unverified").length} unverified`,
                         icon: ScanFace,
                         to: "Verification" as Tab,
                       },
@@ -498,9 +507,8 @@ export function AdminDashboard() {
                         icon={ScanFace}
                         title="Face verification"
                         text={`${queue.length} submitted videos awaiting your review`}
-                        onClick={() => { go("Verification"); setFilter("submitted"); }}
+                        onClick={() => { go("Verification"); setFilter("unverified"); }}
                       />
-                      <Attention icon={Palette} title="Profile publication" text={`${data.artists.filter(a => a.status === "pending_review").length} profiles awaiting approval`} onClick={() => { go("Artists"); setFilter("pending_review"); }} />
                       <Attention
                         icon={MessageSquare}
                         title="Booking inquiries"
@@ -621,20 +629,18 @@ export function AdminDashboard() {
                       onChange={(e) => setFilter(e.target.value)}
                     >
                       <option value="all">All statuses</option>
-                      {(tab === "Artists"
-                        ? ["pending_review", "approved", "rejected"]
-                        : tab === "Verification"
-                          ? ["submitted", "not_started", "failed"]
-                          : tab === "Bookings"
-                            ? [
-                                "paid",
-                                "awaiting_payment",
-                                "completed",
-                                "cancellation_requested",
-                                "declined",
-                                "refund_review",
-                              ]
-                            : ["open", "closed"]
+                      {(tab === "Artists" || tab === "Verification"
+                        ? ["unverified", "verified", "rejected"]
+                        : tab === "Bookings"
+                          ? [
+                              "paid",
+                              "awaiting_payment",
+                              "completed",
+                              "cancellation_requested",
+                              "declined",
+                              "refund_review",
+                            ]
+                          : ["open", "closed"]
                       ).map((v) => (
                         <option key={v} value={v}>
                           {human(v)}
@@ -861,12 +867,12 @@ export function AdminDashboard() {
                 </div>
                 <div>
                   <div className="kd-tools">
-                    <Status value={artist.status} />
                     <Status value={artist.verification_status} />
                   </div>
                   <dl>
                     {[
                       ["Name as per Aadhaar", artist.legal_name],
+                      ["Email", (artist as { email?: string }).email ?? ""],
                       [
                         "Art form",
                         [artist.discipline, artist.subcategory].filter(Boolean).join(" · "),
@@ -885,8 +891,23 @@ export function AdminDashboard() {
                         "Travel / stay",
                         `${human(artist.travel_setting)} · Travel ${money(artist.travel_charge_inr)} · Stay ${money(artist.stay_charge_inr)}`,
                       ],
+                      [
+                        "Bank",
+                        [
+                          (artist as { bank_account_holder?: string }).bank_account_holder,
+                          (artist as { bank_name?: string }).bank_name,
+                        ]
+                          .filter(Boolean)
+                          .join(" · "),
+                      ],
+                      [
+                        "Rejection reason",
+                        (artist as { rejection_reason?: string }).rejection_reason ?? "",
+                      ],
                       ["Joined", date(artist.created_at)],
-                    ].map(([k, v]) => (
+                    ]
+                      .filter(([, v]) => v !== "")
+                      .map(([k, v]) => (
                       <div key={k}>
                         <dt>{k}</dt>
                         <dd>{v || "Not provided"}</dd>
@@ -1055,7 +1076,6 @@ function ArtistTable({ artists, onOpen }: { artists: Artist[]; onOpen: (a: Artis
           <tr>
             <th>Artist</th>
             <th>City</th>
-            <th>Profile</th>
             <th>Identity</th>
             <th>Review</th>
           </tr>
@@ -1073,9 +1093,6 @@ function ArtistTable({ artists, onOpen }: { artists: Artist[]; onOpen: (a: Artis
                 </div>
               </td>
               <td>{a.base_city || "Not provided"}</td>
-              <td>
-                <Status value={a.status} />
-              </td>
               <td>
                 <Status value={a.verification_status} />
               </td>

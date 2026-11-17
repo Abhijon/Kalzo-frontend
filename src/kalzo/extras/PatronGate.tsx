@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Music, UsersRound } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import "./gate.css";
-import { cleanEmailCode, emailCodeError, signupError, type AccountAudience } from "./signupRules";
+import { cleanEmailCode, signupError, type AccountAudience } from "./signupRules";
 
 type Patron = { name: string; email: string; phone: string; city: string; type: string; industry: string; reason: string };
 const TYPES = ["Individual / family", "Hotel or resort", "Corporate", "Café or restaurant", "Event company", "Other business"];
@@ -72,12 +72,12 @@ export function PatronGate({ onBack, audience: initialAudience = "patron", initi
         });
       }
       setBusy(false);
-      if (res.error) return setErr(emailCodeError(res.error.message, "send", mode));
+      if (res.error) return setErr(res.error.message);
     } else {
       // ── Login: POST /api/v1/login ─────────────────────────────────────────────
       const res = await api.auth.login(p.email.trim());
       setBusy(false);
-      if (res.error) return setErr(emailCodeError(res.error.message, "send", mode));
+      if (res.error) return setErr(res.error.message);
     }
 
     setSent(true); setCode(""); setWait(60);
@@ -97,7 +97,7 @@ export function PatronGate({ onBack, audience: initialAudience = "patron", initi
     // POST /api/v1/verify-otp
     const { error } = await api.auth.verifyOtp({ email: p.email.trim(), otp: code });
     setBusy(false);
-    if (error) setErr(emailCodeError(error.message, "verify", mode));
+    if (error) setErr(error.message);
   };
   const google = async () => {
     const r = await api.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });

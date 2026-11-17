@@ -2,6 +2,28 @@ import { useEffect, useRef, useState } from "react";
 import { Camera, RotateCcw, Check, ScanFace, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FACE_SECONDS, VENUE_SECONDS } from "./flowRules";
+
+/** Prefer a type multer accepts; Chrome’s default is often video/x-matroska. */
+function pickRecorderMime(): string {
+  const candidates = [
+    "video/webm;codecs=vp9,opus",
+    "video/webm;codecs=vp8,opus",
+    "video/webm",
+    "video/mp4",
+  ];
+  for (const type of candidates) {
+    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(type)) return type;
+  }
+  return "";
+}
+
+function normalizeUploadMime(mime: string): string {
+  const base = ((mime || "").split(";")[0] ?? "").trim().toLowerCase();
+  if (base === "video/mp4" || base === "video/quicktime") return base;
+  // Treat matroska / empty as webm for upload Content-Type
+  return "video/webm";
+}
+
 export function LiveRecorder({ kind, busy, onDone }: { kind: "face" | "venue"; busy: boolean; onDone: (blob: Blob) => Promise<void> }) {
   const seconds = kind === "face" ? FACE_SECONDS : VENUE_SECONDS;
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -28,14 +50,16 @@ export function LiveRecorder({ kind, busy, onDone }: { kind: "face" | "venue"; b
     try {
       media = await navigator.mediaDevices.getUserMedia({ video: { facingMode: kind === "face" ? "user" : "environment" }, audio: true });
       activeStream.current = media;
-      const rec = new MediaRecorder(media);
+      const mimeType = pickRecorderMime();
+      const rec = mimeType ? new MediaRecorder(media, { mimeType }) : new MediaRecorder(media);
       recorder.current = rec;
       const chunks: Blob[] = [];
       rec.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
       rec.onstop = () => {
         activeStream.current?.getTracks().forEach((track) => track.stop());
         setStream(null); setRemaining(0);
-        setClip(new Blob(chunks, { type: rec.mimeType || "video/webm" }));
+        const raw = rec.mimeType || mimeType || "video/webm";
+        setClip(new Blob(chunks, { type: normalizeUploadMime(raw) }));
       };
       setStream(media); setRemaining(seconds); rec.start();
       let left = seconds;

@@ -31,12 +31,12 @@ describe("admin metrics", () => {
       ),
     ).toBe(1);
   });
-  it("queues only submitted face videos", () => {
+  it("queues only unverified face videos", () => {
     expect(
       awaitingVerification([
-        { verification_status: "submitted", face_video_path: "a/v.webm" },
+        { verification_status: "unverified", face_video_path: "a/v.webm" },
         { verification_status: "verified", face_video_path: "b" },
-        { verification_status: "submitted", face_video_path: "" },
+        { verification_status: "unverified", face_video_path: "" },
       ]),
     ).toHaveLength(1);
   });

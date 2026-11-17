@@ -18,11 +18,11 @@ export function inLastDays(rows: Dated[], days: number, now = new Date()) {
   const from = now.getTime() - days * 86400000;
   return rows.filter((r) => new Date(r.created_at).getTime() >= from).length;
 }
-/** Artists who submitted a face video and wait for an admin decision. */
+/** Artists with a face video still waiting on an admin identity decision. */
 export function awaitingVerification<
   T extends { verification_status: string; face_video_path: string },
 >(a: T[]) {
-  return a.filter((x) => x.verification_status === "submitted" && !!x.face_video_path);
+  return a.filter((x) => x.verification_status === "unverified" && !!x.face_video_path);
 }
 export function paidRevenue(b: { status: string; amount_inr: number }[]) {
   return b.filter((x) => x.status === "paid").reduce((s, x) => s + x.amount_inr, 0);

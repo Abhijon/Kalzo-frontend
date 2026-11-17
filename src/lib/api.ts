@@ -54,7 +54,13 @@ export function normalizeArtist(raw: any) {
     reels: Array.isArray(reelsRaw) ? reelsRaw : [],
     primary_reel: Number(pick(raw.primary_reel, raw.primaryReel) ?? 0),
     status: pick(raw.status) ?? "pending_review",
-    verification_status: pick(raw.verification_status, raw.verificationStatus) ?? "not_started",
+    verification_status: pick(raw.verification_status, raw.verificationStatus) ?? "unverified",
+    rejection_reason: pick(raw.rejection_reason, raw.rejectionReason) ?? "",
+    bank_account_holder: pick(raw.bank_account_holder, raw.bankAccountHolder) ?? "",
+    bank_name: pick(raw.bank_name, raw.bankName) ?? "",
+    bank_account_number: pick(raw.bank_account_number, raw.bankAccountNumber) ?? "",
+    bank_ifsc: pick(raw.bank_ifsc, raw.bankIfsc) ?? "",
+    email: pick(raw.email) ?? "",
     availability: pick(raw.availability) ?? [],
     created_at: pick(raw.created_at, raw.createdAt) ?? "",
     updated_at: pick(raw.updated_at, raw.updatedAt) ?? "",
@@ -69,6 +75,19 @@ export function artistListFrom(payload: any): any[] {
   if (Array.isArray(data?.items)) return data.items.map(normalizeArtist);
   if (Array.isArray(data?.results)) return data.results.map(normalizeArtist);
   return [];
+}
+
+/**
+ * Extract one artist/profile from API envelopes:
+ * `{ success, data: { artist } }` · `{ profile }` · or a bare artist row.
+ */
+export function artistFrom(payload: any) {
+  const data = unwrapData(payload);
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const row = data.artist ?? data.profile ?? data;
+  if (!row || typeof row !== "object" || Array.isArray(row)) return null;
+  if (!("id" in row) && !("stageName" in row) && !("stage_name" in row)) return null;
+  return normalizeArtist(row);
 }
 
 function resolveApiBaseUrl() {
@@ -367,16 +386,24 @@ const storageAdapter = {
         return req<{ path: string; url: string }>(`${API_V1}/media/upload`, { method: "POST", body: fd });
       },
 
-      async createSignedUrl(path: string, expiresIn = 3600) {
-        const res = await req<{ signedUrl?: string; url?: string }>(
-          `${API_V1}/media/url`, { params: { path, expires: expiresIn } }
-        );
-        const signedUrl = res.data?.signedUrl ?? res.data?.url ?? `${API_BASE_URL}/media/${path}`;
-        return { data: { signedUrl }, error: res.error };
+      async createSignedUrl(path: string, _expiresIn = 3600) {
+        if (!path) return { data: { signedUrl: "" }, error: null };
+        if (/^https?:\/\//i.test(path)) return { data: { signedUrl: path }, error: null };
+        const clean = String(path).replace(/^\/+/, "");
+        const res = await req(`${API_V1}/media/url`, { params: { path: clean } });
+        if (!res.error) {
+          const payload = unwrapData(res.data) as { signedUrl?: string; url?: string } | null;
+          const signedUrl = payload?.signedUrl ?? payload?.url;
+          if (signedUrl) return { data: { signedUrl }, error: null };
+        }
+        // Local uploads are served at GET /api/v1/media/<object-key>
+        return { data: { signedUrl: `${API_BASE_URL}/media/${clean}` }, error: null };
       },
 
       getPublicUrl(path: string) {
-        return { data: { publicUrl: `${API_BASE_URL}/media/${path}` } };
+        if (!path) return { data: { publicUrl: "" } };
+        if (/^https?:\/\//i.test(path)) return { data: { publicUrl: path } };
+        return { data: { publicUrl: `${API_BASE_URL}/media/${String(path).replace(/^\/+/, "")}` } };
       },
     };
   },
