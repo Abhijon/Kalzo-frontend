@@ -1,23 +1,96 @@
 /**
  * Kalzo API Client
- * Base URL: VITE_API_BASE_URL (defaults to http://localhost:8000)
- * All REST calls are routed through /api/v1
+ * Base URL: VITE_API_BASE_URL (defaults to http://localhost:8000/api/v1)
  *
- * Backend routes (from swagger at http://localhost:8000/docs/):
- *  GET  /health
- *  POST /customer-signup
- *  POST /artist-signup
- *  POST /login            → request login OTP for existing user
- *  POST /resend-otp       → resend OTP after signup or login
- *  POST /verify-otp       → verify OTP → returns JWT
- *  GET  /me               → get logged-in user + profile (Bearer required)
+ * Auth:
+ *  POST /customer-signup, /artist-signup, /login, /resend-otp, /verify-otp
+ *  GET  /me
+ * Artist:
+ *  GET  /artist/profile · POST /artist/profile (multipart)
+ *  GET  /artists/verified
+ * Admin:
+ *  GET  /admin/artists · GET /admin/artists/:id
+ *  PATCH /admin/artists/:id/verify · PATCH /admin/artists/:id/reject
  */
 
-export const API_BASE_URL = (
-  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_BASE_URL) ||
-  (typeof process !== "undefined" && process.env?.VITE_API_BASE_URL) ||
-  "http://localhost:8000/api/v1"
-).replace(/\/+$/, "");
+/** Unwrap `{ success, data }` envelopes from the Node API. */
+export function unwrapData<T = any>(payload: any): T {
+  if (payload && typeof payload === "object" && "data" in payload && ("success" in payload || Array.isArray(payload.data) || typeof payload.data === "object")) {
+    return payload.data as T;
+  }
+  return payload as T;
+}
+
+/** Normalize artist rows (camelCase or snake_case) for existing Kalzo UI. */
+export function normalizeArtist(raw: any) {
+  if (!raw || typeof raw !== "object") return raw;
+  const pick = <T,>(...vals: T[]) => vals.find((v) => v !== undefined && v !== null) as T;
+  const reelsRaw = pick(raw.reels, raw.reelPaths, raw.reel_paths) ?? [];
+  return {
+    ...raw,
+    id: raw.id,
+    owner_id: pick(raw.owner_id, raw.ownerId, raw.userId, raw.user_id) ?? "",
+    stage_name: pick(raw.stage_name, raw.stageName) ?? "",
+    legal_name: pick(raw.legal_name, raw.legalName) ?? "",
+    discipline: pick(raw.discipline) ?? "",
+    subcategory: pick(raw.subcategory) ?? "",
+    bio: pick(raw.bio) ?? "",
+    base_city: pick(raw.base_city, raw.baseCity) ?? "",
+    state_name: pick(raw.state_name, raw.stateName) ?? "",
+    current_city: pick(raw.current_city, raw.currentCity) ?? "",
+    current_state: pick(raw.current_state, raw.currentState) ?? "",
+    preferred_cities: pick(raw.preferred_cities, raw.preferredCities) ?? [],
+    preferred_states: pick(raw.preferred_states, raw.preferredStates) ?? [],
+    rate_inr: Number(pick(raw.rate_inr, raw.rateInr) ?? 0),
+    pricing_unit: pick(raw.pricing_unit, raw.pricingUnit) ?? "hour",
+    travel_setting: pick(raw.travel_setting, raw.travelSetting) ?? "including",
+    travel_charge_inr: Number(pick(raw.travel_charge_inr, raw.travelChargeInr) ?? 0),
+    stay_charge_inr: Number(pick(raw.stay_charge_inr, raw.stayChargeInr) ?? 0),
+    city_rates: pick(raw.city_rates, raw.cityRates) ?? {},
+    instagram: pick(raw.instagram) ?? "",
+    photo_path: pick(raw.photo_path, raw.photoPath, raw.photo) ?? "",
+    art_photo_path: pick(raw.art_photo_path, raw.artPhotoPath, raw.artPhoto) ?? "",
+    face_video_path: pick(raw.face_video_path, raw.faceVideoPath, raw.faceVideo) ?? "",
+    reels: Array.isArray(reelsRaw) ? reelsRaw : [],
+    primary_reel: Number(pick(raw.primary_reel, raw.primaryReel) ?? 0),
+    status: pick(raw.status) ?? "pending_review",
+    verification_status: pick(raw.verification_status, raw.verificationStatus) ?? "not_started",
+    availability: pick(raw.availability) ?? [],
+    created_at: pick(raw.created_at, raw.createdAt) ?? "",
+    updated_at: pick(raw.updated_at, raw.updatedAt) ?? "",
+  };
+}
+
+/** Extract a paginated or bare artist array from an API payload. */
+export function artistListFrom(payload: any): any[] {
+  const data = unwrapData(payload);
+  if (Array.isArray(data)) return data.map(normalizeArtist);
+  if (Array.isArray(data?.artists)) return data.artists.map(normalizeArtist);
+  if (Array.isArray(data?.items)) return data.items.map(normalizeArtist);
+  if (Array.isArray(data?.results)) return data.results.map(normalizeArtist);
+  return [];
+}
+
+function resolveApiBaseUrl() {
+  const configured = (
+    (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_BASE_URL) ||
+    (typeof process !== "undefined" && process.env?.VITE_API_BASE_URL) ||
+    "/api/v1"
+  ).replace(/\/+$/, "");
+
+  // Relative paths are for the browser (Vite proxy). SSR/server needs an absolute backend URL.
+  if (configured.startsWith("/") && typeof window === "undefined") {
+    const proxyTarget = (
+      (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_PROXY_TARGET) ||
+      (typeof process !== "undefined" && process.env?.VITE_API_PROXY_TARGET) ||
+      "http://127.0.0.1:8000"
+    ).replace(/\/+$/, "");
+    return `${proxyTarget}${configured}`;
+  }
+  return configured;
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 /** All REST calls go through the base URL (which already includes /api/v1) */
 const API_V1 = API_BASE_URL;
@@ -408,6 +481,21 @@ export const api = {
   artists: {
     list:           (params?: Record<string, any>) => req(`${API_V1}/artists`, { params }),
     getById:        (id: string)                   => req(`${API_V1}/artists/${id}`),
+    /** Verified artists for customers → GET /artists/verified */
+    listVerified:   (params?: { page?: number; limit?: number }) =>
+      req(`${API_V1}/artists/verified`, { params }),
+    /** Logged-in artist onboarding profile → GET /artist/profile */
+    getProfile:     () => req(`${API_V1}/artist/profile`),
+    /**
+     * Submit artist profile for verification → POST /artist/profile (multipart/form-data)
+     * Fields: stageName, legalName, baseCity, stateName, currentCity, currentState,
+     * preferredCities, preferredStates?, discipline, subcategory, bio, instagram,
+     * rateInr, pricingUnit?, travelSetting?, travelChargeInr?, stayChargeInr?, cityRates?,
+     * primaryReel?, bankAccountHolder, bankName, bankAccountNumber, bankIfsc,
+     * files: photo, artPhoto, faceVideo, reels (2–4)
+     */
+    saveProfile:    (formData: FormData) =>
+      req(`${API_V1}/artist/profile`, { method: "POST", body: formData }),
     saveDraft:      (data: any)                    => req(`${API_V1}/artists/draft`,    { method: "POST",  body: data }),
     updateLocation: (data: any)                    => req(`${API_V1}/artists/location`, { method: "PUT",   body: data }),
   },
@@ -427,9 +515,17 @@ export const api = {
   admin: {
     getStats:     ()                            => req(`${API_V1}/admin/stats`),
     listBookings: (params?: Record<string, any>) => req(`${API_V1}/admin/bookings`,     { params }),
-    listArtists:  (params?: Record<string, any>) => req(`${API_V1}/admin/artists`,      { params }),
-    approveArtist:(id: string)                   => req(`${API_V1}/admin/artists/${id}/approve`, { method: "POST" }),
-    rejectArtist: (id: string, reason: string)  => req(`${API_V1}/admin/artists/${id}/reject`,  { method: "POST", body: { reason } }),
+    /** Paginated artist profiles → GET /admin/artists */
+    listArtists:  (params?: { page?: number; limit?: number }) =>
+      req(`${API_V1}/admin/artists`, { params }),
+    /** One artist with media paths → GET /admin/artists/:id */
+    getArtist:    (id: string) => req(`${API_V1}/admin/artists/${id}`),
+    /** Mark verified → PATCH /admin/artists/:id/verify */
+    verifyArtist: (id: string) =>
+      req(`${API_V1}/admin/artists/${id}/verify`, { method: "PATCH" }),
+    /** Reject with required comment → PATCH /admin/artists/:id/reject */
+    rejectArtist: (id: string, reason: string) =>
+      req(`${API_V1}/admin/artists/${id}/reject`, { method: "PATCH", body: { reason } }),
   },
 };
 

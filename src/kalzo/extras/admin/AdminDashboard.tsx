@@ -27,11 +27,9 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import {
   adminData,
   adminSupportHistory,
-  reviewArtist,
-  verifyArtistFace,
   approveBookingCancellation,
 } from "@/lib/kalzo.functions";
-import { api } from "@/lib/api";
+import { api, artistListFrom, normalizeArtist, unwrapData } from "@/lib/api";
 import { PatronGate } from "../PatronGate";
 import { canPublishArtist } from "../launchRules";
 import { awaitingVerification, dailyCounts, inLastDays, paidRevenue, needsRefundReview } from "./metrics";
@@ -98,8 +96,6 @@ function textMessage(v: unknown): { role: string; text: string } {
 }
 export function AdminDashboard() {
   const read = useServerFn(adminData),
-    review = useServerFn(reviewArtist),
-    verify = useServerFn(verifyArtistFace),
     approveCancellation = useServerFn(approveBookingCancellation),
     history = useServerFn(adminSupportHistory);
   const [signed, setSigned] = useState<boolean | null>(null),
@@ -124,7 +120,15 @@ export function AdminDashboard() {
     setBusy(true);
     setError("");
     try {
-      setData(await read());
+      const base = await read();
+      const artistsRes = await api.admin.listArtists({ page: 1, limit: 100 });
+      if (artistsRes.error) {
+        // Keep dashboard shell data; surface artist-list failure separately.
+        setError(artistsRes.error.message);
+        setData(base);
+      } else {
+        setData({ ...base, artists: artistListFrom(artistsRes.data) as Data["artists"] });
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load the dashboard.");
     } finally {
@@ -142,28 +146,47 @@ export function AdminDashboard() {
   }, [signed, load]);
   const artist = data?.artists.find((a) => a.id === artistId);
   useEffect(() => {
-    if (!artist) return;
+    if (!artistId) return;
     let active = true;
-    const paths = [
-      artist.photo_path,
-      artist.art_photo_path,
-      artist.face_video_path,
-      ...(Array.isArray(artist.reels)
-        ? artist.reels.filter((r): r is string => typeof r === "string")
-        : []),
-    ].filter(Boolean);
-    void Promise.all(
-      paths.map(async (path) => {
-        const { data } = await api.storage.from("kalzo-media").createSignedUrl(path, 600);
-        return [path, data?.signedUrl ?? ""] as const;
-      }),
-    ).then((entries) => {
+    void (async () => {
+      const detail = await api.admin.getArtist(artistId);
+      if (!active) return;
+      let current = data?.artists.find((a) => a.id === artistId);
+      if (!detail.error && detail.data) {
+        const row = normalizeArtist(unwrapData(detail.data));
+        current = row as Artist;
+        setData((prev) =>
+          prev
+            ? {
+                ...prev,
+                artists: prev.artists.map((a) => (a.id === artistId ? { ...a, ...row } : a)),
+              }
+            : prev,
+        );
+      }
+      if (!current) return;
+      const paths = [
+        current.photo_path,
+        current.art_photo_path,
+        current.face_video_path,
+        ...(Array.isArray(current.reels)
+          ? current.reels.filter((r: unknown): r is string => typeof r === "string")
+          : []),
+      ].filter(Boolean) as string[];
+      const entries = await Promise.all(
+        paths.map(async (path) => {
+          const { data: signed } = await api.storage.from("kalzo-media").createSignedUrl(path, 600);
+          return [path, signed?.signedUrl ?? ""] as const;
+        }),
+      );
       if (active) setUrls(Object.fromEntries(entries));
-    });
+    })();
     return () => {
       active = false;
     };
-  }, [artist]);
+    // Intentionally keyed on artistId only; list row is a fallback until detail returns.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [artistId]);
   useEffect(() => {
     if (!thread) return;
     let active = true;
@@ -187,16 +210,22 @@ export function AdminDashboard() {
   };
   const match = (...s: (string | null)[]) =>
     s.join(" ").toLowerCase().includes(search.toLowerCase());
-  async function decision(
-    a: Artist,
-    action: "verified" | "failed" | "approved" | "rejected" | "pending_review",
-  ) {
+  async function decision(a: Artist, action: "verified" | "rejected") {
     setBusy(true);
     setError("");
     try {
-      if (action === "verified" || action === "failed")
-        await verify({ data: { id: a.id, result: action } });
-      else await review({ data: { id: a.id, status: action } });
+      if (action === "verified") {
+        const res = await api.admin.verifyArtist(a.id);
+        if (res.error) throw new Error(res.error.message);
+      } else {
+        const reason = window.prompt("Rejection comment (required):")?.trim() ?? "";
+        if (!reason) {
+          setError("A rejection comment is required.");
+          return;
+        }
+        const res = await api.admin.rejectArtist(a.id, reason);
+        if (res.error) throw new Error(res.error.message);
+      }
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Review failed.");
@@ -850,7 +879,7 @@ export function AdminDashboard() {
                         "Current city",
                         [artist.current_city, artist.current_state].filter(Boolean).join(", "),
                       ],
-                      ["Preferred cities", artist.preferred_cities.join(", ")],
+                      ["Preferred cities", (artist.preferred_cities ?? []).join(", ")],
                       ["Hourly rate", money(artist.rate_inr)],
                       [
                         "Travel / stay",
@@ -884,22 +913,7 @@ export function AdminDashboard() {
               </div>
               <h3>Live face verification video</h3>
               {urls[artist.face_video_path] ? (
-                <>
-                  <video src={urls[artist.face_video_path]} controls playsInline />
-                  <div className="kd-tools">
-                    <Button disabled={busy} onClick={() => void decision(artist, "verified")}>
-                      <ShieldCheck size={16} />
-                      Face matches
-                    </Button>
-                    <Button
-                      variant="outline"
-                      disabled={busy}
-                      onClick={() => void decision(artist, "failed")}
-                    >
-                      Face does not match
-                    </Button>
-                  </div>
-                </>
+                <video src={urls[artist.face_video_path]} controls playsInline />
               ) : (
                 <p className="text-sm">No face video available.</p>
               )}
@@ -922,26 +936,21 @@ export function AdminDashboard() {
                 <Button
                   disabled={
                     busy ||
+                    artist.verification_status === "verified" ||
                     !canPublishArtist({
                       ...artist,
+                      verification_status: "verified",
                       reels: Array.isArray(artist.reels) ? artist.reels : [],
                     })
                   }
-                  onClick={() => void decision(artist, "approved")}
+                  onClick={() => void decision(artist, "verified")}
                 >
-                  <CircleCheck size={16} />
-                  Approve publication
+                  <ShieldCheck size={16} />
+                  Verify artist
                 </Button>
                 <Button
                   variant="outline"
-                  disabled={busy}
-                  onClick={() => void decision(artist, "pending_review")}
-                >
-                  Keep pending
-                </Button>
-                <Button
-                  variant="outline"
-                  disabled={busy}
+                  disabled={busy || artist.verification_status === "rejected"}
                   onClick={() => void decision(artist, "rejected")}
                 >
                   Reject profile
