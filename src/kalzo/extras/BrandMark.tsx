@@ -1,17 +1,14 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import logo from "@/assets/kalzo-logo.png.asset.json";
+import logoImg from "@/assets/kalzo-logo.png";
 
 export function BrandMark({ onHome }: { onHome?: () => void }) {
   return (
     <button type="button" onClick={onHome} aria-label="Kalzo home" className="kbrand">
       <img
-        src={logo.url}
+        src={logoImg}
         alt="Kalzo logo"
         className="kbrand-logo"
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-        }}
       />
       <span className="kbrand-tag">where every mehfil finds its artist</span>
     </button>

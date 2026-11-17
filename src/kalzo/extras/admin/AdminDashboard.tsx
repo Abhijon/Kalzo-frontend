@@ -37,7 +37,7 @@ import { canPublishArtist } from "../launchRules";
 import { awaitingVerification, dailyCounts, inLastDays, paidRevenue, needsRefundReview } from "./metrics";
 import "../account.css";
 import "./admin.css";
-import logo from "@/assets/kalzo-logo.png.asset.json";
+import logoImg from "@/assets/kalzo-logo.png";
 import ledger from "@/assets/admin-ledger.png";
 import paper from "@/assets/vintage-panel-paper.png.asset.json";
 type Data = Awaited<ReturnType<typeof adminData>>;
@@ -274,7 +274,7 @@ export function AdminDashboard() {
       <img className="kd-paper" src={paper.url} alt="" onError={(e) => { e.currentTarget.style.display = "none"; }} />
       <aside className="kd-side">
         <Link to="/" className="kd-brand">
-          <img src={logo.url} alt="Kalzo" width={72} height={72} />
+          <img src={logoImg} alt="Kalzo" width={72} height={72} />
           <small>THE ADMINISTRATOR'S DESK</small>
         </Link>
         <nav aria-label="Admin sections">
