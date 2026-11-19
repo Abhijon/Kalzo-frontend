@@ -8,6 +8,8 @@
  * Artist:
  *  GET  /artist/profile · POST /artist/profile (multipart)
  *  GET  /artists/verified
+ *  POST /artist/kyc/digilocker/initiate · POST /artist/kyc/digilocker/complete
+ *  GET  /artist/kyc/status
  * Admin:
  *  GET  /admin/artists · GET /admin/artists/:id
  *  PATCH /admin/artists/:id/verify · PATCH /admin/artists/:id/reject
@@ -56,6 +58,13 @@ export function normalizeArtist(raw: any) {
     status: pick(raw.status) ?? "pending_review",
     verification_status: pick(raw.verification_status, raw.verificationStatus) ?? "unverified",
     rejection_reason: pick(raw.rejection_reason, raw.rejectionReason) ?? "",
+    kyc_status: pick(raw.kyc_status, raw.kycStatus) ?? "not_started",
+    kyc_client_id: pick(raw.kyc_client_id, raw.kycClientId) ?? "",
+    kyc_verified_name: pick(raw.kyc_verified_name, raw.kycVerifiedName) ?? "",
+    kyc_masked_aadhaar: pick(raw.kyc_masked_aadhaar, raw.kycMaskedAadhaar) ?? "",
+    kyc_dob: pick(raw.kyc_dob, raw.kycDob) ?? "",
+    kyc_gender: pick(raw.kyc_gender, raw.kycGender) ?? "",
+    kyc_verified_at: pick(raw.kyc_verified_at, raw.kycVerifiedAt) ?? "",
     bank_account_holder: pick(raw.bank_account_holder, raw.bankAccountHolder) ?? "",
     bank_name: pick(raw.bank_name, raw.bankName) ?? "",
     bank_account_number: pick(raw.bank_account_number, raw.bankAccountNumber) ?? "",
@@ -525,6 +534,20 @@ export const api = {
       req(`${API_V1}/artist/profile`, { method: "POST", body: formData }),
     saveDraft:      (data: any)                    => req(`${API_V1}/artists/draft`,    { method: "POST",  body: data }),
     updateLocation: (data: any)                    => req(`${API_V1}/artists/location`, { method: "PUT",   body: data }),
+  },
+
+  kyc: {
+    /** Start Digilocker Via Link → POST /artist/kyc/digilocker/initiate */
+    initiateDigilocker: () =>
+      req(`${API_V1}/artist/kyc/digilocker/initiate`, { method: "POST" }),
+    /** Finalize after Digilocker success → POST /artist/kyc/digilocker/complete */
+    completeDigilocker: (clientId: string) =>
+      req(`${API_V1}/artist/kyc/digilocker/complete`, {
+        method: "POST",
+        body: { clientId } as any,
+      }),
+    /** Current Digilocker status → GET /artist/kyc/status */
+    getStatus: () => req(`${API_V1}/artist/kyc/status`),
   },
 
   bookings: {

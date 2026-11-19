@@ -20,6 +20,7 @@ import { LocationSelect, PreferredCities, stateForCity } from "./artist/Location
 import { CityPricing } from "./artist/CityPricing";
 import { normalizedCityRate, cityRateSchema, type CityRate } from "./artist/flowRules";
 import { LiveRecorder } from "./artist/LiveRecorder";
+import { digilockerSessionFrom, openDigilockerSession } from "./digilocker";
 import { artistPanelData } from "@/lib/artistPanel.functions";
 import { Plane, BedDouble, CircleAlert, CircleCheck, Info } from "lucide-react";
 import plaque from "@/assets/kalzo-profile-plaque.png.asset.json";
@@ -156,9 +157,15 @@ export function ArtistProfileEditor() {
     [submitted, setSubmitted] = useState(false),
     [preview, setPreview] = useState<Record<string, string>>({}),
     [verification, setVerification] = useState("unverified"),
+    [kycStatus, setKycStatus] = useState("not_started"),
+    [kycName, setKycName] = useState(""),
+    [kycMasked, setKycMasked] = useState(""),
+    [kycBusy, setKycBusy] = useState(false),
     [savedCity, setSavedCity] = useState(""),
     [cityAsk, setCityAsk] = useState<({ city: string } & CityRate) | null>(null),
     [customSub, setCustomSub] = useState(false);
+
+  const kycDone = kycStatus === "success";
 
   function showAlert(next: ArtistProfileAlert) {
     setAlert(next);
@@ -223,7 +230,7 @@ export function ArtistProfileEditor() {
       setForm({
         ...empty,
         stage_name: a.stage_name || "",
-        legal_name: a.legal_name || "",
+        legal_name: a.legal_name || a.kyc_verified_name || "",
         current_state: a.current_state || stateForCity(a.current_city),
         preferred_states: Array.isArray(a.preferred_states) ? a.preferred_states : [],
         discipline: a.discipline || empty.discipline,
@@ -253,6 +260,9 @@ export function ArtistProfileEditor() {
       });
       setSavedCity(a.current_city || "");
       setVerification(a.verification_status || "unverified");
+      setKycStatus(a.kyc_status || "not_started");
+      setKycName(a.kyc_verified_name || "");
+      setKycMasked(a.kyc_masked_aadhaar || "");
       setSubmitted(alreadySubmitted);
       setLoading(false);
     })();
@@ -405,12 +415,60 @@ export function ArtistProfileEditor() {
     });
   }
 
+  async function startDigilocker() {
+    if (kycDone || submitted || kycBusy) return;
+    setKycBusy(true);
+    setAlert(null);
+    try {
+      const res = await api.kyc.initiateDigilocker();
+      if (res.error) {
+        showAlert({
+          kind: "error",
+          title: "Digilocker could not start",
+          message: res.error.message || "Please try again in a moment.",
+        });
+        return;
+      }
+      const session = digilockerSessionFrom(res.data);
+      if (!session) {
+        showAlert({
+          kind: "error",
+          title: "Digilocker could not start",
+          message: "Surepass did not return a Digilocker session.",
+        });
+        return;
+      }
+      setKycStatus("pending");
+      await openDigilockerSession(session);
+    } catch (e) {
+      showAlert({
+        kind: "error",
+        title: "Digilocker could not start",
+        message: e instanceof Error ? e.message : "Something went wrong. Please try again.",
+      });
+    } finally {
+      setKycBusy(false);
+    }
+  }
+
   async function submit() {
     if (submitted) {
       showAlert({
         kind: "info",
         title: "Profile already submitted",
         message: "Your submitted details are shown here. Profile edits and extra reels will use a PATCH update later.",
+      });
+      return;
+    }
+    if (!kycDone) {
+      showAlert({
+        kind: "error",
+        title: "Digilocker KYC required",
+        message: "Complete the Digilocker Aadhaar check before submitting your profile.",
+      });
+      document.querySelector('[data-field="digilocker"]')?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
       });
       return;
     }
@@ -504,6 +562,9 @@ export function ArtistProfileEditor() {
       const saved = artistFrom(res.data);
       setSavedCity(form.current_city);
       setVerification(saved?.verification_status ?? "unverified");
+      setKycStatus(saved?.kyc_status ?? kycStatus);
+      setKycName(saved?.kyc_verified_name || kycName);
+      setKycMasked(saved?.kyc_masked_aadhaar || kycMasked);
       setFiles(emptyFiles());
       setSubmitted(true);
       if (saved?.photo_path) {
@@ -954,15 +1015,36 @@ export function ArtistProfileEditor() {
             preload="metadata"
           />
         )}
-        <h3>2 · DigiLocker Aadhaar check *</h3>
+        <h3 data-field="digilocker">2 · DigiLocker Aadhaar check *</h3>
         <p className="kl-note">
           Verify through DigiLocker with your Aadhaar-linked mobile. Kalzo never stores your full
-          Aadhaar number. This required check is not connected yet; your profile cannot be fully
-          identity-verified until it is available.
+          Aadhaar number. You must finish this before submitting your profile.
         </p>
-        <Button variant="outline" disabled>
-          DigiLocker check · opening soon
-        </Button>
+        <p>
+          DigiLocker status:{" "}
+          <strong>{kycStatus.replaceAll("_", " ")}</strong>
+          {kycDone && kycName ? ` · ${kycName}` : ""}
+          {kycDone && kycMasked ? ` · ${kycMasked}` : ""}
+        </p>
+        {kycDone ? (
+          <p className="kx-ok" role="status">
+            DigiLocker verified. You can submit your profile.
+          </p>
+        ) : (
+          <Button
+            variant="outline"
+            disabled={locked || kycBusy}
+            onClick={() => void startDigilocker()}
+          >
+            {kycBusy
+              ? "Opening DigiLocker…"
+              : kycStatus === "failed"
+                ? "Retry DigiLocker check"
+                : kycStatus === "pending"
+                  ? "Continue DigiLocker check"
+                  : "Verify with DigiLocker"}
+          </Button>
+        )}
       </fieldset>
 
       <fieldset className="ka-card" disabled={locked}>
@@ -1023,12 +1105,14 @@ export function ArtistProfileEditor() {
       </fieldset>
 
       <div className="kl-actions">
-        <Button size="lg" disabled={busy || submitted} onClick={() => void submit()}>
+        <Button size="lg" disabled={busy || submitted || !kycDone} onClick={() => void submit()}>
           {busy
             ? "Saving…"
             : submitted
               ? "Profile submitted"
-              : "Submit profile for verification"}
+              : !kycDone
+                ? "Complete DigiLocker first"
+                : "Submit profile for verification"}
         </Button>
       </div>
       {alert && <ProfileAlertBanner alert={alert} />}
