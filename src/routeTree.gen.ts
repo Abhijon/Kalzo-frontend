@@ -33,6 +33,7 @@ import { Route as ArtistWalletRouteImport } from './routes/artist.wallet'
 import { Route as BookingsBookingIdRouteImport } from './routes/bookings.$bookingId'
 import { Route as ConversationsConversationIdRouteImport } from './routes/conversations.$conversationId'
 import { Route as SupportThreadIdRouteImport } from './routes/support_.$threadId'
+import { Route as ArtistKycCallbackRouteImport } from './routes/artist.kyc.callback'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 
@@ -157,6 +158,11 @@ const SupportThreadIdRoute = SupportThreadIdRouteImport.update({
   path: '/support/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArtistKycCallbackRoute = ArtistKycCallbackRouteImport.update({
+  id: '/kyc/callback',
+  path: '/kyc/callback',
+  getParentRoute: () => ArtistRoute,
+} as any)
 const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   id: '/lovable/email/auth/preview',
   path: '/lovable/email/auth/preview',
@@ -193,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/conversations/$conversationId': typeof ConversationsConversationIdRoute
   '/support/$threadId': typeof SupportThreadIdRoute
   '/artist/': typeof ArtistIndexRoute
+  '/artist/kyc/callback': typeof ArtistKycCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
@@ -220,6 +227,7 @@ export interface FileRoutesByTo {
   '/conversations/$conversationId': typeof ConversationsConversationIdRoute
   '/support/$threadId': typeof SupportThreadIdRoute
   '/artist': typeof ArtistIndexRoute
+  '/artist/kyc/callback': typeof ArtistKycCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
@@ -249,6 +257,7 @@ export interface FileRoutesById {
   '/conversations/$conversationId': typeof ConversationsConversationIdRoute
   '/support_/$threadId': typeof SupportThreadIdRoute
   '/artist/': typeof ArtistIndexRoute
+  '/artist/kyc/callback': typeof ArtistKycCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
@@ -279,6 +288,7 @@ export interface FileRouteTypes {
     | '/conversations/$conversationId'
     | '/support/$threadId'
     | '/artist/'
+    | '/artist/kyc/callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/conversations/$conversationId'
     | '/support/$threadId'
     | '/artist'
+    | '/artist/kyc/callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
   id:
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
     | '/conversations/$conversationId'
     | '/support_/$threadId'
     | '/artist/'
+    | '/artist/kyc/callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
   fileRoutesById: FileRoutesById
@@ -530,6 +542,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SupportThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/artist/kyc/callback': {
+      id: '/artist/kyc/callback'
+      path: '/kyc/callback'
+      fullPath: '/artist/kyc/callback'
+      preLoaderRoute: typeof ArtistKycCallbackRouteImport
+      parentRoute: typeof ArtistRoute
+    }
     '/lovable/email/auth/preview': {
       id: '/lovable/email/auth/preview'
       path: '/lovable/email/auth/preview'
@@ -555,6 +574,7 @@ interface ArtistRouteChildren {
   ArtistProfileRoute: typeof ArtistProfileRoute
   ArtistWalletRoute: typeof ArtistWalletRoute
   ArtistIndexRoute: typeof ArtistIndexRoute
+  ArtistKycCallbackRoute: typeof ArtistKycCallbackRoute
 }
 
 const ArtistRouteChildren: ArtistRouteChildren = {
@@ -565,6 +585,7 @@ const ArtistRouteChildren: ArtistRouteChildren = {
   ArtistProfileRoute: ArtistProfileRoute,
   ArtistWalletRoute: ArtistWalletRoute,
   ArtistIndexRoute: ArtistIndexRoute,
+  ArtistKycCallbackRoute: ArtistKycCallbackRoute,
 }
 
 const ArtistRouteWithChildren =
