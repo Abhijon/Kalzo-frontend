@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
 import logoImg from "@/assets/kalzo-logo.png";
 
 export function BrandMark({ onHome }: { onHome?: () => void }) {
@@ -19,20 +17,11 @@ export const COUNT_START = 0;
 export const COUNT_EPOCH = 0;
 export const COUNT_STEP_MS = 1;
 export function houseCount(enrolled: number) { return Math.max(0, Math.floor(enrolled)); }
+/** Enrollment RPC removed with Supabase; show placeholder until a Node count endpoint exists. */
 export function HouseCounter(_: { start?: number }) {
-  const [count, setCount] = useState<number | null>(null);
-  useEffect(() => {
-    const read = async () => {
-      const { data, error } = await api.rpc("kalzo_enrollment_count");
-      if (!error && typeof data === "number") setCount(data);
-    };
-    void read();
-    const timer = setInterval(() => void read(), 30000);
-    return () => clearInterval(timer);
-  }, []);
   return (
     <div className="kcount">
-      <span className="kcount-num">{count === null ? "—" : houseCount(count).toLocaleString("en-IN")}</span>
+      <span className="kcount-num">—</span>
       <span className="kcount-label">real artist profiles enrolled · sample excluded</span>
     </div>
   );

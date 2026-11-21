@@ -12,7 +12,7 @@ import { startRazorpay } from "./extras/razorpay";
 import { BrandMark, HouseCounter, KalzoWord } from "./extras/BrandMark";
 import { SavedList, type SavedItem } from "./extras/SavedList";
 import { BookingRoom } from "./extras/BookingRoom";
-import { api } from "@/lib/api";
+import { api, artistFrom } from "@/lib/api";
 import { ArtistContact } from "./extras/ArtistContact";
 import { useState } from "react";
 import { ProfileEntry } from "./extras/ProfileEntry";
@@ -161,6 +161,74 @@ export function Kalzo() {
     return () => data.subscription.unsubscribe();
   }, []);
   const vals = ref.current.renderVals() as Scope;
+  const profileArtistId =
+    vals["isProfile"] && !vals["selectedIsSample"] ? String(vals["selectedArtistId"] ?? "") : "";
+  // Watch Reel / profile: load full GET /artists/:id so live video, reels, and photo are complete.
+  useEffect(() => {
+    if (!profileArtistId) return;
+    let cancelled = false;
+    api.artists.getById(profileArtistId).then((res) => {
+      if (cancelled || res.error || !ref.current) return;
+      const detail = artistFrom(res.data);
+      if (!detail?.id) return;
+      const enriched = {
+        ...detail,
+        photo: detail.photo_url || "",
+        artPhoto: detail.art_photo_url || "",
+        faceVideoUrl: detail.face_video_url || "",
+        reelUrls: Array.isArray(detail.reel_urls) ? detail.reel_urls : [],
+        primary_reel: detail.primary_reel ?? 0,
+      };
+      ref.current.artistDetails = {
+        ...(ref.current.artistDetails || {}),
+        [detail.id]: enriched,
+      };
+      const list = Array.isArray(ref.current.publicArtists) ? ref.current.publicArtists : [];
+      const idx = list.findIndex((row: { id?: string }) => row.id === detail.id);
+      if (idx >= 0) {
+        const next = list.slice();
+        next[idx] = { ...list[idx], ...enriched };
+        ref.current.publicArtists = next;
+      } else {
+        ref.current.publicArtists = list.concat([enriched]);
+      }
+      force();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [profileArtistId]);
+  const liveVideoUrl =
+    vals["isProfile"] && vals["sel"] && typeof (vals["sel"] as Scope)["video"] === "string"
+      ? String((vals["sel"] as Scope)["video"] ?? "")
+      : "";
+  // Read actual showreel / live-video duration for "SHOWREEL · 19 secs · …".
+  useEffect(() => {
+    if (!liveVideoUrl || !ref.current) return;
+    const cached = ref.current.mediaDurations?.[liveVideoUrl];
+    if (cached) return;
+    let cancelled = false;
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.src = liveVideoUrl;
+    const onMeta = () => {
+      if (cancelled || !ref.current) return;
+      const secs = Math.round(Number(video.duration));
+      if (!Number.isFinite(secs) || secs <= 0) return;
+      ref.current.mediaDurations = {
+        ...(ref.current.mediaDurations || {}),
+        [liveVideoUrl]: `${secs} secs`,
+      };
+      force();
+    };
+    video.addEventListener("loadedmetadata", onMeta);
+    return () => {
+      cancelled = true;
+      video.removeEventListener("loadedmetadata", onMeta);
+      video.removeAttribute("src");
+      video.load();
+    };
+  }, [liveVideoUrl]);
   if (
     !signed &&
     (vals["isProfile"] || vals["isBook"] || vals["isPay"]) &&

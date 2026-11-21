@@ -72,12 +72,21 @@ export function PatronGate({ onBack, audience: initialAudience = "patron", initi
         });
       }
       setBusy(false);
-      if (res.error) return setErr(res.error.message);
+      if (res.error) {
+        const msg =
+          res.error.message?.trim() ||
+          "Could not create your account. Please try again.";
+        setErr(msg);
+        return;
+      }
     } else {
       // ── Login: POST /api/v1/login ─────────────────────────────────────────────
       const res = await api.auth.login(p.email.trim());
       setBusy(false);
-      if (res.error) return setErr(res.error.message);
+      if (res.error) {
+        setErr(res.error.message?.trim() || "Could not log in. Please try again.");
+        return;
+      }
     }
 
     setSent(true); setCode(""); setWait(60);
@@ -188,7 +197,16 @@ export function PatronGate({ onBack, audience: initialAudience = "patron", initi
           </>
         )}
 
-        {err && <p className="kx-bad" role="alert">{err}</p>}
+        {err && (
+          <div className="kp-error" role="alert">
+            <p>{err}</p>
+            {mode === "create" && /already exists/i.test(err) && (
+              <button type="button" className="kx-btn kx-ghost kp-error-login" onClick={() => switchTo("login")}>
+                Log in with this email
+              </button>
+            )}
+          </div>
+        )}
         <div className="kx-row">
           {sent
             ? <button className="kx-btn" disabled={busy || code.length !== 6} onClick={verify}>{mode === "create" ? "VERIFY & CREATE ACCOUNT" : "VERIFY & LOG IN"}</button>

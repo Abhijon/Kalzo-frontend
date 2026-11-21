@@ -41,6 +41,9 @@ function artistPhoto(artist) {
 export class KalzoLogic extends DCLogic {
   constructor(props) {
     super(props);
+    this.publicArtists = [];
+    this.artistDetails = {};
+    this.mediaDurations = {};
     this.state = {
       screen: "home",
       locQ: "",
@@ -806,30 +809,79 @@ export class KalzoLogic extends DCLogic {
       });
     });
     var realArtists = (self.publicArtists || []).map(function (p, i) {
+      var detail = (self.artistDetails && self.artistDetails[p.id]) || {};
+      var photo =
+        detail.photo ||
+        detail.photo_url ||
+        p.photo ||
+        p.photo_url ||
+        "";
+      var artPhoto =
+        detail.artPhoto ||
+        detail.art_photo_url ||
+        p.artPhoto ||
+        p.art_photo_url ||
+        "";
+      var faceVideoUrl =
+        detail.faceVideoUrl ||
+        detail.face_video_url ||
+        p.faceVideoUrl ||
+        p.face_video_url ||
+        "";
+      var reelUrls =
+        (detail.reelUrls && detail.reelUrls.length && detail.reelUrls) ||
+        (detail.reel_urls && detail.reel_urls.length && detail.reel_urls) ||
+        p.reelUrls ||
+        p.reel_urls ||
+        [];
+      var primaryReel = Number(
+        detail.primary_reel != null
+          ? detail.primary_reel
+          : detail.primaryReel != null
+            ? detail.primaryReel
+            : p.primary_reel != null
+              ? p.primary_reel
+              : p.primaryReel != null
+                ? p.primaryReel
+                : 0,
+      );
       return {
         id: p.id,
-        name: p.stage_name,
-        cat: p.discipline,
-        craft: p.discipline,
-        city: p.base_city,
-        state: p.state_name,
-        travels: p.preferred_cities || [],
-        rate: p.rate_inr,
+        name: detail.stage_name || p.stage_name || "",
+        cat: detail.discipline || p.discipline || "",
+        // Subcategory is the specialty line on the card (e.g. Guitarist).
+        craft: detail.subcategory || p.subcategory || detail.discipline || p.discipline || "",
+        city: detail.base_city || p.base_city || "",
+        state: detail.state_name || p.state_name || "",
+        travels: detail.preferred_cities || p.preferred_cities || [],
+        rate: Number(detail.rate_inr != null ? detail.rate_inr : p.rate_inr) || 0,
         rating: 0,
         reviews: 0,
         seed: i + 100,
         slots: REAL_SLOTS,
-        pricing: p.pricing,
+        pricing: detail.pricing || p.pricing || {
+          rate_inr: Number(detail.rate_inr != null ? detail.rate_inr : p.rate_inr) || 0,
+          pricing_unit: detail.pricing_unit || p.pricing_unit || "hour",
+          travel_setting: detail.travel_setting || p.travel_setting || "including",
+          travel_charge_inr: Number(detail.travel_charge_inr != null ? detail.travel_charge_inr : p.travel_charge_inr) || 0,
+          stay_charge_inr: Number(detail.stay_charge_inr != null ? detail.stay_charge_inr : p.stay_charge_inr) || 0,
+          city_rates: detail.city_rates || p.city_rates || {},
+        },
         langs: "",
-        bio: p.bio,
-        unit: p.pricing_unit,
-        icon: (CRAFTS[p.discipline] || [["", "mic"]])[0][1],
-        photo: p.photo,
-        reelUrls: p.reelUrls,
-        primaryReel: p.primary_reel,
-        availability: p.availability,
-        currentCity: p.current_city,
-        travelSetting: p.travel_setting,
+        bio: detail.bio || p.bio || "",
+        unit: detail.pricing_unit || p.pricing_unit || "hour",
+        icon: (CRAFTS[detail.discipline || p.discipline] || [["", "mic"]])[0][1],
+        // Main poster + circle avatar + live face video from API S3 URLs.
+        photo: photo,
+        artPhoto: artPhoto,
+        faceVideoUrl: faceVideoUrl,
+        reelUrls: reelUrls,
+        primaryReel: primaryReel,
+        availability: detail.availability || p.availability || [],
+        currentCity: detail.current_city || p.current_city || "",
+        currentState: detail.current_state || p.current_state || "",
+        travelSetting: detail.travel_setting || p.travel_setting || "including",
+        instagram: detail.instagram || p.instagram || "",
         sample: false,
       };
     });
@@ -1483,7 +1535,9 @@ export class KalzoLogic extends DCLogic {
     }
     function priceIn(a, city, state) {
       if (!a.sample && a.pricing) {
-        var rp = artistCityPrice(a.pricing, city || "");
+        // No city picked yet — never invent a travel note that needs loc.city.
+        if (!city) return { rate: a.rate, travel: 0, note: "base" };
+        var rp = artistCityPrice(a.pricing, city);
         return { rate: rp.rate, travel: rp.travel, note: rp.travel ? "travel" : "base" };
       }
       if (!city || (city === a.city && state === a.state))
@@ -1671,7 +1725,8 @@ export class KalzoLogic extends DCLogic {
         };
       });
       return {
-        art: ART[ci] || ART[0],
+        // Small circle under the poster: live art photo when present.
+        art: a.artPhoto || ART[ci] || ART[0],
         catVars: "--cat-h: " + ((ci * 47) % 360),
         desc: desc,
         skills: skills,
@@ -1682,11 +1737,14 @@ export class KalzoLogic extends DCLogic {
         status: a.sample
           ? "SAMPLE PROFILE · NOT BOOKABLE"
           : "VERIFIED ARTIST · BOOKINGS OPENING SOON",
-        instr: INSTR[a.icon] || a.craft,
+        instr: a.sample ? INSTR[a.icon] || a.craft : a.craft || a.cat,
         bio: a.bio,
-        curLoc: vv ? vv.city + " (Visiting)" : a.city + " (Home)",
-        baseLoc: a.city,
-        prefLoc: [a.city].concat(a.travels).join(", "),
+        // CURRENT from profile currentCity; BASE from base city — not the same field.
+        curLoc: vv
+          ? [vv.city, vv.state].filter(Boolean).join(", ") + " (Visiting)"
+          : [a.currentCity || a.city, a.currentState || a.state].filter(Boolean).join(", "),
+        baseLoc: [a.city, a.state].filter(Boolean).join(", "),
+        prefLoc: (a.travels && a.travels.length ? a.travels : [a.city]).join(", "),
         timeText: free
           ? x.fs[0] + " - " + fmtH(hourOf(x.fs[x.fs.length - 1]) + 3)
           : "Diary full " + dw.toLowerCase(),
@@ -1694,13 +1752,27 @@ export class KalzoLogic extends DCLogic {
         t2: tg[1],
         t3: tg[2],
         travelNote:
-          pc.note === "travel"
-            ? "+ " + rupees(pc.travel) + " travel & stay to " + loc.city
-            : pc.note === "visiting"
-              ? "Already in " + loc.city + " · no travel charge"
+          pc.note === "travel" && loc
+            ? "+ " +
+              rupees(pc.travel) +
+              " travel & stay to " +
+              (loc.type === "city" ? loc.city : loc.state)
+            : pc.note === "visiting" && loc
+              ? "Already in " +
+                (loc.type === "city" ? loc.city : loc.state) +
+                " · no travel charge"
               : loc && loc.type === "city"
                 ? "No travel charge in " + a.city
-                : "Travel & stay shown when you pick a city",
+                : a.sample
+                  ? "Travel & stay shown when you pick a city"
+                  : a.travelSetting === "excluding"
+                    ? "Travel from " +
+                      rupees((a.pricing && a.pricing.travel_charge_inr) || 0) +
+                      " · stay from " +
+                      rupees((a.pricing && a.pricing.stay_charge_inr) || 0)
+                    : a.travelSetting === "none"
+                      ? "Does not travel"
+                      : "Travel & stay included in rate",
         availWord: a.sample ? "SAMPLE ONLY" : "VERIFIED",
         availDot: free ? "color: #2F4A43; font-weight: 700" : "color: #8A7666",
         watch: function () {
@@ -1719,7 +1791,7 @@ export class KalzoLogic extends DCLogic {
         match: mt(a),
         hasMatch: !!loc && !!mt(a),
         name: a.name,
-        craft: a.craft,
+        craft: a.cat || a.craft,
         place: a.city + ", " + a.state,
         icon: IC[a.icon],
         il: ILL[a.cat],
@@ -1730,7 +1802,7 @@ export class KalzoLogic extends DCLogic {
         stars: starStr(a.rating),
         rating: a.reviews ? a.rating.toFixed(1) : "Not rated",
         reviews: a.reviews,
-        rateText: rupees(pc.rate),
+        rateText: rupees(pc.rate || a.rate),
         unit: unitWord(a),
         openLabel: "View " + a.name,
         avail: "SAMPLE · NOT BOOKABLE",
@@ -2364,10 +2436,23 @@ export class KalzoLogic extends DCLogic {
     ];
     var aIdx = all.indexOf(a);
     var bpc = loc && loc.type === "city" ? priceIn(a, loc.city, loc.state) : priceIn(a, null);
+    var primaryReelUrl =
+      (a.reelUrls && a.reelUrls[a.primaryReel]) || (a.reelUrls && a.reelUrls[0]) || "";
+    var liveVideoUrl = a.sample ? sampleReel.url : a.faceVideoUrl || primaryReelUrl || "";
+    var reelList = a.sample ? [sampleReel.url, sampleReel.url] : a.reelUrls || [];
+    var showreelTime =
+      (self.mediaDurations && liveVideoUrl && self.mediaDurations[liveVideoUrl]) || "";
     var sel = {
       photo: artistPhoto(a),
-      video: a.sample ? sampleReel.url : a.reelUrls[a.primaryReel] || "",
-      videoPoster: artistPhoto(a),
+      // Live verification clip for the VIDEO toggle; reels stay in the Reels tab.
+      video: liveVideoUrl,
+      videoPoster: "",
+      showreelTime: showreelTime,
+      showreelCaption:
+        "SHOWREEL · " +
+        (showreelTime || "…") +
+        " · RECORDED BY " +
+        aFirst.toUpperCase(),
       name: a.name,
       first: aFirst,
       firstUp: aFirst.toUpperCase(),
@@ -2411,18 +2496,17 @@ export class KalzoLogic extends DCLogic {
         };
       }),
       reviewList: [],
-      demos: (a.sample ? [sampleReel.url, sampleReel.url] : a.reelUrls || []).map(
-        function (url, i) {
-          return {
-            video: url,
-            poster: artistPhoto(a),
-            n: ["I", "II", "III", "IV"][i],
-            title: i === a.primaryReel ? "Primary reel" : "Reel " + (i + 1),
-            len: "",
-            thumb: "",
-          };
-        },
-      ),
+      demos: reelList.map(function (url, i) {
+        return {
+          video: url,
+          // Never use the profile photo as a reel poster — let the video show its own frame.
+          poster: "",
+          n: ["I", "II", "III", "IV"][i],
+          title: i === a.primaryReel ? "Primary reel" : "Reel " + (i + 1),
+          len: "",
+          thumb: "",
+        };
+      }),
       unusedDemos: (a.unit === "plate"
         ? ["The live counters", "A wedding spread", "In the kitchen", "Guests at table"]
         : a.unit === "event"
@@ -2865,16 +2949,18 @@ export class KalzoLogic extends DCLogic {
       roomOpen: s.roomOpen,
       roomLabel: s.roomOpen ? "CLOSE THE PRACTICE ROOM" : "TAP TO TRY A BOOKING, STEP BY STEP",
       togglePhoto: function () {
-        self.setState({ media: s.media === "photo" ? "" : "photo" });
+        self.setState({ media: "photo" });
       },
       toggleVideo: function () {
-        self.setState({ media: s.media === "video" ? "" : "video" });
+        self.setState({ media: "video" });
       },
-      profilePhoto: s.media !== "video",
+      // Upper media frame stays on the profile portrait; PHOTO/VIDEO panels sit below.
+      profilePhoto: true,
+      profileVideo: false,
       mediaControls: true,
-      photoOn: s.media === "photo",
+      photoOn: s.media !== "video",
       videoOn: s.media === "video",
-      photoTile: tileStyle(s.media === "photo"),
+      photoTile: tileStyle(s.media !== "video"),
       videoTile: tileStyle(s.media === "video"),
       houses: houses,
       hasHouses: houses.length > 0,

@@ -22,6 +22,20 @@
 .kp-welcome .kx-row{flex-wrap:wrap;gap:12px;margin-top:14px}.kp-welcome .kp-grid .kx-row{flex-wrap:nowrap;margin:0}
 .kp-welcome .kx-btn{border-radius:6px;background:var(--desk-brass);color:var(--artist-paper);font:600 15px Newsreader,serif;letter-spacing:0;min-height:44px;padding:10px 18px}
 .kp-welcome .kx-ghost{background:transparent;color:var(--artist-black-ink);border:1px solid var(--desk-brass)}
+.kp-welcome .kp-error,.kp-welcome .kx-bad{
+  margin:14px 0 0;
+  padding:12px 14px;
+  border:1px solid color-mix(in oklab,var(--artist-rust) 45%,transparent);
+  border-radius:6px;
+  background:color-mix(in oklab,var(--artist-rust) 12%,var(--artist-paper));
+  color:var(--artist-rust);
+  font-size:15px;
+  line-height:1.45;
+  display:grid;
+  gap:10px;
+}
+.kp-welcome .kp-error p{margin:0}
+.kp-welcome .kp-error-login{width:fit-content;min-height:36px;padding:6px 12px;font-size:14px}
 .kpm-list .kpm-logout{width:100%;height:auto;white-space:normal;display:flex;justify-content:center;gap:8px;margin-top:6px;border-top:2px solid var(--desk-brass);color:var(--artist-rust)}
 @keyframes kp-arrive{from{opacity:0;transform:perspective(900px) rotateX(-8deg) translateY(12px)}to{opacity:1;transform:none}}
 @keyframes kp-rock{50%{transform:rotate(-8deg) translateY(-3px)}}

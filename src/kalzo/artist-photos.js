@@ -53,6 +53,16 @@ export function photoGender(url) {
 export function assignArtistPhotos(artists, assigned = new Map()) {
   const used = new Set();
   for (const artist of artists) {
+    // Live verified artists keep their uploaded profile photo from the API.
+    // Never replace a real media URL with a bundled pool face.
+    const existing = String(artist.photo || "");
+    if (/^https?:\/\//i.test(existing) || existing.startsWith("/api/")) continue;
+    if (artist.sample === false) {
+      // No inventing faces for real accounts when photo failed to resolve.
+      artist.photo = existing;
+      continue;
+    }
+
     const dedicated = namedPhotos.get(artist.name);
     if (dedicated) {
       artist.photo = dedicated;

@@ -50,9 +50,17 @@ export function normalizeArtist(raw: any) {
     stay_charge_inr: Number(pick(raw.stay_charge_inr, raw.stayChargeInr) ?? 0),
     city_rates: pick(raw.city_rates, raw.cityRates) ?? {},
     instagram: pick(raw.instagram) ?? "",
-    photo_path: pick(raw.photo_path, raw.photoPath, raw.photo) ?? "",
-    art_photo_path: pick(raw.art_photo_path, raw.artPhotoPath, raw.artPhoto) ?? "",
+    photo_path: pick(raw.photo_path, raw.photoPath) ?? "",
+    art_photo_path: pick(raw.art_photo_path, raw.artPhotoPath) ?? "",
     face_video_path: pick(raw.face_video_path, raw.faceVideoPath, raw.faceVideo) ?? "",
+    // Public verified list / get-by-id return ready S3 URLs — prefer these in the UI.
+    photo_url: pick(raw.photo_url, raw.photoUrl) ?? "",
+    art_photo_url: pick(raw.art_photo_url, raw.artPhotoUrl) ?? "",
+    face_video_url: pick(raw.face_video_url, raw.faceVideoUrl) ?? "",
+    reel_urls: (() => {
+      const urls = pick(raw.reel_urls, raw.reelUrls);
+      return Array.isArray(urls) ? urls.filter((u: unknown): u is string => typeof u === "string" && !!u) : [];
+    })(),
     reels: Array.isArray(reelsRaw) ? reelsRaw : [],
     primary_reel: Number(pick(raw.primary_reel, raw.primaryReel) ?? 0),
     status: pick(raw.status) ?? "pending_review",
@@ -212,10 +220,17 @@ async function req<T = any>(
     const data = isJson ? await res.json().catch(() => null) : await res.text();
 
     if (!res.ok) {
-      const message = (typeof data === "object" && data)
-        ? (data.message || data.error || `HTTP ${res.status}`)
-        : `HTTP ${res.status}`;
-      return { data: null, error: { message: String(message), status: res.status, raw: data } };
+      let message = `HTTP ${res.status}`;
+      if (typeof data === "object" && data) {
+        if (typeof data.message === "string" && data.message.trim()) message = data.message.trim();
+        else if (typeof data.error === "string" && data.error.trim()) message = data.error.trim();
+        else if (data.error && typeof data.error.message === "string" && data.error.message.trim()) {
+          message = data.error.message.trim();
+        }
+      } else if (typeof data === "string" && data.trim()) {
+        message = data.trim();
+      }
+      return { data: null, error: { message, status: res.status, raw: data } };
     }
 
     return { data: data as T, error: null };

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +22,11 @@ import { CityPricing } from "./artist/CityPricing";
 import { normalizedCityRate, cityRateSchema, type CityRate } from "./artist/flowRules";
 import { LiveRecorder } from "./artist/LiveRecorder";
 import { digilockerSessionFrom, openDigilockerSession } from "./digilocker";
+import {
+  clearArtistProfileDraft,
+  loadArtistProfileDraft,
+  saveArtistProfileDraft,
+} from "./artistProfileDraft";
 import { artistPanelData } from "@/lib/artistPanel.functions";
 import { Plane, BedDouble, CircleAlert, CircleCheck, Info } from "lucide-react";
 import plaque from "@/assets/kalzo-profile-plaque.png.asset.json";
@@ -167,9 +173,25 @@ export function ArtistProfileEditor() {
 
   const kycDone = kycStatus === "success";
 
-  function showAlert(next: ArtistProfileAlert) {
+  function showAlert(next: ArtistProfileAlert, opts?: { scroll?: boolean }) {
     setAlert(next);
-    requestAnimationFrame(() => alertRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    // Default: only jump for errors. Media attach must never yank the page upward.
+    const shouldScroll = opts?.scroll ?? next.kind === "error";
+    if (!shouldScroll) return;
+    requestAnimationFrame(() =>
+      alertRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+    );
+  }
+
+  /** Keep scroll position when attaching media (file inputs / previews can jump the page). */
+  function keepScroll(run: () => void) {
+    const x = window.scrollX;
+    const y = window.scrollY;
+    run();
+    requestAnimationFrame(() => {
+      window.scrollTo(x, y);
+      requestAnimationFrame(() => window.scrollTo(x, y));
+    });
   }
 
   function clearField(field: ArtistProfileField) {
@@ -187,24 +209,72 @@ export function ArtistProfileEditor() {
     if (mapped) clearField(mapped);
   }
 
+  function applyLocalFilePreviews(nextFiles: PendingFiles, nextForm: typeof empty) {
+    const previewUpdates: Record<string, string> = {};
+    const formUpdates = { ...nextForm };
+    if (nextFiles.photo) {
+      const key = localPreviewKey("photo");
+      previewUpdates[key] = URL.createObjectURL(nextFiles.photo);
+      formUpdates.photo_path = key;
+    }
+    if (nextFiles.artPhoto) {
+      const key = localPreviewKey("art");
+      previewUpdates[key] = URL.createObjectURL(nextFiles.artPhoto);
+      formUpdates.art_photo_path = key;
+    }
+    if (nextFiles.faceVideo) {
+      const key = localPreviewKey("face");
+      previewUpdates[key] = URL.createObjectURL(nextFiles.faceVideo);
+      formUpdates.face_video_path = key;
+    }
+    const reels = [...formUpdates.reels];
+    nextFiles.reels.forEach((reel, i) => {
+      if (!reel) return;
+      const key = localPreviewKey("reel", i);
+      previewUpdates[key] = URL.createObjectURL(reel);
+      while (reels.length <= i) reels.push("");
+      reels[i] = key;
+    });
+    formUpdates.reels = reels;
+    if (Object.keys(previewUpdates).length) {
+      setPreview((prev) => ({ ...prev, ...previewUpdates }));
+    }
+    return formUpdates;
+  }
+
   useEffect(() => {
     void (async () => {
       setLoading(true);
+      const draft = await loadArtistProfileDraft();
       const res = await api.artists.getProfile();
       if (res.error) {
         // Row exists after signup even before POST; 404 is rare. Seed early location if empty.
         if (res.error.status === 404) {
-          void locationRead().then((x) => {
-            if (!x.location) return;
-            const p = cityRateSchema.safeParse(x.location.pricing);
-            setForm((f) => ({
-              ...f,
-              current_city: x.location?.city ?? "",
-              current_state: x.location?.state ?? "",
-              rate_inr: p.success ? p.data.rate : f.rate_inr,
-              city_rates: p.success ? { [x.location?.city ?? ""]: p.data } : f.city_rates,
-            }));
-          });
+          if (draft?.form) {
+            const restoredForm = { ...empty, ...(draft.form as typeof empty) };
+            const withPreviews = applyLocalFilePreviews(draft.files, restoredForm);
+            setForm(withPreviews);
+            setFiles(draft.files);
+            setCustomSub(draft.customSub);
+            setSavedCity(draft.savedCity);
+            showAlert({
+              kind: "info",
+              title: "Draft restored",
+              message: "Your details were kept while DigiLocker was open.",
+            });
+          } else {
+            void locationRead().then((x) => {
+              if (!x.location) return;
+              const p = cityRateSchema.safeParse(x.location.pricing);
+              setForm((f) => ({
+                ...f,
+                current_city: x.location?.city ?? "",
+                current_state: x.location?.state ?? "",
+                rate_inr: p.success ? p.data.rate : f.rate_inr,
+                city_rates: p.success ? { [x.location?.city ?? ""]: p.data } : f.city_rates,
+              }));
+            });
+          }
           setLoading(false);
           return;
         }
@@ -226,6 +296,78 @@ export function ArtistProfileEditor() {
         ? a.reels.filter((r: unknown): r is string => typeof r === "string" && !!r)
         : [];
       const alreadySubmitted = isSubmittedProfile(a);
+      setVerification(a.verification_status || "unverified");
+      setKycStatus(a.kyc_status || "not_started");
+      setKycName(a.kyc_verified_name || "");
+      setKycMasked(a.kyc_masked_aadhaar || "");
+      setSubmitted(alreadySubmitted);
+
+      if (alreadySubmitted) {
+        void clearArtistProfileDraft();
+        setCustomSub(!!a.subcategory && !opts.includes(a.subcategory));
+        setForm({
+          ...empty,
+          stage_name: a.stage_name || "",
+          legal_name: a.legal_name || a.kyc_verified_name || "",
+          current_state: a.current_state || stateForCity(a.current_city),
+          preferred_states: Array.isArray(a.preferred_states) ? a.preferred_states : [],
+          discipline: a.discipline || empty.discipline,
+          subcategory: a.subcategory || "",
+          bio: a.bio || "",
+          base_city: a.base_city || "",
+          state_name: a.state_name || "",
+          current_city: a.current_city || "",
+          rate_inr: a.rate_inr || empty.rate_inr,
+          instagram: a.instagram || "",
+          photo_path: a.photo_path || "",
+          art_photo_path: a.art_photo_path || "",
+          face_video_path: a.face_video_path || "",
+          reels,
+          primary_reel: a.primary_reel || 0,
+          pricing_unit: (a.pricing_unit as typeof empty.pricing_unit) || "hour",
+          travel_setting: (a.travel_setting as typeof empty.travel_setting) || "including",
+          travel_charge_inr: a.travel_charge_inr || 0,
+          stay_charge_inr: a.stay_charge_inr || 0,
+          preferred_cities: Array.isArray(a.preferred_cities) ? a.preferred_cities : [],
+          city_rates: (a.city_rates ?? {}) as Record<string, CityRate>,
+          bank_account_holder: a.bank_account_holder || "",
+          bank_name: a.bank_name || "",
+          bank_account_number: maskAccount(a.bank_account_number || ""),
+          bank_ifsc: maskIfsc(a.bank_ifsc || ""),
+        });
+        setSavedCity(a.current_city || "");
+        setLoading(false);
+        return;
+      }
+
+      // In-progress profile: restore DigiLocker draft so filled details do not vanish.
+      if (draft?.form) {
+        const restoredForm = { ...empty, ...(draft.form as typeof empty) };
+        // Prefer KYC-verified legal name when DigiLocker completed while away.
+        if (a.kyc_verified_name && !restoredForm.legal_name.trim()) {
+          restoredForm.legal_name = a.kyc_verified_name;
+        }
+        const withPreviews = applyLocalFilePreviews(draft.files, restoredForm);
+        const discOpts = ART_FORMS[withPreviews.discipline] ?? [];
+        setCustomSub(
+          draft.customSub ||
+            (!!withPreviews.subcategory && !discOpts.includes(withPreviews.subcategory)),
+        );
+        setForm(withPreviews);
+        setFiles(draft.files);
+        setSavedCity(draft.savedCity || withPreviews.current_city || "");
+        showAlert({
+          kind: a.kyc_status === "success" ? "success" : "info",
+          title: a.kyc_status === "success" ? "DigiLocker verified" : "Draft restored",
+          message:
+            a.kyc_status === "success"
+              ? "Your Aadhaar check is complete and your earlier details are still here."
+              : "Your details were kept while DigiLocker was open.",
+        });
+        setLoading(false);
+        return;
+      }
+
       setCustomSub(!!a.subcategory && !opts.includes(a.subcategory));
       setForm({
         ...empty,
@@ -254,19 +396,57 @@ export function ArtistProfileEditor() {
         city_rates: (a.city_rates ?? {}) as Record<string, CityRate>,
         bank_account_holder: a.bank_account_holder || "",
         bank_name: a.bank_name || "",
-        // Never show a full account number again after submit.
-        bank_account_number: alreadySubmitted ? maskAccount(a.bank_account_number || "") : "",
-        bank_ifsc: alreadySubmitted ? maskIfsc(a.bank_ifsc || "") : a.bank_ifsc || "",
+        bank_account_number: "",
+        bank_ifsc: a.bank_ifsc || "",
       });
       setSavedCity(a.current_city || "");
-      setVerification(a.verification_status || "unverified");
-      setKycStatus(a.kyc_status || "not_started");
-      setKycName(a.kyc_verified_name || "");
-      setKycMasked(a.kyc_masked_aadhaar || "");
-      setSubmitted(alreadySubmitted);
       setLoading(false);
     })();
   }, [locationRead]);
+
+  // Keep a local draft so DigiLocker redirects don't wipe the form.
+  useEffect(() => {
+    if (loading || submitted) return;
+    const persist = () => {
+      void saveArtistProfileDraft({
+        form,
+        files,
+        customSub,
+        savedCity,
+      });
+    };
+    const timer = window.setTimeout(persist, 400);
+    window.addEventListener("pagehide", persist);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pagehide", persist);
+    };
+  }, [form, files, customSub, savedCity, loading, submitted]);
+
+  // Block page interaction while the heavy multipart POST is in flight.
+  useEffect(() => {
+    if (!busy) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const block = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    // Capture-phase so nav / other UI cannot receive clicks or scrolls.
+    document.addEventListener("click", block, true);
+    document.addEventListener("pointerdown", block, true);
+    document.addEventListener("touchstart", block, true);
+    document.addEventListener("keydown", block, true);
+    document.addEventListener("wheel", block, { capture: true, passive: false });
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener("click", block, true);
+      document.removeEventListener("pointerdown", block, true);
+      document.removeEventListener("touchstart", block, true);
+      document.removeEventListener("keydown", block, true);
+      document.removeEventListener("wheel", block, true);
+    };
+  }, [busy]);
 
   useEffect(() => {
     // Only resolve stored media paths — never local: blob placeholders (those already have object URLs).
@@ -338,63 +518,58 @@ export function ArtistProfileEditor() {
 
   function pickFile(file: File | undefined, index: number) {
     if (!file) return;
-    const photo = index === -1 || index === -3;
-    if ((photo ? !isImageFile(file) : !isVideoFile(file)) || file.size > 50 * 1024 * 1024) {
-      showAlert({
-        kind: "error",
-        title: photo ? "Photograph not accepted" : "Reel not accepted",
-        message: photo
-          ? "Please choose a JPG, PNG or WebP image under 50 MB."
-          : "Please choose an MP4, WebM or MOV video under 50 MB.",
-      });
-      return;
-    }
-    if (index === -1) {
-      const key = localPreviewKey("photo");
-      setFiles((f) => ({ ...f, photo: file }));
-      setLocalPreview(key, file);
-      setForm((f) => ({ ...f, photo_path: key }));
-      clearField("photo");
-    } else if (index === -3) {
-      const key = localPreviewKey("art");
-      setFiles((f) => ({ ...f, artPhoto: file }));
-      setLocalPreview(key, file);
-      setForm((f) => ({ ...f, art_photo_path: key }));
-      clearField("art_photo");
-    } else {
-      const key = localPreviewKey("reel", index);
-      setFiles((f) => {
-        const reels = [...f.reels];
-        reels[index] = file;
-        return { ...f, reels };
-      });
-      setLocalPreview(key, file);
-      setForm((f) => {
-        const reels = [...f.reels];
-        while (reels.length <= index) reels.push("");
-        reels[index] = key;
-        return { ...f, reels };
-      });
-      clearField("reels");
-      clearField("primary_reel");
-    }
-    showAlert({
-      kind: "info",
-      title: "Media ready",
-      message: "File attached. Submit your profile to upload everything together.",
+    keepScroll(() => {
+      const photo = index === -1 || index === -3;
+      if ((photo ? !isImageFile(file) : !isVideoFile(file)) || file.size > 50 * 1024 * 1024) {
+        showAlert({
+          kind: "error",
+          title: photo ? "Photograph not accepted" : "Reel not accepted",
+          message: photo
+            ? "Please choose a JPG, PNG or WebP image under 50 MB."
+            : "Please choose an MP4, WebM or MOV video under 50 MB.",
+        });
+        return;
+      }
+      if (index === -1) {
+        const key = localPreviewKey("photo");
+        setFiles((f) => ({ ...f, photo: file }));
+        setLocalPreview(key, file);
+        setForm((f) => ({ ...f, photo_path: key }));
+        clearField("photo");
+      } else if (index === -3) {
+        const key = localPreviewKey("art");
+        setFiles((f) => ({ ...f, artPhoto: file }));
+        setLocalPreview(key, file);
+        setForm((f) => ({ ...f, art_photo_path: key }));
+        clearField("art_photo");
+      } else {
+        const key = localPreviewKey("reel", index);
+        setFiles((f) => {
+          const reels = [...f.reels];
+          reels[index] = file;
+          return { ...f, reels };
+        });
+        setLocalPreview(key, file);
+        setForm((f) => {
+          const reels = [...f.reels];
+          while (reels.length <= index) reels.push("");
+          reels[index] = key;
+          return { ...f, reels };
+        });
+        clearField("reels");
+        clearField("primary_reel");
+      }
+      // Preview is enough feedback — no top alert (that was scrolling the page up).
     });
   }
 
   async function pickFace(blob: Blob) {
-    const key = localPreviewKey("face");
-    setFiles((f) => ({ ...f, faceVideo: blob }));
-    setLocalPreview(key, blob);
-    setForm((f) => ({ ...f, face_video_path: key }));
-    clearField("face_video");
-    showAlert({
-      kind: "info",
-      title: "Face video ready",
-      message: "Clip attached. Submit your profile to send it for verification.",
+    keepScroll(() => {
+      const key = localPreviewKey("face");
+      setFiles((f) => ({ ...f, faceVideo: blob }));
+      setLocalPreview(key, blob);
+      setForm((f) => ({ ...f, face_video_path: key }));
+      clearField("face_video");
     });
   }
 
@@ -420,6 +595,13 @@ export function ArtistProfileEditor() {
     setKycBusy(true);
     setAlert(null);
     try {
+      // Persist before Surepass navigates away so filled details survive the round-trip.
+      await saveArtistProfileDraft({
+        form,
+        files,
+        customSub,
+        savedCity,
+      });
       const res = await api.kyc.initiateDigilocker();
       if (res.error) {
         showAlert({
@@ -560,6 +742,7 @@ export function ArtistProfileEditor() {
       }
 
       const saved = artistFrom(res.data);
+      await clearArtistProfileDraft();
       setSavedCity(form.current_city);
       setVerification(saved?.verification_status ?? "unverified");
       setKycStatus(saved?.kyc_status ?? kycStatus);
@@ -605,6 +788,25 @@ export function ArtistProfileEditor() {
   }
   return (
     <>
+      {busy &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="ka-submit-overlay"
+            role="alertdialog"
+            aria-modal="true"
+            aria-busy="true"
+            aria-live="assertive"
+            aria-label="Submitting your artist profile"
+          >
+            <div className="ka-submit-loader">
+              <span className="ka-submit-spinner" aria-hidden="true" />
+              <strong>Submitting your profile</strong>
+              <p>Uploading photographs, reels and face video. This can take a moment — please wait.</p>
+            </div>
+          </div>,
+          document.body,
+        )}
       <div ref={alertRef}>{alert && <ProfileAlertBanner alert={alert} />}</div>
       {submitted && (
         <div className="ka-alert ka-alert-info" role="status">

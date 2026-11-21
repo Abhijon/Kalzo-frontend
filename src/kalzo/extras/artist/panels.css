@@ -831,3 +831,63 @@
 .kg-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
 @media(prefers-reduced-motion:reduce){.kl-heritage .kl-nav>*,.kg-card,.kg-lamp{animation:none}}
 .kg-logo{width:120px;margin:0 auto;animation:kn-pop .8s .2s both}
+
+/* Full-screen profile submit blocker (POST /artist/profile) */
+.ka-submit-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in oklab, var(--desk-ink) 78%, transparent);
+  backdrop-filter: blur(3px);
+  cursor: wait;
+  pointer-events: all;
+  touch-action: none;
+  user-select: none;
+}
+.ka-submit-loader {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  max-width: 320px;
+  text-align: center;
+  padding: 28px 26px;
+  border: 4px double var(--artist-gold-deep, var(--desk-brass));
+  border-radius: 12px;
+  background: var(--artist-frame-paper, var(--artist-paper));
+  color: var(--desk-ink);
+  box-shadow: var(--desk-shadow, 0 18px 40px color-mix(in oklab, var(--desk-ink) 35%, transparent));
+}
+.ka-submit-spinner {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in oklab, var(--desk-brass) 35%, transparent);
+  border-top-color: var(--desk-brass);
+  border-right-color: var(--artist-gold, var(--desk-brass));
+  animation: ka-submit-spin 0.85s linear infinite;
+}
+.ka-submit-loader strong {
+  font: 600 18px Newsreader, Georgia, serif;
+  color: var(--desk-ink);
+}
+.ka-submit-loader p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--artist-rust, #8a5a3a);
+}
+@keyframes ka-submit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ka-submit-spinner {
+    animation: none;
+    border-top-color: var(--desk-brass);
+    opacity: 0.85;
+  }
+}
