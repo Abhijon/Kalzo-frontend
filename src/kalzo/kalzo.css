@@ -1438,23 +1438,25 @@ input:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 4px 0;
+  justify-content: center;
+  gap: 3px;
+  min-height: 52px;
+  padding: 6px 0;
   border: 1px solid var(--artist-border);
   font-family: 'DM Mono', monospace;
-  line-height: 1.2
+  line-height: 1.2;
+  box-sizing: border-box
 }
 
 .kweek-day small {
-  font-size: 8px
-}
-
-.kweek-day b {
-  font-size: 13px
+  font-size: 11px;
+  letter-spacing: 0.06em
 }
 
 .kweek-day em {
   font-style: normal;
-  font-size: 8px;
+  font-size: 9px;
+  letter-spacing: 0.04em;
   text-transform: uppercase
 }
 
@@ -1467,7 +1469,7 @@ input:focus {
 .kweek-full {
   color: var(--artist-muted);
   opacity: .6;
-  text-decoration: line-through
+  text-decoration: none
 }
 
 .kweek-on {

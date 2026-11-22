@@ -1,9 +1,52 @@
 export type BookingGroup = "current" | "upcoming" | "past";
-const LIVE = new Set(["arrived", "performing", "finished", "venue_verified", "in_progress"]);
+
+const ON_STAGE = new Set([
+  "arrived",
+  "performing",
+  "finished",
+  "venue_verified",
+  "in_progress",
+  "job_started",
+]);
 const DONE = new Set(["completed", "cancelled", "rejected", "declined", "expired"]);
-/** Current = happening today or artist on stage; past = finished/cancelled or date gone; else upcoming. */
-export function bookingGroup(b: { event_date: string; workflow_stage: string }, today: string): BookingGroup {
-  if (DONE.has(b.workflow_stage)) return "past";
-  if (LIVE.has(b.workflow_stage) || b.event_date === today) return "current";
-  return b.event_date < today ? "past" : "upcoming";
+
+/** Normalize API booking rows (camelCase or snake_case) for the patron ledger. */
+export function normalizePatronBooking(raw: any) {
+  const artist = raw?.artist ?? {};
+  return {
+    id: String(raw?.id ?? ""),
+    artist_name:
+      artist.stageName ||
+      artist.stage_name ||
+      raw?.artist_name ||
+      raw?.artistName ||
+      "Artist",
+    artist_photo: artist.photoUrl || artist.photo_url || raw?.artist_photo || "",
+    event_date: String(raw?.eventDate ?? raw?.event_date ?? "").slice(0, 10),
+    slot: String(raw?.slot ?? raw?.day ?? ""),
+    address: String(raw?.address ?? ""),
+    amount_inr: Number(raw?.amountInr ?? raw?.amount_inr ?? 0),
+    workflow_stage: String(raw?.status ?? raw?.workflow_stage ?? "pending"),
+    note: raw?.note ?? null,
+    guests: raw?.guests ?? null,
+  };
+}
+
+/**
+ * Current = pending invitations + same-day / live work.
+ * Past = finished or cancelled / old dates.
+ * Else upcoming.
+ */
+export function bookingGroup(
+  b: { event_date?: string; eventDate?: string; workflow_stage?: string; status?: string },
+  today: string,
+): BookingGroup {
+  const stage = String(b.workflow_stage ?? b.status ?? "");
+  const date = String(b.event_date ?? b.eventDate ?? "").slice(0, 10);
+  if (DONE.has(stage)) return "past";
+  // Pending invitations show under Current so patrons see them immediately.
+  if (stage === "pending") return "current";
+  if (ON_STAGE.has(stage) || (date && date === today)) return "current";
+  if (date && date < today) return "past";
+  return "upcoming";
 }

@@ -7,4 +7,5 @@ describe("bookingGroup", () => {
   it("future booking is upcoming", () => expect(bookingGroup({ event_date: "2026-12-01", workflow_stage: "accepted" }, t)).toBe("upcoming"));
   it("completed booking is past", () => expect(bookingGroup({ event_date: "2026-12-01", workflow_stage: "completed" }, t)).toBe("past"));
   it("old date is past", () => expect(bookingGroup({ event_date: "2026-10-01", workflow_stage: "accepted" }, t)).toBe("past"));
+  it("pending invitation is current", () => expect(bookingGroup({ event_date: "2026-12-01", workflow_stage: "pending" }, t)).toBe("current"));
 });

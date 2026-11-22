@@ -11,13 +11,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { api, artistFrom } from "@/lib/api";
+import { uploadArtistMedia, type UploadPurpose } from "@/lib/directUpload";
 import {
   type ArtistProfileAlert,
   type ArtistProfileField,
   validateArtistProfileSubmit,
 } from "./launchRules";
-import { ART_FORMS, OTHER } from "./artist/rules";
+import { OTHER } from "./artist/rules";
+import { getCachedArtForms, loadArtForms } from "./artist/artFormsCatalog";
 import { LocationSelect, PreferredCities, stateForCity } from "./artist/LocationFields";
+import { loadLocations } from "./artist/locationsCatalog";
 import { CityPricing } from "./artist/CityPricing";
 import { normalizedCityRate, cityRateSchema, type CityRate } from "./artist/flowRules";
 import { LiveRecorder } from "./artist/LiveRecorder";
@@ -38,12 +41,92 @@ type PendingFiles = {
   reels: (File | null)[];
 };
 
+type UploadedKeys = {
+  photo: string | null;
+  artPhoto: string | null;
+  faceVideo: string | null;
+  reels: (string | null)[];
+};
+
+type SlotStatus = "idle" | "uploading" | "ready" | "error";
+
+type MediaStatus = {
+  photo: SlotStatus;
+  artPhoto: SlotStatus;
+  faceVideo: SlotStatus;
+  reels: SlotStatus[];
+};
+
+type UploadProgress = {
+  photo: number | null;
+  artPhoto: number | null;
+  faceVideo: number | null;
+  reels: (number | null)[];
+};
+
 const emptyFiles = (): PendingFiles => ({
   photo: null,
   artPhoto: null,
   faceVideo: null,
   reels: [null, null, null, null],
 });
+
+const emptyKeys = (): UploadedKeys => ({
+  photo: null,
+  artPhoto: null,
+  faceVideo: null,
+  reels: [null, null, null, null],
+});
+
+const emptyMediaStatus = (): MediaStatus => ({
+  photo: "idle",
+  artPhoto: "idle",
+  faceVideo: "idle",
+  reels: ["idle", "idle", "idle", "idle"],
+});
+
+const emptyUploadProgress = (): UploadProgress => ({
+  photo: null,
+  artPhoto: null,
+  faceVideo: null,
+  reels: [null, null, null, null],
+});
+
+function UploadPctOverlay({ ratio }: { ratio: number | null }) {
+  const pct = Math.round(Math.min(1, Math.max(0, ratio ?? 0)) * 100);
+  return (
+    <div className="ka-upload-overlay" role="status" aria-live="polite" aria-label={`Uploading ${pct}%`}>
+      <strong>{pct}%</strong>
+      <span>Uploading</span>
+      <div className="ka-upload-bar" aria-hidden>
+        <i style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+const MAX_MEDIA_BYTES = 100 * 1024 * 1024;
+
+function normalizeFaceBlob(raw: Blob): File {
+  const faceBase = ((raw.type || "video/webm").split(";")[0] ?? "video/webm")
+    .trim()
+    .toLowerCase();
+  const faceType =
+    faceBase === "video/mp4" || faceBase === "video/quicktime" ? faceBase : "video/webm";
+  if (raw instanceof File && raw.type === faceType) return raw;
+  const ext =
+    faceType === "video/mp4" ? "mp4" : faceType === "video/quicktime" ? "mov" : "webm";
+  return new File([raw], `face.${ext}`, { type: faceType });
+}
+
+function normalizeReelFile(reel: File): File {
+  const base = ((reel.type || "").split(";")[0] ?? "").trim().toLowerCase();
+  if (["video/mp4", "video/webm", "video/quicktime"].includes(base)) return reel;
+  const ext = reel.name.match(/\.(mp4|webm|mov)$/i)?.[1]?.toLowerCase() ?? "mp4";
+  const type =
+    ext === "webm" ? "video/webm" : ext === "mov" ? "video/quicktime" : "video/mp4";
+  return new File([reel], reel.name || `reel.${ext}`, { type });
+}
 
 const empty = {
   stage_name: "",
@@ -119,7 +202,13 @@ function ProfileAlertBanner({ alert }: { alert: ArtistProfileAlert }) {
   );
 }
 
-function FieldError({ id, message }: { id?: string; message?: string }) {
+function FieldError({
+  id,
+  message,
+}: {
+  id?: string | undefined;
+  message?: string | undefined;
+}) {
   if (!message) return null;
   return (
     <p id={id} className="ka-field-error" role="alert">
@@ -154,8 +243,15 @@ function isSubmittedProfile(a: {
 export function ArtistProfileEditor() {
   const locationRead = useServerFn(artistPanelData);
   const alertRef = useRef<HTMLDivElement>(null);
+  const uploadGen = useRef({ photo: 0, artPhoto: 0, faceVideo: 0, reels: [0, 0, 0, 0] });
+  const inflightUploads = useRef(new Set<Promise<void>>());
+  const keysRef = useRef<UploadedKeys>(emptyKeys());
   const [form, setForm] = useState(empty);
+  const [artForms, setArtForms] = useState<Record<string, string[]>>(getCachedArtForms);
   const [files, setFiles] = useState<PendingFiles>(emptyFiles);
+  const [uploadedKeys, setUploadedKeys] = useState<UploadedKeys>(emptyKeys);
+  const [mediaStatus, setMediaStatus] = useState<MediaStatus>(emptyMediaStatus);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress>(emptyUploadProgress);
   const [alert, setAlert] = useState<ArtistProfileAlert | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<ArtistProfileField, string>>>({});
   const [busy, setBusy] = useState(false),
@@ -172,6 +268,196 @@ export function ArtistProfileEditor() {
     [customSub, setCustomSub] = useState(false);
 
   const kycDone = kycStatus === "success";
+
+  function setKeys(next: UploadedKeys | ((prev: UploadedKeys) => UploadedKeys)) {
+    setUploadedKeys((prev) => {
+      const value = typeof next === "function" ? next(prev) : next;
+      keysRef.current = value;
+      return value;
+    });
+  }
+
+  async function discardUploadedKey(key: string | null | undefined) {
+    if (!key) return;
+    await api.media.discard({ key }).catch(() => {});
+  }
+
+  function trackUpload(job: Promise<void>) {
+    inflightUploads.current.add(job);
+    void job.finally(() => inflightUploads.current.delete(job));
+  }
+
+  async function waitForInflightUploads() {
+    while (inflightUploads.current.size > 0) {
+      await Promise.allSettled([...inflightUploads.current]);
+    }
+  }
+
+  function queueDirectUpload(opts: {
+    purpose: UploadPurpose;
+    file: Blob;
+    fileName?: string;
+    slot: "photo" | "artPhoto" | "faceVideo" | { reel: number };
+    previousKey: string | null;
+  }) {
+    const { purpose, file, fileName, slot, previousKey } = opts;
+    let gen = 0;
+    if (slot === "photo" || slot === "artPhoto" || slot === "faceVideo") {
+      gen = ++uploadGen.current[slot];
+      setMediaStatus((s) => ({ ...s, [slot]: "uploading" }));
+      setUploadProgress((p) => ({ ...p, [slot]: 0 }));
+      setKeys((k) => ({ ...k, [slot]: null }));
+    } else {
+      const reelIdx = slot.reel;
+      const nextGen = (uploadGen.current.reels[reelIdx] ?? 0) + 1;
+      uploadGen.current.reels[reelIdx] = nextGen;
+      gen = nextGen;
+      setMediaStatus((s) => {
+        const reels = [...s.reels];
+        reels[reelIdx] = "uploading";
+        return { ...s, reels };
+      });
+      setUploadProgress((p) => {
+        const reels = [...p.reels];
+        reels[reelIdx] = 0;
+        return { ...p, reels };
+      });
+      setKeys((k) => {
+        const reels = [...k.reels];
+        reels[reelIdx] = null;
+        return { ...k, reels };
+      });
+    }
+
+    void discardUploadedKey(previousKey);
+
+    const reportProgress = (ratio: number) => {
+      const stillCurrent =
+        slot === "photo" || slot === "artPhoto" || slot === "faceVideo"
+          ? uploadGen.current[slot] === gen
+          : uploadGen.current.reels[slot.reel] === gen;
+      if (!stillCurrent) return;
+      if (slot === "photo" || slot === "artPhoto" || slot === "faceVideo") {
+        setUploadProgress((p) => ({ ...p, [slot]: ratio }));
+      } else {
+        setUploadProgress((p) => {
+          const reels = [...p.reels];
+          reels[slot.reel] = ratio;
+          return { ...p, reels };
+        });
+      }
+    };
+
+    const clearProgress = () => {
+      if (slot === "photo" || slot === "artPhoto" || slot === "faceVideo") {
+        setUploadProgress((p) => ({ ...p, [slot]: null }));
+      } else {
+        setUploadProgress((p) => {
+          const reels = [...p.reels];
+          reels[slot.reel] = null;
+          return { ...p, reels };
+        });
+      }
+    };
+
+    const job = (async () => {
+      try {
+        const key = await uploadArtistMedia(file, purpose, {
+          ...(fileName ? { fileName } : {}),
+          onProgress: reportProgress,
+        });
+        const stillCurrent =
+          slot === "photo" || slot === "artPhoto" || slot === "faceVideo"
+            ? uploadGen.current[slot] === gen
+            : uploadGen.current.reels[slot.reel] === gen;
+        if (!stillCurrent) {
+          await discardUploadedKey(key);
+          return;
+        }
+        if (slot === "photo" || slot === "artPhoto" || slot === "faceVideo") {
+          setKeys((k) => ({ ...k, [slot]: key }));
+          setMediaStatus((s) => ({ ...s, [slot]: "ready" }));
+        } else {
+          setKeys((k) => {
+            const reels = [...k.reels];
+            reels[slot.reel] = key;
+            return { ...k, reels };
+          });
+          setMediaStatus((s) => {
+            const reels = [...s.reels];
+            reels[slot.reel] = "ready";
+            return { ...s, reels };
+          });
+        }
+        clearProgress();
+      } catch (e) {
+        const stillCurrent =
+          slot === "photo" || slot === "artPhoto" || slot === "faceVideo"
+            ? uploadGen.current[slot] === gen
+            : uploadGen.current.reels[slot.reel] === gen;
+        if (!stillCurrent) return;
+        if (slot === "photo" || slot === "artPhoto" || slot === "faceVideo") {
+          setMediaStatus((s) => ({ ...s, [slot]: "error" }));
+        } else {
+          setMediaStatus((s) => {
+            const reels = [...s.reels];
+            reels[slot.reel] = "error";
+            return { ...s, reels };
+          });
+        }
+        clearProgress();
+        showAlert({
+          kind: "error",
+          title: "Upload failed",
+          message: e instanceof Error ? e.message : "Could not upload this file. Please try again.",
+        });
+      }
+    })();
+    trackUpload(job);
+  }
+
+  /** After DigiLocker draft restore — re-upload local files that have no S3 key yet. */
+  function resumeUploadsFromFiles(next: PendingFiles) {
+    if (next.photo) {
+      queueDirectUpload({
+        purpose: "photo",
+        file: next.photo,
+        fileName: next.photo.name,
+        slot: "photo",
+        previousKey: keysRef.current.photo,
+      });
+    }
+    if (next.artPhoto) {
+      queueDirectUpload({
+        purpose: "artPhoto",
+        file: next.artPhoto,
+        fileName: next.artPhoto.name,
+        slot: "artPhoto",
+        previousKey: keysRef.current.artPhoto,
+      });
+    }
+    if (next.faceVideo) {
+      const face = normalizeFaceBlob(next.faceVideo);
+      queueDirectUpload({
+        purpose: "faceVideo",
+        file: face,
+        fileName: face.name,
+        slot: "faceVideo",
+        previousKey: keysRef.current.faceVideo,
+      });
+    }
+    next.reels.forEach((reel, i) => {
+      if (!reel) return;
+      const normalized = normalizeReelFile(reel);
+      queueDirectUpload({
+        purpose: "reel",
+        file: normalized,
+        fileName: normalized.name,
+        slot: { reel: i },
+        previousKey: keysRef.current.reels[i] ?? null,
+      });
+    });
+  }
 
   function showAlert(next: ArtistProfileAlert, opts?: { scroll?: boolean }) {
     setAlert(next);
@@ -245,6 +531,8 @@ export function ArtistProfileEditor() {
   useEffect(() => {
     void (async () => {
       setLoading(true);
+      const [forms] = await Promise.all([loadArtForms(), loadLocations()]);
+      setArtForms(forms);
       const draft = await loadArtistProfileDraft();
       const res = await api.artists.getProfile();
       if (res.error) {
@@ -257,11 +545,7 @@ export function ArtistProfileEditor() {
             setFiles(draft.files);
             setCustomSub(draft.customSub);
             setSavedCity(draft.savedCity);
-            showAlert({
-              kind: "info",
-              title: "Draft restored",
-              message: "Your details were kept while DigiLocker was open.",
-            });
+            resumeUploadsFromFiles(draft.files);
           } else {
             void locationRead().then((x) => {
               if (!x.location) return;
@@ -291,7 +575,7 @@ export function ArtistProfileEditor() {
         setLoading(false);
         return;
       }
-      const opts = ART_FORMS[a.discipline] ?? [];
+      const opts = forms[a.discipline] ?? [];
       const reels = Array.isArray(a.reels)
         ? a.reels.filter((r: unknown): r is string => typeof r === "string" && !!r)
         : [];
@@ -348,7 +632,7 @@ export function ArtistProfileEditor() {
           restoredForm.legal_name = a.kyc_verified_name;
         }
         const withPreviews = applyLocalFilePreviews(draft.files, restoredForm);
-        const discOpts = ART_FORMS[withPreviews.discipline] ?? [];
+        const discOpts = forms[withPreviews.discipline] ?? [];
         setCustomSub(
           draft.customSub ||
             (!!withPreviews.subcategory && !discOpts.includes(withPreviews.subcategory)),
@@ -356,14 +640,7 @@ export function ArtistProfileEditor() {
         setForm(withPreviews);
         setFiles(draft.files);
         setSavedCity(draft.savedCity || withPreviews.current_city || "");
-        showAlert({
-          kind: a.kyc_status === "success" ? "success" : "info",
-          title: a.kyc_status === "success" ? "DigiLocker verified" : "Draft restored",
-          message:
-            a.kyc_status === "success"
-              ? "Your Aadhaar check is complete and your earlier details are still here."
-              : "Your details were kept while DigiLocker was open.",
-        });
+        resumeUploadsFromFiles(draft.files);
         setLoading(false);
         return;
       }
@@ -520,29 +797,46 @@ export function ArtistProfileEditor() {
     if (!file) return;
     keepScroll(() => {
       const photo = index === -1 || index === -3;
-      if ((photo ? !isImageFile(file) : !isVideoFile(file)) || file.size > 50 * 1024 * 1024) {
+      if ((photo ? !isImageFile(file) : !isVideoFile(file)) || file.size > MAX_MEDIA_BYTES) {
         showAlert({
           kind: "error",
           title: photo ? "Photograph not accepted" : "Reel not accepted",
           message: photo
-            ? "Please choose a JPG, PNG or WebP image under 50 MB."
-            : "Please choose an MP4, WebM or MOV video under 50 MB.",
+            ? "Please choose a JPG, PNG or WebP image under 100 MB."
+            : "Please choose an MP4, WebM or MOV video under 100 MB.",
         });
         return;
       }
       if (index === -1) {
+        const prevKey = keysRef.current.photo;
         const key = localPreviewKey("photo");
         setFiles((f) => ({ ...f, photo: file }));
         setLocalPreview(key, file);
         setForm((f) => ({ ...f, photo_path: key }));
         clearField("photo");
+        queueDirectUpload({
+          purpose: "photo",
+          file,
+          fileName: file.name,
+          slot: "photo",
+          previousKey: prevKey,
+        });
       } else if (index === -3) {
+        const prevKey = keysRef.current.artPhoto;
         const key = localPreviewKey("art");
         setFiles((f) => ({ ...f, artPhoto: file }));
         setLocalPreview(key, file);
         setForm((f) => ({ ...f, art_photo_path: key }));
         clearField("art_photo");
+        queueDirectUpload({
+          purpose: "artPhoto",
+          file,
+          fileName: file.name,
+          slot: "artPhoto",
+          previousKey: prevKey,
+        });
       } else {
+        const prevKey = keysRef.current.reels[index] ?? null;
         const key = localPreviewKey("reel", index);
         setFiles((f) => {
           const reels = [...f.reels];
@@ -558,18 +852,34 @@ export function ArtistProfileEditor() {
         });
         clearField("reels");
         clearField("primary_reel");
+        const normalized = normalizeReelFile(file);
+        queueDirectUpload({
+          purpose: "reel",
+          file: normalized,
+          fileName: normalized.name,
+          slot: { reel: index },
+          previousKey: prevKey,
+        });
       }
-      // Preview is enough feedback — no top alert (that was scrolling the page up).
     });
   }
 
   async function pickFace(blob: Blob) {
     keepScroll(() => {
+      const prevKey = keysRef.current.faceVideo;
       const key = localPreviewKey("face");
       setFiles((f) => ({ ...f, faceVideo: blob }));
       setLocalPreview(key, blob);
       setForm((f) => ({ ...f, face_video_path: key }));
       clearField("face_video");
+      const face = normalizeFaceBlob(blob);
+      queueDirectUpload({
+        purpose: "faceVideo",
+        file: face,
+        fileName: face.name,
+        slot: "faceVideo",
+        previousKey: prevKey,
+      });
     });
   }
 
@@ -668,70 +978,55 @@ export function ArtistProfileEditor() {
     setAlert(null);
     setFieldErrors({});
     try {
-      const fd = new FormData();
-      fd.append("stageName", form.stage_name.trim());
-      fd.append("legalName", form.legal_name.trim());
-      fd.append("baseCity", form.base_city.trim());
-      fd.append("stateName", form.state_name.trim());
-      fd.append("currentCity", form.current_city.trim());
-      fd.append("currentState", form.current_state.trim());
-      fd.append("preferredCities", JSON.stringify(form.preferred_cities));
-      fd.append("preferredStates", JSON.stringify(form.preferred_states));
-      fd.append("discipline", form.discipline.trim());
-      fd.append("subcategory", form.subcategory.trim());
-      fd.append("bio", form.bio.trim());
-      fd.append("instagram", form.instagram.trim());
-      fd.append("rateInr", String(form.rate_inr));
-      fd.append("pricingUnit", form.pricing_unit);
-      fd.append("travelSetting", form.travel_setting);
-      fd.append(
-        "travelChargeInr",
-        String(form.travel_setting === "excluding" ? form.travel_charge_inr : 0),
-      );
-      fd.append(
-        "stayChargeInr",
-        String(form.travel_setting === "excluding" ? form.stay_charge_inr : 0),
-      );
-      fd.append("cityRates", JSON.stringify(form.city_rates));
-      fd.append("bankAccountHolder", form.bank_account_holder.trim());
-      fd.append("bankName", form.bank_name.trim());
-      fd.append("bankAccountNumber", form.bank_account_number.trim());
-      fd.append("bankIfsc", form.bank_ifsc.trim().toUpperCase());
-      fd.append("photo", files.photo!);
-      fd.append("artPhoto", files.artPhoto!);
-      {
-        const raw = files.faceVideo!;
-        const base = ((raw.type || "video/webm").split(";")[0] ?? "video/webm").trim().toLowerCase();
-        const type =
-          base === "video/mp4" || base === "video/quicktime"
-            ? base
-            : "video/webm"; // also maps Chrome's video/x-matroska
-        const ext = type === "video/mp4" ? "mp4" : type === "video/quicktime" ? "mov" : "webm";
-        fd.append(
-          "faceVideo",
-          raw instanceof File && raw.type === type
-            ? raw
-            : new File([raw], `face.${ext}`, { type }),
-        );
-      }
-      const uploadedReels = files.reels
-        .map((reel, i) => ({ reel, i }))
-        .filter((x): x is { reel: File; i: number } => !!x.reel);
-      uploadedReels.forEach(({ reel }) => {
-        const base = ((reel.type || "").split(";")[0] ?? "").trim().toLowerCase();
-        if (["video/mp4", "video/webm", "video/quicktime"].includes(base)) {
-          fd.append("reels", reel);
-          return;
-        }
-        const ext = reel.name.match(/\.(mp4|webm|mov)$/i)?.[1]?.toLowerCase() ?? "mp4";
-        const type =
-          ext === "webm" ? "video/webm" : ext === "mov" ? "video/quicktime" : "video/mp4";
-        fd.append("reels", new File([reel], reel.name || `reel.${ext}`, { type }));
-      });
-      const primaryAmong = uploadedReels.findIndex((x) => x.i === form.primary_reel);
-      fd.append("primaryReel", String(primaryAmong >= 0 ? primaryAmong : 0));
+      await waitForInflightUploads();
 
-      const res = await api.artists.saveProfile(fd);
+      const keys = keysRef.current;
+      const reelSlots = files.reels
+        .map((reel, i) => ({ reel, i, key: keys.reels[i] }))
+        .filter((x): x is { reel: File; i: number; key: string | null } => !!x.reel);
+      const reelKeys = reelSlots.map((x) => x.key).filter((k): k is string => !!k);
+
+      if (!keys.photo || !keys.artPhoto || !keys.faceVideo || reelKeys.length < 2) {
+        showAlert({
+          kind: "error",
+          title: "Media still uploading",
+          message:
+            "Wait for photographs and videos to finish uploading (or re-attach any that failed), then submit again.",
+        });
+        return;
+      }
+
+      const primaryAmong = reelSlots.findIndex((x) => x.i === form.primary_reel);
+
+      const res = await api.artists.saveProfile({
+        stageName: form.stage_name.trim(),
+        legalName: form.legal_name.trim(),
+        baseCity: form.base_city.trim(),
+        stateName: form.state_name.trim(),
+        currentCity: form.current_city.trim(),
+        currentState: form.current_state.trim(),
+        preferredCities: form.preferred_cities,
+        preferredStates: form.preferred_states,
+        discipline: form.discipline.trim(),
+        subcategory: form.subcategory.trim(),
+        bio: form.bio.trim(),
+        instagram: form.instagram.trim(),
+        rateInr: form.rate_inr,
+        pricingUnit: form.pricing_unit,
+        travelSetting: form.travel_setting,
+        travelChargeInr: form.travel_setting === "excluding" ? form.travel_charge_inr : 0,
+        stayChargeInr: form.travel_setting === "excluding" ? form.stay_charge_inr : 0,
+        cityRates: form.city_rates,
+        bankAccountHolder: form.bank_account_holder.trim(),
+        bankName: form.bank_name.trim(),
+        bankAccountNumber: form.bank_account_number.trim(),
+        bankIfsc: form.bank_ifsc.trim().toUpperCase(),
+        primaryReel: primaryAmong >= 0 ? primaryAmong : 0,
+        photoPath: keys.photo,
+        artPhotoPath: keys.artPhoto,
+        faceVideoPath: keys.faceVideo,
+        reels: reelKeys,
+      });
       if (res.error) {
         showAlert({
           kind: "error",
@@ -749,6 +1044,8 @@ export function ArtistProfileEditor() {
       setKycName(saved?.kyc_verified_name || kycName);
       setKycMasked(saved?.kyc_masked_aadhaar || kycMasked);
       setFiles(emptyFiles());
+      setKeys(emptyKeys());
+      setMediaStatus(emptyMediaStatus());
       setSubmitted(true);
       if (saved?.photo_path) {
         setForm((f) => ({
@@ -780,7 +1077,7 @@ export function ArtistProfileEditor() {
       setBusy(false);
     }
   }
-  const subs = ART_FORMS[form.discipline] ?? [];
+  const subs = artForms[form.discipline] ?? [];
   const err = (field: ArtistProfileField) => fieldErrors[field];
   const locked = submitted || busy;
   if (loading) {
@@ -802,24 +1099,13 @@ export function ArtistProfileEditor() {
             <div className="ka-submit-loader">
               <span className="ka-submit-spinner" aria-hidden="true" />
               <strong>Submitting your profile</strong>
-              <p>Uploading photographs, reels and face video. This can take a moment — please wait.</p>
+              <p>Saving your details. Media uploads in the background first if any are still finishing.</p>
             </div>
           </div>,
           document.body,
         )}
       <div ref={alertRef}>{alert && <ProfileAlertBanner alert={alert} />}</div>
-      {submitted && (
-        <div className="ka-alert ka-alert-info" role="status">
-          <Info size={20} aria-hidden="true" />
-          <div>
-            <strong>Submitted profile</strong>
-            <p>
-              Showing the same data from your last POST submit. Edits and extra reels will come with
-              a PATCH update later. Identity status: {verification.replaceAll("_", " ")}.
-            </p>
-          </div>
-        </div>
-      )}
+     
       <section className="kp-plaque" aria-label="Profile preview" style={{ backgroundImage: `url(${plaque.url})` }}>
         <div className="kp-photo">
           {previewSrc(form.photo_path) ? <img src={previewSrc(form.photo_path)} alt="You" /> : <span>Your photo</span>}
@@ -930,15 +1216,7 @@ export function ArtistProfileEditor() {
                 setCustomSub(false);
               }}
             >
-              {[
-                ...Object.keys(ART_FORMS),
-                "Artisans",
-                "Puppeteers",
-                "Influencers",
-                "Models",
-                "Caterers",
-                "Event planners",
-              ].map((c) => (
+              {Object.keys(artForms).map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </select>
@@ -1093,6 +1371,7 @@ export function ArtistProfileEditor() {
             ) : (
               <span>Profile photograph *</span>
             )}
+            {mediaStatus.photo === "uploading" && <UploadPctOverlay ratio={uploadProgress.photo} />}
             <input
               type="file"
               aria-label="Upload profile photo"
@@ -1110,6 +1389,7 @@ export function ArtistProfileEditor() {
             ) : (
               <span>Art photograph * · shown in the circle</span>
             )}
+            {mediaStatus.artPhoto === "uploading" && <UploadPctOverlay ratio={uploadProgress.artPhoto} />}
             <input
               type="file"
               aria-label="Upload art photo"
@@ -1122,6 +1402,9 @@ export function ArtistProfileEditor() {
             />
           </label>
         </div>
+        {(mediaStatus.photo === "error" || mediaStatus.artPhoto === "error") && (
+          <p className="kl-error">A photograph failed to upload — re-attach to retry.</p>
+        )}
         <FieldError message={err("photo") || err("art_photo")} />
       </fieldset>
 
@@ -1149,6 +1432,12 @@ export function ArtistProfileEditor() {
                     playsInline
                     preload="metadata"
                   />
+                  {mediaStatus.reels[i] === "uploading" && (
+                    <UploadPctOverlay ratio={uploadProgress.reels[i] ?? 0} />
+                  )}
+                  {mediaStatus.reels[i] === "error" && (
+                    <p className="ka-upload-error">Upload failed — replace to retry</p>
+                  )}
                   <label className="ka-reel-replace">
                     Replace
                     <input
@@ -1208,14 +1497,22 @@ export function ArtistProfileEditor() {
         <FieldError message={err("face_video")} />
         {!submitted && <LiveRecorder kind="face" busy={busy} onDone={pickFace} />}
         {previewSrc(form.face_video_path) && (
-          <video
-            className="kl-photo"
-            key={previewSrc(form.face_video_path)}
-            src={`${previewSrc(form.face_video_path)}#t=0.1`}
-            controls
-            playsInline
-            preload="metadata"
-          />
+          <div className="ka-face-preview">
+            <video
+              className="kl-photo"
+              key={previewSrc(form.face_video_path)}
+              src={`${previewSrc(form.face_video_path)}#t=0.1`}
+              controls
+              playsInline
+              preload="metadata"
+            />
+            {mediaStatus.faceVideo === "uploading" && (
+              <UploadPctOverlay ratio={uploadProgress.faceVideo} />
+            )}
+          </div>
+        )}
+        {mediaStatus.faceVideo === "error" && (
+          <p className="kl-error">Face video upload failed — record again to retry.</p>
         )}
         <h3 data-field="digilocker">2 · DigiLocker Aadhaar check *</h3>
         <p className="kl-note">

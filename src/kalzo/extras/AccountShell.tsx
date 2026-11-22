@@ -14,10 +14,16 @@ export function AccountShell({
   children,
   title,
   audience = "patron",
+  narrow = false,
+  lead = null,
 }: {
   children: ReactNode;
   title: string;
   audience?: AccountAudience;
+  /** Center heading + content under the nav (booking room). */
+  narrow?: boolean;
+  /** Optional control above the page title (e.g. back link). */
+  lead?: ReactNode;
 }) {
   const navigate = useNavigate();
   const [signed, setSigned] = useState<boolean | null>(null);
@@ -66,14 +72,17 @@ export function AccountShell({
           {signed && <Button variant="outline" onClick={() => void logout()}><LogOut size={16} /> Log out</Button>}
         </nav>
         {logoutError && <p role="alert">{logoutError}</p>}
-        <h1>{title}</h1>
-        {signed === null ? (
-          <p>Loading your account…</p>
-        ) : signed ? (
-          children
-        ) : (
-          <PatronGate audience={audience} onBack={() => navigate({ to: "/" })} />
-        )}
+        <div className={narrow ? "kl-narrow" : undefined}>
+          {lead}
+          <h1>{title}</h1>
+          {signed === null ? (
+            <p>Loading your account…</p>
+          ) : signed ? (
+            children
+          ) : (
+            <PatronGate audience={audience} onBack={() => navigate({ to: "/" })} />
+          )}
+        </div>
       </div>
     </main>
   );
