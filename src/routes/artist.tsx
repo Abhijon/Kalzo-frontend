@@ -66,9 +66,8 @@ function Tabs() {
 }
 function ProfileSections() {
   const path = useRouterState({ select: (s) => s.location.pathname });
-  return ["/artist/profile", "/artist/bookings", "/artist/wallet", "/artist/kyc/callback"].includes(
-    path,
-  ) ? (
+  return ["/artist/profile", "/artist/wallet", "/artist/kyc/callback"].includes(path) ||
+    path.startsWith("/artist/bookings") ? (
     <ProfileMenu />
   ) : null;
 }

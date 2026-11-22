@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { MapPin } from "lucide-react";
-import { artistPanelData, updateArtistLocation } from "@/lib/artistPanel.functions";
+import api, { artistFrom } from "@/lib/api";
 import { LocationSelect, stateForCity } from "@/kalzo/extras/artist/LocationFields";
 import { CityPricing } from "@/kalzo/extras/artist/CityPricing";
 import { cityRateSchema, normalizedCityRate, type CityRate } from "@/kalzo/extras/artist/flowRules";
@@ -26,44 +25,51 @@ export const Route = createFileRoute("/artist/location")({
   component: Location,
 });
 function Location() {
-  const read = useServerFn(artistPanelData),
-    save = useServerFn(updateArtistLocation);
-  const [artist, setArtist] = useState<Awaited<ReturnType<typeof artistPanelData>>["artist"]>();
+  const [artist, setArtist] = useState<any>();
   const [city, setCity] = useState(""),
     [state, setState] = useState(""),
     [open, setOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
   const [pricing, setPricing] = useState<CityRate>({
-    rate: 2000,
+    rate: 0,
     travel: "not_needed",
     travel_charge: 0,
     stay_charge: 0,
   });
+
+  const load = async () => {
+    const res = await api.artists.getProfile();
+    if (res.error) {
+      setMessage(res.error.message || "Could not load your location.");
+      return;
+    }
+    const a = artistFrom(res.data);
+    if (!a) return;
+    setArtist(a);
+    const initialCity = a.current_city || a.base_city || "";
+    const initialState =
+      a.current_state || a.state_name || (initialCity ? stateForCity(initialCity) : "");
+    setCity(initialCity);
+    setState(initialState);
+    const existingRate = ((a.city_rates ?? {}) as Record<string, unknown>)[initialCity];
+    const saved = cityRateSchema.safeParse(existingRate);
+    setPricing(
+      saved.success
+        ? saved.data
+        : {
+            rate: a.rate_inr || 0,
+            travel: "not_needed",
+            travel_charge: 0,
+            stay_charge: 0,
+          },
+    );
+  };
+
   useEffect(() => {
-    read()
-      .then((d) => {
-        setArtist(d.artist);
-        setCity(d.artist?.current_city || d.location?.city || "");
-        setState(
-          d.artist?.current_state ||
-            d.location?.state ||
-            stateForCity(d.artist?.current_city ?? ""),
-        );
-        const saved = cityRateSchema.safeParse(d.location?.pricing);
-        setPricing(
-          saved.success
-            ? saved.data
-            : {
-                rate: d.artist?.rate_inr || 2000,
-                travel: "not_needed",
-                travel_charge: 0,
-                stay_charge: 0,
-              },
-        );
-      })
-      .catch((e) => setMessage(e.message));
-  }, [read]);
+    void load();
+  }, []);
+
   async function submit() {
     const valid = cityRateSchema.safeParse(pricing);
     if (!valid.success) {
@@ -72,11 +78,24 @@ function Location() {
     }
     setBusy(true);
     try {
-      await save({ data: { city, state, pricing: normalizedCityRate(valid.data) } });
+      const norm = normalizedCityRate(valid.data);
+      const nextCityRates = {
+        ...((artist?.city_rates ?? {}) as Record<string, CityRate>),
+        [city]: norm,
+      };
+      const res = await api.artists.updateProfile({
+        currentCity: city,
+        currentState: state,
+        rateInr: norm.rate,
+        cityRates: nextCityRates,
+      });
+      if (res.error) {
+        setMessage(res.error.message || "Could not save location.");
+        return;
+      }
       setOpen(false);
       setMessage("Your location and city charges are saved.");
-      const d = await read();
-      setArtist(d.artist);
+      await load();
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Could not save location.");
     } finally {
