@@ -25,13 +25,44 @@ export type PricedArtist = {
   city_rates: unknown;
 };
 
+/** Accept snake_case or camelCase rows from the Node API / UI. */
+function asPricedArtist(raw: PricedArtist | Record<string, unknown>): PricedArtist {
+  const r = raw as Record<string, unknown>;
+  return {
+    rate_inr: Number(r.rate_inr ?? r.rateInr ?? 0),
+    pricing_unit: String(r.pricing_unit ?? r.pricingUnit ?? "hour"),
+    travel_setting: String(r.travel_setting ?? r.travelSetting ?? "including"),
+    travel_charge_inr: Number(r.travel_charge_inr ?? r.travelChargeInr ?? 0) || 0,
+    stay_charge_inr: Number(r.stay_charge_inr ?? r.stayChargeInr ?? 0) || 0,
+    city_rates: r.city_rates ?? r.cityRates ?? {},
+  };
+}
+
 type CityRate = { rate: number; travel: "included" | "separate" | "not_needed"; travel_charge?: number; stay_charge?: number };
 
 function cityRate(rates: unknown, city: string): CityRate | null {
   if (!city || !rates || typeof rates !== "object") return null;
   const key = Object.keys(rates as Record<string, unknown>).find((k) => k.trim().toLowerCase() === city.trim().toLowerCase());
-  const r = key ? (rates as Record<string, CityRate>)[key] : null;
-  return r && Number.isInteger(r.rate) && r.rate > 0 ? r : null;
+  const raw = key ? (rates as Record<string, Record<string, unknown>>)[key] : null;
+  if (!raw || typeof raw !== "object") return null;
+  const rate = Number(raw.rate);
+  if (!Number.isInteger(rate) || rate <= 0) return null;
+  const travelRaw = String(raw.travel ?? "");
+  const travel =
+    travelRaw === "included" || travelRaw === "separate" || travelRaw === "not_needed"
+      ? travelRaw
+      : "separate";
+  const travel_charge = Number(raw.travel_charge ?? raw.travelCharge ?? 0) || 0;
+  const stay_charge = Number(raw.stay_charge ?? raw.stayCharge ?? 0) || 0;
+  return { rate, travel, travel_charge, stay_charge };
+}
+
+function defaultTravelStay(artist: PricedArtist) {
+  if (artist.travel_setting !== "excluding") return { travel: 0, stay: 0 };
+  return {
+    travel: artist.travel_charge_inr || 0,
+    stay: artist.stay_charge_inr || 0,
+  };
 }
 
 /** Highest quantity allowed for each pricing unit (hours, one event, or plates). */
@@ -41,23 +72,40 @@ export function maxQuantity(unit: string) {
   return 12;
 }
 
-/** Hourly (or per-event/plate) rate and travel + stay for a city. Same rules on the page and the server. */
-export function artistCityPrice(artist: PricedArtist, city: string) {
-  const local = cityRate(artist.city_rates, city);
-  const rate = local?.rate ?? artist.rate_inr;
-  let travel = 0, stay = 0;
-  if (local) {
-    if (local.travel === "separate") { travel = local.travel_charge ?? 0; stay = local.stay_charge ?? 0; }
-  } else if (artist.travel_setting === "excluding") {
-    travel = artist.travel_charge_inr || 0; stay = artist.stay_charge_inr || 0;
+/**
+ * Hourly (or per-event/plate) rate and travel + stay for a city.
+ * City rates may override the hourly rate; travel/stay stay on the artist default
+ * ("charged separately") unless that city explicitly marks travel included / not needed.
+ */
+export function artistCityPrice(artist: PricedArtist | Record<string, unknown>, city: string) {
+  const priced = asPricedArtist(artist);
+  const local = cityRate(priced.city_rates, city);
+  const rate = local?.rate ?? priced.rate_inr;
+  const fallback = defaultTravelStay(priced);
+
+  let travel = fallback.travel;
+  let stay = fallback.stay;
+  if (local?.travel === "included" || local?.travel === "not_needed") {
+    travel = 0;
+    stay = 0;
+  } else if (local?.travel === "separate") {
+    const cityTravel = local.travel_charge ?? 0;
+    const cityStay = local.stay_charge ?? 0;
+    // Separate with no amounts filled → keep the artist default charges.
+    if (cityTravel > 0 || cityStay > 0) {
+      travel = cityTravel;
+      stay = cityStay;
+    }
   }
+
   return { rate, travel: travel + stay, travelOnly: travel, stay };
 }
 
-export function priceBooking(artist: PricedArtist, req: Pick<BookingRequest, "quantity" | "city">) {
-  const { rate, travelOnly: travel, stay } = artistCityPrice(artist, req.city);
+export function priceBooking(artist: PricedArtist | Record<string, unknown>, req: Pick<BookingRequest, "quantity" | "city">) {
+  const priced = asPricedArtist(artist);
+  const { rate, travelOnly: travel, stay } = artistCityPrice(priced, req.city);
   if (!Number.isInteger(rate) || rate <= 0) throw new Error("This artist has not set a price yet.");
-  const qty = Math.min(req.quantity, maxQuantity(artist.pricing_unit));
+  const qty = Math.min(req.quantity, maxQuantity(priced.pricing_unit));
   if (qty !== req.quantity) throw new Error("Choose a shorter booking.");
   const performance = rate * qty;
   const subtotal = performance + travel + stay;

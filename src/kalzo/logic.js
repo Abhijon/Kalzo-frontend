@@ -1615,9 +1615,8 @@ export class KalzoLogic extends DCLogic {
     }
     function priceIn(a, city, state) {
       if (!a.sample && a.pricing) {
-        // No city picked yet — never invent a travel note that needs loc.city.
-        if (!city) return { rate: a.rate, travel: 0, note: "base" };
-        var rp = artistCityPrice(a.pricing, city);
+        // Empty city still applies default travel/stay when the artist charges separately.
+        var rp = artistCityPrice(a.pricing, city || "");
         return { rate: rp.rate, travel: rp.travel, note: rp.travel ? "travel" : "base" };
       }
       if (!city || (city === a.city && state === a.state))

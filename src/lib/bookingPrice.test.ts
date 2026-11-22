@@ -28,6 +28,32 @@ describe("booking price (flat fee bands)", () => {
     expect(p.subtotal).toBe(6000 + 3500);
     expect(p.patronPays).toBe(9500 + 199);
   });
+  it("keeps default travel/stay when a city only overrides the hourly rate as separate with empty charges", () => {
+    const artist = {
+      ...base,
+      travel_setting: "excluding",
+      travel_charge_inr: 250,
+      stay_charge_inr: 760,
+      city_rates: { Jaipur: { rate: 3000, travel: "separate", travel_charge: 0, stay_charge: 0 } },
+    };
+    expect(artistCityPrice(artist, "Jaipur")).toMatchObject({ rate: 3000, travelOnly: 250, stay: 760, travel: 1010 });
+    expect(priceBooking(artist, { quantity: 4, city: "Jaipur" }).subtotal).toBe(12000 + 1010);
+  });
+  it("zeros travel only when the city explicitly includes it or marks it not needed", () => {
+    const artist = {
+      ...base,
+      travel_setting: "excluding",
+      travel_charge_inr: 250,
+      stay_charge_inr: 760,
+      city_rates: {
+        Jaipur: { rate: 3000, travel: "included", travel_charge: 250, stay_charge: 760 },
+        Udaipur: { rate: 3000, travel: "not_needed", travel_charge: 250, stay_charge: 760 },
+      },
+    };
+    expect(artistCityPrice(artist, "Jaipur").travel).toBe(0);
+    expect(artistCityPrice(artist, "Udaipur").travel).toBe(0);
+    expect(artistCityPrice(artist, "").travel).toBe(1010);
+  });
   it("uses the artist's own price for a city (any letter case)", () => {
     const artist = { ...base, city_rates: { Jaipur: { rate: 4000, travel: "separate", travel_charge: 1000, stay_charge: 0 } } };
     expect(artistCityPrice(artist, "jaipur")).toMatchObject({ rate: 4000, travel: 1000 });
