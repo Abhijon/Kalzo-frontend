@@ -767,7 +767,7 @@ export function ArtistProfileEditor() {
 
   async function discardUploadedKey(key: string | null | undefined) {
     if (!key) return;
-    await api.media.discard({ key }).catch(() => { });
+    await api.media.discard({ key }).catch(() => {});
   }
 
   function trackUpload(job: Promise<void>) {
@@ -1130,7 +1130,7 @@ export function ArtistProfileEditor() {
         const discOpts = forms[withPreviews.discipline] ?? [];
         setCustomSub(
           draft.customSub ||
-          (!!withPreviews.subcategory && !discOpts.includes(withPreviews.subcategory)),
+            (!!withPreviews.subcategory && !discOpts.includes(withPreviews.subcategory)),
         );
         setForm(withPreviews);
         setFiles(draft.files);
@@ -1902,7 +1902,7 @@ export function ArtistProfileEditor() {
           </Button>
         </div>
       )}
-
+     
       <section className="kp-plaque" aria-label="Profile preview" style={{ backgroundImage: `url(${plaque.url})` }}>
         <div className="kp-photo">
           {previewSrc(form.photo_path) ? <img src={previewSrc(form.photo_path)} alt="You" /> : <span>Your photo</span>}
@@ -2398,113 +2398,83 @@ export function ArtistProfileEditor() {
           {[0, 1, 2, 3].map((i) => {
             const reelSrc = previewSrc(form.reels[i]);
             return (
-              <div
-                className={"ka-reel" + (form.primary_reel === i && form.reels[i] ? " primary" : "")}
-                key={i}
-              >
-                {reelSrc ? (
-                  <div
-                    className="ka-reel-preview"
+            <div
+              className={"ka-reel" + (form.primary_reel === i && form.reels[i] ? " primary" : "")}
+              key={i}
+            >
+              {reelSrc ? (
+                <div
+                  className="ka-reel-preview"
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    aspectRatio: "9 / 16",
+                    borderRadius: 8,
+                    overflow: "hidden",
+                    background: "#000",
+                  }}
+                >
+                  <video
+                    key={reelSrc}
+                    src={`${reelSrc}#t=0.1`}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  />
+                  {mediaStatus.reels[i] === "uploading" && (
+                    <UploadPctOverlay ratio={uploadProgress.reels[i] ?? 0} />
+                  )}
+                  {mediaStatus.reels[i] === "error" && (
+                    <p className="ka-upload-error">Upload failed — replace to retry</p>
+                  )}
+                  <button
+                    type="button"
+                    className="ka-reel-delete"
+                    disabled={busy}
+                    onClick={() => removeReel(i)}
+                    aria-label={`Remove reel ${i + 1}`}
                     style={{
-                      position: "relative",
-                      width: "100%",
-                      aspectRatio: "9 / 16",
-                      borderRadius: 8,
-                      overflow: "hidden",
-                      background: "#000",
-                    }}
-                  >
-                    <video
-                      key={reelSrc}
-                      src={`${reelSrc}#t=0.1`}
-                      controls
-                      playsInline
-                      preload="metadata"
-                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                    />
-                    {mediaStatus.reels[i] === "uploading" && (
-                      <UploadPctOverlay ratio={uploadProgress.reels[i] ?? 0} />
-                    )}
-                    {mediaStatus.reels[i] === "error" && (
-                      <p className="ka-upload-error">Upload failed — replace to retry</p>
-                    )}
-                    <button
-                      type="button"
-                      className="ka-reel-delete"
-                      disabled={busy}
-                      onClick={() => removeReel(i)}
-                      aria-label={`Remove reel ${i + 1}`}
-                      style={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                        zIndex: 3,
-                        width: 32,
-                        height: 32,
-                        borderRadius: "50%",
-                        background: "rgba(18, 16, 14, 0.78)",
-                        backdropFilter: "blur(6px)",
-                        WebkitBackdropFilter: "blur(6px)",
-                        border: "1.5px solid rgba(255, 255, 255, 0.4)",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: busy ? "not-allowed" : "pointer",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.45)",
-                        padding: 0,
-                        transition: "background 0.2s, transform 0.15s, border-color 0.2s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "var(--artist-rust, #c0392b)";
-                        e.currentTarget.style.borderColor = "#fff";
-                        e.currentTarget.style.transform = "scale(1.08)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "rgba(18, 16, 14, 0.78)";
-                        e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.4)";
-                        e.currentTarget.style.transform = "scale(1)";
-                      }}
-                      title={`Remove reel ${i + 1}`}
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                    <label className="ka-reel-replace" title="Replace this reel">
-                      Replace
-                      <input
-                        type="file"
-                        title=""
-                        aria-label={`Replace reel ${i + 1}`}
-                        accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
-                        disabled={busy}
-                        onChange={(e) => {
-                          pickFile(e.target.files?.[0], i);
-                          e.target.value = "";
-                        }}
-                      />
-                    </label>
-                  </div>
-                ) : (
-                  <label
-                    className="ka-reel-empty"
-                    title={`Upload reel ${i + 1}`}
-                    style={{
-                      aspectRatio: "9 / 16",
-                      width: "100%",
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      zIndex: 3,
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      background: "rgba(18, 16, 14, 0.78)",
+                      backdropFilter: "blur(6px)",
+                      WebkitBackdropFilter: "blur(6px)",
+                      border: "1.5px solid rgba(255, 255, 255, 0.4)",
+                      color: "#fff",
                       display: "flex",
-                      flexDirection: "column",
                       alignItems: "center",
                       justifyContent: "center",
-                      borderRadius: 8,
+                      cursor: busy ? "not-allowed" : "pointer",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.45)",
+                      padding: 0,
+                      transition: "background 0.2s, transform 0.15s, border-color 0.2s",
                     }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "var(--artist-rust, #c0392b)";
+                      e.currentTarget.style.borderColor = "#fff";
+                      e.currentTarget.style.transform = "scale(1.08)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "rgba(18, 16, 14, 0.78)";
+                      e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.4)";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                    title={`Remove reel ${i + 1}`}
                   >
-                    <span>❖</span>
-                    Reel {i + 1}
-                    <small>{i < 2 ? "Required" : "Optional"}</small>
+                    <Trash2 size={15} />
+                  </button>
+                  <label className="ka-reel-replace" title="Replace this reel">
+                    Replace
                     <input
                       type="file"
                       title=""
-                      aria-label={`Upload reel ${i + 1}`}
+                      aria-label={`Replace reel ${i + 1}`}
                       accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
                       disabled={busy}
                       onChange={(e) => {
@@ -2513,17 +2483,47 @@ export function ArtistProfileEditor() {
                       }}
                     />
                   </label>
-                )}
-                <Button
-                  variant="outline"
-                  className="ka-star"
-                  disabled={!form.reels[i]}
-                  aria-pressed={form.primary_reel === i}
-                  onClick={() => set("primary_reel", i)}
+                </div>
+              ) : (
+                <label
+                  className="ka-reel-empty"
+                  title={`Upload reel ${i + 1}`}
+                  style={{
+                    aspectRatio: "9 / 16",
+                    width: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: 8,
+                  }}
                 >
-                  {form.primary_reel === i ? "★ Primary" : "☆ Make primary"}
-                </Button>
-              </div>
+                  <span>❖</span>
+                  Reel {i + 1}
+                  <small>{i < 2 ? "Required" : "Optional"}</small>
+                  <input
+                    type="file"
+                    title=""
+                    aria-label={`Upload reel ${i + 1}`}
+                    accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+                    disabled={busy}
+                    onChange={(e) => {
+                      pickFile(e.target.files?.[0], i);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              )}
+              <Button
+                variant="outline"
+                className="ka-star"
+                disabled={!form.reels[i]}
+                aria-pressed={form.primary_reel === i}
+                onClick={() => set("primary_reel", i)}
+              >
+                {form.primary_reel === i ? "★ Primary" : "☆ Make primary"}
+              </Button>
+            </div>
             );
           })}
         </div>
