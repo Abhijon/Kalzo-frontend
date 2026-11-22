@@ -2,8 +2,12 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { UserRound, Heart, CalendarDays, MessageSquare, Star, Save, Sparkles, Hourglass, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
-import { bookingGroup, type BookingGroup } from "./patron/bookingGroups";
+import { api, unwrapData } from "@/lib/api";
+import {
+  bookingGroup,
+  normalizePatronBooking,
+  type BookingGroup,
+} from "./patron/bookingGroups";
 import { ConversationList } from "./conversations/Conversations";
 import { FavouriteSalon } from "./patron/FavouriteSalon";
 
@@ -43,12 +47,20 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
       }
     } catch {}
 
-    // Load bookings safely from /api/v1/bookings if available
+    // Load bookings from GET /api/v1/bookings (paginated; high limit keeps ledger groups intact)
     try {
-      const res = await api.bookings.list();
-      if (res.data) {
-        const bookingsList = Array.isArray(res.data) ? res.data : (res.data as any)?.bookings ?? [];
-        setB((prev) => ({ ...(prev ?? {}), bookings: bookingsList }));
+      const res = await api.bookings.list({ page: 1, limit: 100 });
+      if (!res.error && res.data) {
+        const data = unwrapData(res.data) as any;
+        const rows = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.bookings)
+            ? data.bookings
+            : [];
+        setB((prev) => ({
+          ...(prev ?? {}),
+          bookings: rows.map(normalizePatronBooking).filter((x: { id: string }) => x.id),
+        }));
       }
     } catch {}
   };
@@ -173,39 +185,46 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
               </>
             )}
             <div className="kb-list" key={tab + group}>
-              {list.map((x, i) => (
-                <div className="kb-ticket" style={{ animationDelay: `${i * 0.08}s` }} key={x.id}>
-            <article className="ka-booking">
-              <h2>{x.artist_name}</h2>
-              <p>
-                {x.event_date} · {x.slot} · {x.address}
-              </p>
-              <p>
-                {x.workflow_stage.replaceAll("_", " ")} · ₹{x.amount_inr.toLocaleString("en-IN")}
-              </p>
-              {(x.workflow_stage === "arrived" || x.workflow_stage === "finished") && (
-                <Link to="/bookings/$bookingId" params={{ bookingId: x.id }} className="kl-code-alert">
-                  {x.workflow_stage === "arrived"
-                    ? "Your artist has arrived · tap to see your arrival code"
-                    : "Show finished · tap to see your closing code"}
-                </Link>
-              )}
-              <Link to="/bookings/$bookingId" params={{ bookingId: x.id }}>
-                Open booking & codes →
-              </Link>
-              {x.workflow_stage === "completed" &&
-                !d?.reviews.some((r) => r.booking_id === x.id) && (
-                  <ReviewForm
-                    onSave={async (rating, body) => {
-                      await api.post("reviews", { booking_id: x.id, rating, body });
-                      setMessage("Your review is saved.");
-                      await load();
-                    }}
-                  />
-                )}
-            </article>
-                </div>
-              ))}
+              <ul className="kb-row-list">
+                {list.map((x) => (
+                  <li key={x.id} className="kb-row-card">
+                    <div className="kb-row-main">
+                      <div className="kb-row-top">
+                        <strong>{x.artist_name}</strong>
+                        <span className={`kb-detail-status kb-status-${x.workflow_stage}`}>
+                          {String(x.workflow_stage).replaceAll("_", " ")}
+                        </span>
+                      </div>
+                      <p className="kb-row-meta">
+                        {[x.slot, x.event_date, x.address].filter(Boolean).join(" · ")}
+                      </p>
+                      <p className="kb-row-amount">
+                        ₹{Number(x.amount_inr || 0).toLocaleString("en-IN")}
+                      </p>
+                      {(x.workflow_stage === "arrived" || x.workflow_stage === "finished") && (
+                        <Link
+                          to="/bookings/$bookingId"
+                          params={{ bookingId: x.id }}
+                          className="kl-code-alert"
+                        >
+                          {x.workflow_stage === "arrived"
+                            ? "Your artist has arrived · tap to see your arrival code"
+                            : "Show finished · tap to see your closing code"}
+                        </Link>
+                      )}
+                    </div>
+                    <div className="kb-row-action">
+                      <Link
+                        to="/bookings/$bookingId"
+                        params={{ bookingId: x.id }}
+                        className="kb-row-review"
+                      >
+                        Review
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
               {!list.length && (
                 <div className="kb-empty">
                   <div className="kb-seal">{tab === "Bookings" ? <active.icon size={30} /> : <Star size={30} />}</div>

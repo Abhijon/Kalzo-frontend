@@ -433,6 +433,27 @@ const storageAdapter = {
   },
 };
 
+/** Direct-to-S3 artist media (presigned single or multipart). */
+const mediaApi = {
+  startUpload: (body: {
+    purpose: "photo" | "artPhoto" | "faceVideo" | "reel";
+    contentType: string;
+    fileSize: number;
+    fileName?: string;
+  }) => req(`${API_V1}/media/uploads`, { method: "POST", body }),
+  presignPart: (body: { key: string; uploadId: string; partNumber: number }) =>
+    req(`${API_V1}/media/uploads/presign-part`, { method: "POST", body }),
+  completeUpload: (body: {
+    key: string;
+    uploadId: string;
+    parts: Array<{ partNumber: number; etag: string }>;
+  }) => req(`${API_V1}/media/uploads/complete`, { method: "POST", body }),
+  abortUpload: (body: { key: string; uploadId: string }) =>
+    req(`${API_V1}/media/uploads/abort`, { method: "POST", body }),
+  discard: (body: { key: string }) =>
+    req(`${API_V1}/media/discard`, { method: "POST", body }),
+};
+
 // ─── Table Query Builder ──────────────────────────────────────────────────────
 
 class TableQueryBuilder<T = any> {
@@ -515,6 +536,7 @@ export const api = {
   // Modules
   auth:    authModule,
   storage: storageAdapter,
+  media:   mediaApi,
 
   /** Fluent table query builder (maps to REST CRUD on /api/v1/:table) */
   from: <T = any>(table: string) => new TableQueryBuilder<T>(table),
@@ -532,21 +554,18 @@ export const api = {
   artists: {
     list:           (params?: Record<string, any>) => req(`${API_V1}/artists`, { params }),
     getById:        (id: string)                   => req(`${API_V1}/artists/${id}`),
-    /** Verified artists for customers → GET /artists/verified */
-    listVerified:   (params?: { page?: number; limit?: number }) =>
+    /** Verified artists for customers → GET /artists/verified (supports discipline, city, maxRate, date, startTime, endTime) */
+    listVerified:   (params?: Record<string, any>) =>
       req(`${API_V1}/artists/verified`, { params }),
     /** Logged-in artist onboarding profile → GET /artist/profile */
     getProfile:     () => req(`${API_V1}/artist/profile`),
     /**
-     * Submit artist profile for verification → POST /artist/profile (multipart/form-data)
-     * Fields: stageName, legalName, baseCity, stateName, currentCity, currentState,
-     * preferredCities, preferredStates?, discipline, subcategory, bio, instagram,
-     * rateInr, pricingUnit?, travelSetting?, travelChargeInr?, stayChargeInr?, cityRates?,
-     * primaryReel?, bankAccountHolder, bankName, bankAccountNumber, bankIfsc,
-     * files: photo, artPhoto, faceVideo, reels (2–4)
+     * Submit artist profile for verification → POST /artist/profile
+     * Preferred: JSON with photoPath/artPhotoPath/faceVideoPath/reels after /media/uploads.
+     * Legacy: FormData multipart with binary files still accepted by the API.
      */
-    saveProfile:    (formData: FormData) =>
-      req(`${API_V1}/artist/profile`, { method: "POST", body: formData }),
+    saveProfile: (body: FormData | Record<string, unknown>) =>
+      req(`${API_V1}/artist/profile`, { method: "POST", body }),
     saveDraft:      (data: any)                    => req(`${API_V1}/artists/draft`,    { method: "POST",  body: data }),
     updateLocation: (data: any)                    => req(`${API_V1}/artists/location`, { method: "PUT",   body: data }),
   },
@@ -565,11 +584,44 @@ export const api = {
     getStatus: () => req(`${API_V1}/artist/kyc/status`),
   },
 
+  catalogs: {
+    /** GET /art-forms → { artForms: [{ type, subtypes }] } */
+    artForms: () => req(`${API_V1}/art-forms`),
+    /** GET /locations → { locations: [{ state, name, cities: string[] }] } */
+    locations: () => req(`${API_V1}/locations`),
+  },
+
+  availability: {
+    /** Artist — Mon–Sun recurring weekdays + isActive */
+    mine: () => req(`${API_V1}/artist/availability`),
+    /** Artist — toggle a weekday (0–6 or day name) */
+    setDay: (body: { weekday?: number; day?: string; isActive: boolean }) =>
+      req(`${API_V1}/artist/availability/days`, { method: "PATCH", body }),
+    /** Public — verified artist Mon–Sun */
+    forArtist: (artistId: string) =>
+      req(`${API_V1}/artists/${encodeURIComponent(artistId)}/availability`),
+  },
+
   bookings: {
-    list:    (params?: Record<string, any>) => req(`${API_V1}/bookings`,             { params }),
+    list:    (params?: { page?: number; limit?: number }) =>
+      req(`${API_V1}/bookings`, { params }),
     getById: (id: string)                   => req(`${API_V1}/bookings/${id}`),
     create:  (data: any)                    => req(`${API_V1}/bookings`,             { method: "POST", body: data }),
     cancel:  (id: string, reason?: string)  => req(`${API_V1}/bookings/${id}/cancel`,{ method: "POST", body: { reason } }),
+    /** Catalog of booking status values → GET /booking-statuses */
+    statuses: () => req(`${API_V1}/booking-statuses`),
+    /** Artist booking inbox — page/limit + optional status filter */
+    listForArtist: (params?: {
+      page?: number;
+      limit?: number;
+      status?: string;
+    }) => req(`${API_V1}/artist/bookings`, { params }),
+    /** Artist status: accepted | rejected | job_started | completed */
+    updateStatus: (id: string, status: string) =>
+      req(`${API_V1}/artist/bookings/${encodeURIComponent(id)}/status`, {
+        method: "PATCH",
+        body: { status },
+      }),
   },
 
   payments: {

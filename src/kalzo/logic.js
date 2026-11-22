@@ -44,6 +44,10 @@ export class KalzoLogic extends DCLogic {
     this.publicArtists = [];
     this.artistDetails = {};
     this.mediaDurations = {};
+    /** GET /art-forms map: { Type: subtypes[] } — finder uses main types only. */
+    this.catalogArtForms = null;
+    /** GET /locations rows: [{ name, cities }] — finder prefers states. */
+    this.catalogLocations = null;
     this.state = {
       screen: "home",
       locQ: "",
@@ -91,7 +95,7 @@ export class KalzoLogic extends DCLogic {
     this.tx = null;
     this.artistPortraits = new Map();
     if (typeof window !== "undefined") {
-      window.addEventListener("kalzo:paid", () =>
+      window.addEventListener("kalzo:booked", () =>
         this.setState({
           screen: "done",
           esc: 0,
@@ -104,19 +108,12 @@ export class KalzoLogic extends DCLogic {
           payErr: "",
         }),
       );
-      window.addEventListener("kalzo:pay-cancelled", () =>
-        this.setState({
-          payBusy: false,
-          payErr:
-            "The payment window was closed — nothing was charged. You can try again whenever ready.",
-        }),
-      );
-      window.addEventListener("kalzo:pay-failed", (e) =>
+      window.addEventListener("kalzo:book-failed", (e) =>
         this.setState({
           payBusy: false,
           payErr:
             (e.detail && e.detail.reason) ||
-            "The payment failed. Nothing was charged — please try again.",
+            "Booking failed. Please try again.",
         }),
       );
     }
@@ -432,10 +429,27 @@ export class KalzoLogic extends DCLogic {
 
     var ST =
       "Andhra Pradesh;Telugu;Visakhapatnam,Vijayawada,Guntur,Tirupati,Nellore,Kurnool,Rajahmundry,Kakinada,Anantapur|Arunachal Pradesh;Hindi;Itanagar,Tawang,Pasighat,Ziro|Assam;Assamese;Guwahati,Dibrugarh,Jorhat,Silchar,Tezpur,Nagaon,Majuli|Bihar;Bhojpuri;Patna,Gaya,Bhagalpur,Muzaffarpur,Darbhanga,Purnia,Nalanda|Chhattisgarh;Chhattisgarhi;Raipur,Bilaspur,Durg,Bhilai,Jagdalpur|Goa;Konkani;Panaji,Margao,Vasco da Gama,Mapusa|Gujarat;Gujarati;Ahmedabad,Surat,Vadodara,Rajkot,Bhavnagar,Jamnagar,Kutch,Gandhinagar|Haryana;Haryanvi;Gurugram,Faridabad,Panipat,Ambala,Karnal,Hisar,Rohtak|Himachal Pradesh;Pahari;Shimla,Manali,Dharamshala,Mandi,Kullu,Solan|Jharkhand;Hindi;Ranchi,Jamshedpur,Dhanbad,Bokaro,Hazaribagh|Karnataka;Kannada;Bengaluru,Mysuru,Mangaluru,Hubballi,Belagavi,Udupi,Hampi|Kerala;Malayalam;Kochi,Thiruvananthapuram,Kozhikode,Thrissur,Kannur,Alappuzha,Kollam|Madhya Pradesh;Hindi;Bhopal,Indore,Gwalior,Jabalpur,Ujjain,Khajuraho|Maharashtra;Marathi;Mumbai,Pune,Nagpur,Nashik,Aurangabad,Kolhapur,Thane,Solapur|Manipur;Manipuri;Imphal,Churachandpur|Meghalaya;Khasi;Shillong,Tura,Cherrapunji|Mizoram;Mizo;Aizawl,Lunglei|Nagaland;Nagamese;Kohima,Dimapur|Odisha;Odia;Bhubaneswar,Cuttack,Puri,Rourkela,Sambalpur|Punjab;Punjabi;Amritsar,Ludhiana,Jalandhar,Patiala,Bathinda,Mohali|Rajasthan;Marwari;Jaipur,Jodhpur,Udaipur,Bikaner,Ajmer,Kota,Jaisalmer,Pushkar,Alwar,Chittorgarh|Sikkim;Nepali;Gangtok,Namchi,Pelling|Tamil Nadu;Tamil;Chennai,Coimbatore,Madurai,Tiruchirappalli,Salem,Thanjavur,Tirunelveli,Vellore|Telangana;Telugu;Hyderabad,Warangal,Nizamabad,Karimnagar,Khammam|Tripura;Bengali;Agartala,Udaipur|Uttar Pradesh;Hindi;Lucknow,Varanasi,Agra,Kanpur,Prayagraj,Noida,Ghaziabad,Mathura,Ayodhya,Meerut,Gorakhpur|Uttarakhand;Garhwali;Dehradun,Rishikesh,Haridwar,Nainital,Mussoorie|West Bengal;Bengali;Kolkata,Darjeeling,Siliguri,Durgapur,Howrah,Shantiniketan|Delhi;Hindi;New Delhi,North Delhi,South Delhi,Dwarka|Chandigarh;Punjabi;Chandigarh|Jammu and Kashmir;Kashmiri;Srinagar,Jammu,Gulmarg|Ladakh;Ladakhi;Leh,Kargil|Puducherry;Tamil;Puducherry,Karaikal|Andaman and Nicobar Islands;Hindi;Port Blair|Lakshadweep;Malayalam;Kavaratti|Dadra and Nagar Haveli and Daman and Diu;Gujarati;Daman,Silvassa,Diu";
-    var STATES = ST.split("|").map(function (x) {
-      var p = x.split(";");
-      return { name: p[0], lang: p[1], cities: p[2].split(",") };
-    });
+    // Prefer GET /locations (states + cities); fall back to the bundled India list.
+    var catalogLocs = self.catalogLocations;
+    var STATES =
+      catalogLocs && catalogLocs.length
+        ? catalogLocs.map(function (r) {
+            return {
+              name: r.name,
+              lang: "",
+              cities: Array.isArray(r.cities) ? r.cities : [],
+            };
+          })
+        : ST.split("|").map(function (x) {
+            var p = x.split(";");
+            return { name: p[0], lang: p[1], cities: p[2].split(",") };
+          });
+    // Finder art-form filter uses main types only (not subtypes) from GET /art-forms.
+    var catalogForms = self.catalogArtForms;
+    var ART_TYPES =
+      catalogForms && typeof catalogForms === "object" && Object.keys(catalogForms).length
+        ? Object.keys(catalogForms)
+        : CATS;
     var FIRST = [
       "Aarav",
       "Ananya",
@@ -854,6 +868,7 @@ export class KalzoLogic extends DCLogic {
         city: detail.base_city || p.base_city || "",
         state: detail.state_name || p.state_name || "",
         travels: detail.preferred_cities || p.preferred_cities || [],
+        preferredStates: detail.preferred_states || p.preferred_states || [],
         rate: Number(detail.rate_inr != null ? detail.rate_inr : p.rate_inr) || 0,
         rating: 0,
         reviews: 0,
@@ -878,6 +893,8 @@ export class KalzoLogic extends DCLogic {
         reelUrls: reelUrls,
         primaryReel: primaryReel,
         availability: detail.availability || p.availability || [],
+        weekAvailability:
+          detail.weekAvailability || p.weekAvailability || detail.availability || p.availability || [],
         currentCity: detail.current_city || p.current_city || "",
         currentState: detail.current_state || p.current_state || "",
         travelSetting: detail.travel_setting || p.travel_setting || "including",
@@ -886,7 +903,21 @@ export class KalzoLogic extends DCLogic {
       };
     });
     all = all.concat(realArtists);
+    /** Backend weekday 0=Sunday … 6=Saturday from ISO date */
+    function weekdayFromIso(iso) {
+      var p = String(iso || "").split("-");
+      if (p.length < 3) return 0;
+      return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay();
+    }
     function dayOff(a, d) {
+      var week = a.weekAvailability || [];
+      if (week.length) {
+        var wd = weekdayFromIso(dates[d].iso);
+        var row = week.find(function (v) {
+          return Number(v.weekday) === wd;
+        });
+        return !(row && row.isActive);
+      }
       if (a.sample || !(a.availability || []).length) return false;
       return !(a.availability || []).some(function (v) {
         return v.day === d;
@@ -895,6 +926,8 @@ export class KalzoLogic extends DCLogic {
     function slotFree(a, d, si) {
       if (a.sample) return true;
       if (dayOff(a, d)) return false;
+      // Real artists: no time slots — whole weekday is open or closed.
+      if (a.weekAvailability && a.weekAvailability.length) return true;
       if (d === 0 && a.slots[si]) {
         var nowH = new Date().getHours() + new Date().getMinutes() / 60;
         if (hourOf(a.slots[si]) < nowH + 2) return false;
@@ -914,6 +947,9 @@ export class KalzoLogic extends DCLogic {
       Night: [20, 24],
     };
     function freeSlots(a, d, tod) {
+      if (a.weekAvailability && a.weekAvailability.length) {
+        return dayOff(a, d) ? [] : ["Available"];
+      }
       var r = TODR[tod || "Any"];
       return a.slots.filter(function (t, si) {
         var h = hourOf(t);
@@ -921,7 +957,7 @@ export class KalzoLogic extends DCLogic {
       });
     }
     function freeOn(a, d) {
-      return freeSlots(a, d, "Any").length > 0;
+      return !dayOff(a, d);
     }
     function maxHrs(a) {
       return 2 + ((a.seed >>> 19) % 5);
@@ -1388,44 +1424,75 @@ export class KalzoLogic extends DCLogic {
     // ---- location ----
     var cityCount = {},
       stateCount = {};
+    function bumpState(st) {
+      if (!st) return;
+      stateCount[st] = (stateCount[st] || 0) + 1;
+    }
     all.forEach(function (a) {
       var k = a.city + "|" + a.state;
       cityCount[k] = (cityCount[k] || 0) + 1;
-      stateCount[a.state] = (stateCount[a.state] || 0) + 1;
+      bumpState(a.state);
+      bumpState(a.currentState);
+      (a.preferredStates || []).forEach(bumpState);
     });
     var loc = s.loc;
-    function visitOf(a, d) {
-      return null;
-      var v = hsh(a.seed + d * 53 + 11);
-      if (v % 5 !== 0) return null;
-      var st = STATES[STATE_IDX[a.state]],
-        pool =
-          (v >>> 4) % 3 === 0
-            ? TOPC
-            : st.cities.map(function (c) {
-                return { city: c, state: st.name };
-              });
-      var t = pool[(v >>> 7) % pool.length];
-      return t.city === a.city && t.state === a.state ? null : t;
+    function normPlace(v) {
+      return String(v || "")
+        .trim()
+        .toLowerCase();
     }
+    function sameName(a, b) {
+      return !!a && !!b && normPlace(a) === normPlace(b);
+    }
+    /** Live "current" place from the artist profile (not inventing visits). */
+    function currentOf(a) {
+      if (!a.currentCity && !a.currentState) return null;
+      return { city: a.currentCity || "", state: a.currentState || "" };
+    }
+    /**
+     * Location match for finder:
+     * - state pick → base / current / preferred states (and preferred cities in that state)
+     * - city pick → base / current / preferred cities
+     * Tier filter narrows; default "all" returns closest match label for sort.
+     */
     function matchOf(a) {
       if (!loc) return "any";
       var isSt = loc.type === "state";
-      function eq(c, st) {
-        return isSt ? st === loc.state : c === loc.city && st === loc.state;
+      var cur = currentOf(a);
+      var base = isSt
+        ? sameName(a.state, loc.state)
+        : sameName(a.city, loc.city) && sameName(a.state, loc.state);
+      var current = cur
+        ? isSt
+          ? sameName(cur.state, loc.state)
+          : sameName(cur.city, loc.city) && sameName(cur.state || a.state, loc.state)
+        : false;
+      var pref = false;
+      if (isSt) {
+        pref = (a.preferredStates || []).some(function (st) {
+          return sameName(st, loc.state);
+        });
+        if (!pref) {
+          // Preferred city that belongs to this state's catalog city list.
+          var stRow = STATE_IDX[loc.state] != null ? STATES[STATE_IDX[loc.state]] : null;
+          var citySet = stRow ? stRow.cities.map(normPlace) : [];
+          pref = (a.travels || []).some(function (c) {
+            return citySet.indexOf(normPlace(c)) >= 0;
+          });
+        }
+      } else {
+        pref = (a.travels || []).some(function (c) {
+          return sameName(c, loc.city);
+        });
       }
-      var v = visitOf(a, s.fDay),
-        base = eq(a.city, a.state),
-        pref = a.travels.some(function (c) {
-          return eq(c, a.state);
-        }),
-        vis = !!v && eq(v.city, v.state),
-        t = s.tier;
+      var t = s.tier;
       if (t === "base") return base ? "base" : "";
       if (t === "pref") return pref ? "pref" : "";
-      if (t === "visiting") return vis ? "visiting" : "";
-      if (t === "current") return v ? (vis ? "visiting" : "") : base ? "base" : "";
-      return vis ? "visiting" : base ? "base" : pref ? "pref" : "";
+      if (t === "visiting" || t === "current") return current ? "current" : "";
+      if (current) return "current";
+      if (base) return "base";
+      if (pref) return "pref";
+      return "";
     }
     function inLoc(a) {
       return !!matchOf(a);
@@ -1496,25 +1563,28 @@ export class KalzoLogic extends DCLogic {
         if (s.onlySaved) return true;
         if (arts.length && arts.indexOf(a.cat) < 0) return false;
         if (s.maxRate < 20000 && (a.unit !== "hour" || a.rate > s.maxRate)) return false;
-        if (a.rating < s.minStar) return false;
+        // Ratings not live yet — keep minStar unused.
+        // if (a.rating < s.minStar) return false;
         if (s.hrs && a.unit === "hour" && maxHrs(a) < s.hrs) return false;
         if (qn && a.name.toLowerCase().indexOf(qn) < 0) return false;
         return true;
       })
       .map(function (a) {
-        return { a: a, fs: freeSlots(a, fd, s.tod) };
+        return { a: a, fs: freeSlots(a, fd, s.tod), match: matchOf(a) };
       });
     if (s.onlyFree && !s.onlySaved)
       list = list.filter(function (x) {
         return x.a.sample || x.fs.length > 0 || !(x.a.availability || []).length;
       });
+    var MATCH_RANK = { current: 0, visiting: 0, base: 1, pref: 2, any: 3 };
     var SORT = {
       renown: function (x, y) {
-        return y.a.reviews - x.a.reviews;
+        // No renown metrics yet — fall back to name, then rate.
+        return (x.a.name || "").localeCompare(y.a.name || "") || x.a.rate - y.a.rate;
       },
-      rating: function (x, y) {
-        return y.a.rating - x.a.rating || y.a.reviews - x.a.reviews;
-      },
+      // rating: function (x, y) {
+      //   return y.a.rating - x.a.rating || y.a.reviews - x.a.reviews;
+      // },
       priceLo: function (x, y) {
         return x.a.rate - y.a.rate;
       },
@@ -1524,10 +1594,20 @@ export class KalzoLogic extends DCLogic {
       soonest: function (x, y) {
         var hx = x.fs.length ? hourOf(x.fs[0]) : 99,
           hy = y.fs.length ? hourOf(y.fs[0]) : 99;
-        return hx - hy || y.a.rating - x.a.rating;
+        return hx - hy || x.a.rate - y.a.rate;
       },
     };
-    list.sort(SORT[s.sort]);
+    var sortKey = s.sort === "rating" ? "renown" : s.sort;
+    var sortFn = SORT[sortKey] || SORT.renown;
+    list.sort(function (x, y) {
+      // With a place picked, closer ties (current → base → preferred) rise first.
+      if (loc) {
+        var rx = MATCH_RANK[x.match] != null ? MATCH_RANK[x.match] : 9;
+        var ry = MATCH_RANK[y.match] != null ? MATCH_RANK[y.match] : 9;
+        if (rx !== ry) return rx - ry;
+      }
+      return sortFn(x, y);
+    });
     function cityKey(c) {
       var h = 0;
       for (var i = 0; i < c.length; i++) h = (h * 31 + c.charCodeAt(i)) | 0;
@@ -1544,8 +1624,8 @@ export class KalzoLogic extends DCLogic {
         return { rate: a.rate, travel: 0, note: "base" };
       var k = hsh(a.seed + cityKey(city)),
         rate = a.unit === "hour" ? Math.round((a.rate * (1 + (k % 3) * 0.1)) / 100) * 100 : a.rate;
-      var v2 = visitOf(a, fd);
-      if (v2 && v2.city === city && v2.state === state)
+      var v2 = currentOf(a);
+      if (v2 && v2.city === city && (v2.state === state || !v2.state))
         return { rate: rate, travel: 0, note: "visiting" };
       return {
         rate: rate,
@@ -1682,21 +1762,21 @@ export class KalzoLogic extends DCLogic {
       var a = x.a,
         free = x.fs.length > 0,
         listWord = s.saved[a.id] || "";
-      var vv = visitOf(a, fd),
-        mm = loc ? matchOf(a) : vv ? "visiting" : "base";
+      var vv = currentOf(a),
+        mm = loc ? matchOf(a) : vv ? "current" : "base";
       var pc = loc && loc.type === "city" ? priceIn(a, loc.city, loc.state) : priceIn(a, null);
       var plc = (
-        loc ? (loc.type === "state" ? loc.state : loc.city) : vv ? vv.city : a.city
+        loc ? (loc.type === "state" ? loc.state : loc.city) : vv ? vv.city || a.city : a.city
       ).toUpperCase();
       var dw =
         fd === 0 ? "TODAY" : fd === 1 ? "TOMORROW" : "ON " + DOW[dates[fd].d] + " " + dates[fd].num;
       var stat =
-        mm === "visiting"
-          ? "VISITING " + plc + " " + dw
+        mm === "current" || mm === "visiting"
+          ? "CURRENTLY IN " + plc + " " + dw
           : mm === "pref"
             ? "TRAVELS TO " + plc
-            : vv
-              ? "BASED IN " + plc + " · AWAY " + dw
+            : vv && loc
+              ? "BASED IN " + plc + " · NOW IN " + String(vv.city || vv.state || "").toUpperCase()
               : "IN " + plc + " " + dw;
       var th = hsh(a.seed + 41),
         tg = [ROWTAGS[th % 8], ROWTAGS[(th >>> 3) % 8], ROWTAGS[(th >>> 6) % 8]];
@@ -1715,13 +1795,30 @@ export class KalzoLogic extends DCLogic {
         (PERFORMS[a.cat] || "weddings and private events") +
         ".";
       var skills = [CATSKILL[a.cat] || "Seasoned Performer", tg[0], tg[1], tg[2]];
-      var week = dates.slice(0, 7).map(function (d, di) {
-        var ok = freeOn(a, di);
+      // Fixed Mon→Sun order (same as artist weekly availability), not "next 7 from today".
+      var week = DOW.map(function (label, i) {
+        var jsWd = (i + 1) % 7; // Mon=1 … Sat=6, Sun=0
+        var ok = false;
+        var weekRows = a.weekAvailability || [];
+        if (weekRows.length) {
+          var row = weekRows.find(function (v) {
+            return Number(v.weekday) === jsWd;
+          });
+          ok = !!(row && row.isActive);
+        } else {
+          var di = -1;
+          for (var j = 0; j < dates.length; j++) {
+            if (weekdayFromIso(dates[j].iso) === jsWd) {
+              di = j;
+              break;
+            }
+          }
+          ok = di >= 0 ? freeOn(a, di) : false;
+        }
         return {
-          dow: di === 0 ? "TODAY" : DOW[d.d],
-          num: d.num,
-          word: ok ? "Open" : "Full",
-          cls: "kweek-day " + (ok ? "kweek-open" : "kweek-full") + (di === fd ? " kweek-on" : ""),
+          dow: label,
+          word: ok ? "Available" : "Unavailable",
+          cls: "kweek-day " + (ok ? "kweek-open" : "kweek-full"),
         };
       });
       return {
@@ -1741,7 +1838,7 @@ export class KalzoLogic extends DCLogic {
         bio: a.bio,
         // CURRENT from profile currentCity; BASE from base city — not the same field.
         curLoc: vv
-          ? [vv.city, vv.state].filter(Boolean).join(", ") + " (Visiting)"
+          ? [vv.city, vv.state].filter(Boolean).join(", ")
           : [a.currentCity || a.city, a.currentState || a.state].filter(Boolean).join(", "),
         baseLoc: [a.city, a.state].filter(Boolean).join(", "),
         prefLoc: (a.travels && a.travels.length ? a.travels : [a.city]).join(", "),
@@ -2040,28 +2137,6 @@ export class KalzoLogic extends DCLogic {
       L("M150 140 V126", "none"),
       L("M88 188 Q98 170 108 188 Z M192 188 Q202 170 212 188 Z", R1),
     ];
-    var lmCity = loc ? (loc.type === "city" ? loc.city : capOf(loc.state)[0]) : null;
-    var land = lmCity ? LANDMARKS[lmCity] || GENERIC_LM : null;
-    var isMap = !land;
-    var castle = {
-      w: 300,
-      h: isMap ? 320 : 300,
-      vb: isMap ? indiaMap.viewBox : "0 0 300 300",
-      isMap: isMap,
-      isLand: !isMap,
-      regions: indiaMap.regions,
-      stars: stars,
-      land: land || [],
-      landCity: lmCity || "",
-    };
-    var locName = loc ? (loc.type === "state" ? loc.state : loc.city) : "All of India";
-    var locSub = loc
-      ? loc.type === "state"
-        ? "every city and district in the state"
-        : loc.state
-      : STATES.length + " states & union territories";
-    var castleCap = "INDIA’S LIVE ARTS · SAMPLE PREVIEW";
-
     var METROS = [
       ["Mumbai", "Maharashtra"],
       ["New Delhi", "Delhi"],
@@ -2113,8 +2188,35 @@ export class KalzoLogic extends DCLogic {
       "Dadra and Nagar Haveli and Daman and Diu": "Daman",
     };
     function capOf(st) {
-      return [CAPS[st], st === "Haryana" || st === "Punjab" ? "Chandigarh" : st];
+      // Prefer known capitals; else first city from GET /locations row for that state.
+      var fromCatalog =
+        STATE_IDX[st] != null && STATES[STATE_IDX[st]] && STATES[STATE_IDX[st]].cities[0]
+          ? STATES[STATE_IDX[st]].cities[0]
+          : "";
+      var city = CAPS[st] || fromCatalog || st || "";
+      return [city, st === "Haryana" || st === "Punjab" ? "Chandigarh" : st];
     }
+    var lmCity = loc ? (loc.type === "city" ? loc.city : capOf(loc.state)[0]) : null;
+    var land = lmCity ? LANDMARKS[lmCity] || GENERIC_LM : null;
+    var isMap = !land;
+    var castle = {
+      w: 300,
+      h: isMap ? 320 : 300,
+      vb: isMap ? indiaMap.viewBox : "0 0 300 300",
+      isMap: isMap,
+      isLand: !isMap,
+      regions: indiaMap.regions,
+      stars: stars,
+      land: land || [],
+      landCity: lmCity || "",
+    };
+    var locName = loc ? (loc.type === "state" ? loc.state : loc.city) : "All of India";
+    var locSub = loc
+      ? loc.type === "state"
+        ? "every city and district in the state"
+        : loc.state
+      : STATES.length + " states & union territories";
+    var castleCap = "INDIA’S LIVE ARTS · SAMPLE PREVIEW";
     var isMetro = {},
       isCap = {};
     METROS.forEach(function (m) {
@@ -2148,9 +2250,11 @@ export class KalzoLogic extends DCLogic {
       METROS.forEach(function (m) {
         if (m[1] === ls) addC(m[0], m[1]);
       });
-      STATES[STATE_IDX[ls]].cities.slice(0, 4).forEach(function (c) {
-        addC(c, ls);
-      });
+      if (STATE_IDX[ls] != null && STATES[STATE_IDX[ls]]) {
+        STATES[STATE_IDX[ls]].cities.slice(0, 4).forEach(function (c) {
+          addC(c, ls);
+        });
+      }
       METROS.forEach(function (m) {
         addC(m[0], m[1]);
       });
@@ -2216,8 +2320,10 @@ export class KalzoLogic extends DCLogic {
         : "across India, from the metros to every state capital.");
     var artChips = [{ c: "", label: "Everyone", icon: IC.all }]
       .concat(
-        CATS.map(function (c) {
-          return { c: c, label: c, icon: IC[CRAFTS[c][0][1]] };
+        ART_TYPES.map(function (c) {
+          var craft = CRAFTS[c];
+          var iconKey = craft && craft[0] ? craft[0][1] : "mic";
+          return { c: c, label: c, icon: IC[iconKey] || IC.mic || IC.all };
         }),
       )
       .map(function (x) {
@@ -2287,22 +2393,24 @@ export class KalzoLogic extends DCLogic {
         },
       };
     });
-    var starFil = [
-      [0, "Any"],
-      [4, "★ 4+"],
-      [4.5, "★ 4.5+"],
-      [4.8, "★ 4.8+"],
-    ].map(function (p) {
-      var on = s.minStar === p[0];
-      return {
-        label: p[1],
-        on: on,
-        style: pill(on),
-        pick: function () {
-          self.setState({ minStar: p[0], limit: 24 });
-        },
-      };
-    });
+    // Ratings not wired yet — leave star chips empty / unused.
+    var starFil = [];
+    // var starFil = [
+    //   [0, "Any"],
+    //   [4, "★ 4+"],
+    //   [4.5, "★ 4.5+"],
+    //   [4.8, "★ 4.8+"],
+    // ].map(function (p) {
+    //   var on = s.minStar === p[0];
+    //   return {
+    //     label: p[1],
+    //     on: on,
+    //     style: pill(on),
+    //     pick: function () {
+    //       self.setState({ minStar: p[0], limit: 24 });
+    //     },
+    //   };
+    // });
     var hrsFil = [
       [0, "Any"],
       [1, "1 HR"],
@@ -2327,23 +2435,38 @@ export class KalzoLogic extends DCLogic {
         return { v: String(p[0]), label: p[1] };
       });
     }
+    // Location filter is a state dropdown (GET /locations). Tier stays "all"
+    // so current + base + preferred artists in that state all show.
+    var stateOpts = opts(
+      [["", "All of India"]].concat(
+        STATES.map(function (st) {
+          return [st.name, st.name];
+        }),
+      ),
+    );
     var tierOpts = opts([
       ["all", "All (current + base + preferred)"],
-      ["current", "Currently in " + placeN + " " + dayTxt],
-      ["visiting", "Visiting " + placeN + " " + dayTxt],
-      ["base", "Base hometown: " + placeN],
-      ["pref", "Preferred city: " + placeN],
+      ["current", "Currently in " + placeN],
+      ["base", "Base / hometown: " + placeN],
+      ["pref", "Preferred for " + placeN],
     ]);
     var artOpts = opts(
       [["", "All art forms"]].concat(
-        CATS.map(function (c) {
+        ART_TYPES.map(function (c) {
           return [c, c];
         }),
       ),
     );
     var dayOpts = opts(
       dates.map(function (d, i) {
-        return [i, i === 0 ? "Tonight" : i === 1 ? "Tomorrow" : DOWL[d.d] + ", " + d.num + " Nov"];
+        return [
+          i,
+          i === 0
+            ? "Tonight"
+            : i === 1
+              ? "Tomorrow"
+              : DOWL[d.d] + ", " + d.num + " " + (MON[i] || ""),
+        ];
       }),
     );
     var todOpts = opts([
@@ -2354,21 +2477,23 @@ export class KalzoLogic extends DCLogic {
       ["Night", "Night (8 PM onwards)"],
     ]);
     var sortOpts = opts([
-      ["renown", "Most renowned first"],
-      ["rating", "Highest star rating"],
+      ["renown", "Name A–Z"],
+      // ["rating", "Highest star rating"], // ratings not live yet
       ["priceLo", "Rate: low to high"],
       ["priceHi", "Rate: high to low"],
       ["soonest", "Soonest available"],
     ]);
-    var starOpts = opts([
-      [0, "Any rating"],
-      [4, "4★ and above"],
-      [4.5, "4.5★ and above"],
-      [4.8, "4.8★ and above"],
-    ]);
+    // Ratings not live yet — keep opts empty so the control can stay hidden.
+    var starOpts = [];
+    // var starOpts = opts([
+    //   [0, "Any rating"],
+    //   [4, "4★ and above"],
+    //   [4.5, "4.5★ and above"],
+    //   [4.8, "4.8★ and above"],
+    // ]);
     var sorts = [
-      ["renown", "Renown"],
-      ["rating", "Rating"],
+      ["renown", "Name"],
+      // ["rating", "Rating"],
       ["priceLo", "Fee ↑"],
       ["priceHi", "Fee ↓"],
       ["soonest", "Soonest"],
@@ -2551,6 +2676,7 @@ export class KalzoLogic extends DCLogic {
           (on ? INK : MUTE),
       };
     });
+    // Booking date picker keeps calendar dates (separate from the finder THIS WEEK strip).
     function dateList(dark) {
       return dates.map(function (d, i) {
         var on = s.bDay === i,
@@ -2646,7 +2772,7 @@ export class KalzoLogic extends DCLogic {
       net = money.net,
       kalzoCut = money.kalzoKeeps,
       adv = money.advance;
-    var ready = !bOff && !!s.slot && s.address.trim().length > 0;
+    var ready = !bOff && s.address.trim().length > 0;
     var methods = ["UPI", "Card", "Net banking"].map(function (m) {
       var on = s.method === m;
       return {
@@ -2970,6 +3096,22 @@ export class KalzoLogic extends DCLogic {
       setTier: function (ev) {
         self.setState({ tier: ev.target.value, limit: 24 });
       },
+      // Seeded states from GET /locations (fallback: bundled India list).
+      stateOpts: stateOpts,
+      stateVal: loc ? loc.state || "" : "",
+      setStateLoc: function (ev) {
+        var v = String(ev.target.value || "").trim();
+        if (!v) {
+          self.setState({ loc: null, locQ: "", tier: "all", limit: 24 });
+          return;
+        }
+        self.setState({
+          loc: { type: "state", state: v },
+          locQ: v,
+          tier: "all",
+          limit: 24,
+        });
+      },
       artOpts: artOpts,
       artVal: arts.length === 1 ? arts[0] : "",
       setArt: function (ev) {
@@ -3018,6 +3160,8 @@ export class KalzoLogic extends DCLogic {
         self.setState({ sort: ev.target.value });
       },
       starOpts: starOpts,
+      // Hide minimum-rating filter until reviews are live.
+      showRatingFilters: false,
       minStarV: String(s.minStar),
       setMinStar: function (ev) {
         self.setState({ minStar: parseFloat(ev.target.value) || 0, limit: 24 });
@@ -3087,7 +3231,11 @@ export class KalzoLogic extends DCLogic {
       ],
       methods: methods,
       steps: steps,
-      payLabel: a.sample ? "SAMPLE ONLY · PAYMENTS DISABLED" : s.payBusy ? "OPENING PAYMENT…" : "PAY " + rupees(totalAmt) + " & SEND INVITATION",
+      payLabel: a.sample
+        ? "SAMPLE ONLY · BOOKING DISABLED"
+        : s.payBusy
+          ? "SENDING BOOKING…"
+          : "BOOK " + a.name.toUpperCase(),
       payErr: s.payErr,
       hasPayErr: !!s.payErr,
       flowBackLabel:
@@ -3136,14 +3284,19 @@ export class KalzoLogic extends DCLogic {
           : "background: transparent; color: #A8957F; border-color: #C2B29C; cursor: not-allowed;"),
       clearFilters: function () {
         self.setState({
+          loc: null,
+          locQ: "",
           arts: [],
+          fDay: 0,
           tod: "Any",
           price: "any",
           minStar: 0,
           hrs: 0,
           tier: "all",
           maxRate: 20000,
+          sort: "renown",
           q: "",
+          onlyFree: true,
           onlySaved: false,
           limit: 24,
         });
@@ -3168,18 +3321,17 @@ export class KalzoLogic extends DCLogic {
           screen: s.screen === "book" ? "profile" : s.screen === "pay" ? "book" : "home",
         });
       },
+      // Skip payment screen — book immediately on click (payment later).
       toPay: function () {
-        if (ready) self.setState({ screen: "pay" });
-      },
-      pay: function () {
+        if (!ready) return;
         if (a.sample) {
-          self.setState({ payErr: "This is a sample profile and cannot receive a real invitation." });
+          self.setState({ payErr: "This is a sample profile and cannot be booked." });
           return;
         }
         if (s.payBusy) return;
         self.setState({ payBusy: true, payErr: "" });
         window.dispatchEvent(
-          new CustomEvent("kalzo:pay", {
+          new CustomEvent("kalzo:book", {
             detail: {
               artist_id: a.id,
               artist_name: a.name,
@@ -3189,7 +3341,32 @@ export class KalzoLogic extends DCLogic {
               city: loc && loc.type === "city" ? loc.city : "",
               address: [s.address.trim(), s.area.trim(), s.landmark.trim()].filter(Boolean).join(", "),
               guests: String(s.guests || "").trim(),
-              note: [s.event ? "Occasion: " + s.event : "", String(s.note || "").trim()].filter(Boolean).join(" · "),
+              note: [s.event ? "Occasion: " + s.event : "", String(s.note || "").trim()]
+                .filter(Boolean)
+                .join(" · "),
+              expected_total: totalAmt,
+            },
+          }),
+        );
+      },
+      pay: function () {
+        // Template may still bind "pay" — same direct book, no payment.
+        if (!ready || a.sample || s.payBusy) return;
+        self.setState({ payBusy: true, payErr: "" });
+        window.dispatchEvent(
+          new CustomEvent("kalzo:book", {
+            detail: {
+              artist_id: a.id,
+              artist_name: a.name,
+              event_date: dates[s.bDay].iso,
+              slot: s.slot || "",
+              quantity: qty,
+              city: loc && loc.type === "city" ? loc.city : "",
+              address: [s.address.trim(), s.area.trim(), s.landmark.trim()].filter(Boolean).join(", "),
+              guests: String(s.guests || "").trim(),
+              note: [s.event ? "Occasion: " + s.event : "", String(s.note || "").trim()]
+                .filter(Boolean)
+                .join(" · "),
               expected_total: totalAmt,
             },
           }),

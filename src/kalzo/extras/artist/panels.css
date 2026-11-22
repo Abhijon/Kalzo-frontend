@@ -192,6 +192,59 @@
   padding-block: 14px;
   border-bottom: 1px solid var(--artist-border);
 }
+.kl-account .ka-bookings-filters {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+.kl-account .ka-filter-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--desk-brass);
+  background: var(--artist-paper);
+  color: var(--artist-black-ink);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.kl-account .ka-filter-icon:hover,
+.kl-account .ka-filter-icon[data-state="open"],
+.kl-account .ka-filter-icon.on {
+  background: var(--artist-archive-gold);
+}
+.kl-account .ka-filter-reset {
+  border: 0;
+  background: transparent;
+  color: var(--artist-muted);
+  font: 600 12px "DM Mono", monospace;
+  padding: 4px 2px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.kl-account .ka-filter-reset:hover:not(:disabled) {
+  color: var(--artist-black-ink);
+}
+.kl-account .ka-filter-reset:disabled {
+  opacity: 0.45;
+  cursor: default;
+  text-decoration: none;
+}
+.ka-filter-menu {
+  min-width: 11rem;
+  text-transform: lowercase;
+}
+.kl-account .ka-bookings-list-panel {
+  min-height: 120px;
+  transition: opacity 0.15s ease;
+}
+.kl-account .ka-bookings-list-panel.is-busy {
+  opacity: 0.72;
+  pointer-events: none;
+}
 .kl-account .ka-notes {
   list-style: none;
 }
@@ -891,3 +944,182 @@
     opacity: 0.85;
   }
 }
+
+/* Artist availability week table */
+.ka-availability { display: grid; gap: 18px; }
+.ka-availability-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(42, 29, 24, 0.14);
+  background: rgba(255, 250, 240, 0.35);
+}
+.ka-availability-table { width: 100%; border-collapse: collapse; min-width: 560px; }
+.ka-availability-table th {
+  text-align: left;
+  font: 600 11px/1.2 "DM Mono", ui-monospace, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--artist-muted, #6b5246);
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(42, 29, 24, 0.12);
+  background: transparent;
+}
+.ka-availability-table td {
+  padding: 14px 16px;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(42, 29, 24, 0.08);
+}
+.ka-availability-table tbody tr { transition: background 0.15s ease; }
+.ka-availability-table tbody tr:hover { background: rgba(150, 110, 70, 0.05); }
+.ka-availability-table tbody tr.on { background: rgba(150, 110, 70, 0.08); }
+.ka-availability-table tbody tr.ka-weekday-open { background: transparent; }
+.ka-availability-table tbody tr.ka-weekday-closed { background: rgba(42, 29, 24, 0.03); }
+.ka-availability-table tbody tr.ka-weekday-closed strong,
+.ka-availability-table tbody tr.ka-weekday-closed .ka-avail-pill {
+  color: var(--artist-muted, #6b5246);
+  opacity: 0.85;
+}
+.ka-avail-pill {
+  display: inline-block;
+  padding: 3px 0;
+  border-radius: 0;
+  font: 500 12px/1.2 "DM Mono", ui-monospace, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: none;
+  border: 0;
+}
+.ka-avail-pill.open {
+  color: var(--artist-black-ink, #2a1d18);
+}
+.ka-avail-pill.closed {
+  color: var(--artist-muted, #6b5246);
+}
+.ka-availability-day-btn {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.ka-availability-day-btn strong {
+  font: 600 18px/1.2 Newsreader, Georgia, serif;
+  color: var(--artist-black-ink, #2a1d18);
+}
+.ka-availability-day-btn span {
+  font: 500 12px/1.3 "DM Mono", ui-monospace, monospace;
+  letter-spacing: 0.04em;
+  color: var(--artist-muted, #6b5246);
+}
+.ka-availability-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.ka-availability-switch-label {
+  font: 600 13px/1 "DM Mono", ui-monospace, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--artist-muted, #6b5246);
+  min-width: 4.5rem;
+}
+.kl-account .ka-availability-switch [data-state="checked"] {
+  background: #9dcc9f;
+}
+.kl-account .ka-availability-switch [data-state="checked"] > span {
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(42, 29, 24, 0.2);
+}
+.kl-account .ka-availability-switch [data-state="unchecked"] {
+  background: rgba(42, 29, 24, 0.22);
+}
+.kl-account .ka-availability-switch [data-state="unchecked"] > span {
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(42, 29, 24, 0.18);
+}
+.ka-availability-slot-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ka-availability-slot-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 4px 4px 10px;
+  border: 1px solid var(--desk-brass, #8b7355);
+  background: var(--artist-frame-paper, #efe4cf);
+  font: 500 13px/1.2 "DM Mono", ui-monospace, monospace;
+  color: var(--artist-black-ink, #2a1d18);
+}
+.ka-availability-editor {
+  display: grid;
+  gap: 14px;
+  margin-top: 8px;
+  padding: 20px 18px;
+  border: 1px solid var(--desk-brass, #8b7355);
+  background: rgba(255, 250, 240, 0.55);
+}
+.ka-availability-editor-head h3 {
+  margin: 0;
+  font: 600 22px/1.2 Newsreader, Georgia, serif;
+  color: var(--artist-black-ink, #2a1d18);
+}
+.ka-availability-editor-head .kl-note { margin: 6px 0 0; }
+.ka-availability-add {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+  align-items: end;
+}
+.ka-availability-add label {
+  display: grid;
+  gap: 8px;
+  font: 600 12px/1 "DM Mono", ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--artist-muted, #6b5246);
+}
+.ka-availability-add input[type="time"] {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--desk-brass, #8b7355);
+  background: #fff;
+  color: var(--artist-black-ink, #2a1d18);
+  font: 500 16px/1.2 Newsreader, Georgia, serif;
+}
+.ka-availability-add-btn {
+  grid-column: 1 / -1;
+  margin-top: 12px;
+  justify-self: start;
+  min-height: 44px;
+}
+@media (max-width: 700px) {
+  .ka-availability-table { min-width: 0; }
+  .ka-availability-table thead { display: none; }
+  .ka-availability-table,
+  .ka-availability-table tbody,
+  .ka-availability-table tr,
+  .ka-availability-table td {
+    display: block;
+    width: 100%;
+  }
+  .ka-availability-table tr {
+    padding: 12px 14px 16px;
+    border-bottom: 1px solid rgba(42, 29, 24, 0.12);
+  }
+  .ka-availability-table td {
+    padding: 8px 0;
+    border: 0;
+  }
+  .ka-availability-add { grid-template-columns: 1fr; }
+}
+

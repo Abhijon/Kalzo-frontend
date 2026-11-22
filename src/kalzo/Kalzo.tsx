@@ -8,14 +8,16 @@ import template from "./template.json";
 import "./kalzo.css";
 import { KalzoTalk, KalzoFees, type FlowInfo } from "./extras/Extras";
 import { PatronGate } from "./extras/PatronGate";
-import { startRazorpay } from "./extras/razorpay";
+import { startDirectBooking } from "./extras/bookingClick";
 import { BrandMark, HouseCounter, KalzoWord } from "./extras/BrandMark";
 import { SavedList, type SavedItem } from "./extras/SavedList";
 import { BookingRoom } from "./extras/BookingRoom";
-import { api, artistFrom } from "@/lib/api";
+import { api, artistFrom, unwrapData } from "@/lib/api";
 import { ArtistContact } from "./extras/ArtistContact";
 import { useState } from "react";
 import { ProfileEntry } from "./extras/ProfileEntry";
+import { loadArtForms } from "./extras/artist/artFormsCatalog";
+import { loadLocations } from "./extras/artist/locationsCatalog";
 
 type Node = string | { t: string; a: Record<string, string>; c: Node[] };
 type Scope = Record<string, unknown>;
@@ -153,7 +155,22 @@ export function Kalzo() {
       })
       .catch(() => {});
   }, [readArtists]);
-  useEffect(() => startRazorpay(), []);
+  // Finder filters: GET /art-forms (main types) + GET /locations (states/cities).
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([loadArtForms(), loadLocations()])
+      .then(([forms, locs]) => {
+        if (cancelled || !ref.current) return;
+        ref.current.catalogArtForms = forms;
+        ref.current.catalogLocations = locs;
+        force();
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  useEffect(() => startDirectBooking(), []);
   const [signed, setSigned] = useState(false);
   useEffect(() => {
     api.auth.getUser().then(({ data }) => setSigned(!!data?.user));
@@ -167,33 +184,40 @@ export function Kalzo() {
   useEffect(() => {
     if (!profileArtistId) return;
     let cancelled = false;
-    api.artists.getById(profileArtistId).then((res) => {
-      if (cancelled || res.error || !ref.current) return;
-      const detail = artistFrom(res.data);
-      if (!detail?.id) return;
-      const enriched = {
-        ...detail,
-        photo: detail.photo_url || "",
-        artPhoto: detail.art_photo_url || "",
-        faceVideoUrl: detail.face_video_url || "",
-        reelUrls: Array.isArray(detail.reel_urls) ? detail.reel_urls : [],
-        primary_reel: detail.primary_reel ?? 0,
-      };
-      ref.current.artistDetails = {
-        ...(ref.current.artistDetails || {}),
-        [detail.id]: enriched,
-      };
-      const list = Array.isArray(ref.current.publicArtists) ? ref.current.publicArtists : [];
-      const idx = list.findIndex((row: { id?: string }) => row.id === detail.id);
-      if (idx >= 0) {
-        const next = list.slice();
-        next[idx] = { ...list[idx], ...enriched };
-        ref.current.publicArtists = next;
-      } else {
-        ref.current.publicArtists = list.concat([enriched]);
-      }
-      force();
-    });
+    Promise.all([api.artists.getById(profileArtistId), api.availability.forArtist(profileArtistId)]).then(
+      ([res, availRes]) => {
+        if (cancelled || res.error || !ref.current) return;
+        const detail = artistFrom(res.data);
+        if (!detail?.id) return;
+        const availData = !availRes.error ? unwrapData(availRes.data) : null;
+        const weekAvailability = Array.isArray((availData as { days?: unknown[] } | null)?.days)
+          ? (availData as { days: unknown[] }).days
+          : [];
+        const enriched = {
+          ...detail,
+          photo: detail.photo_url || "",
+          artPhoto: detail.art_photo_url || "",
+          faceVideoUrl: detail.face_video_url || "",
+          reelUrls: Array.isArray(detail.reel_urls) ? detail.reel_urls : [],
+          primary_reel: detail.primary_reel ?? 0,
+          weekAvailability,
+        };
+        ref.current.artistDetails = {
+          ...(ref.current.artistDetails || {}),
+          [detail.id]: enriched,
+        };
+        const list = Array.isArray(ref.current.publicArtists) ? ref.current.publicArtists : [];
+        const idx = list.findIndex((row: { id?: string }) => row.id === detail.id);
+        if (idx >= 0) {
+          const next = list.slice();
+          next[idx] = { ...list[idx], ...enriched };
+          ref.current.publicArtists = next;
+        } else {
+          ref.current.publicArtists = list.concat([enriched]);
+        }
+        force();
+      },
+    );
     return () => {
       cancelled = true;
     };

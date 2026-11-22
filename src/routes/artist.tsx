@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { AccountShell } from "@/kalzo/extras/AccountShell";
 import { artistPanelData } from "@/lib/artistPanel.functions";
 import { kalzoHead } from "@/lib/routeHead";
-import { MailOpen, MapPin, UserRound, Bell, MessageSquare } from "lucide-react";
+import { MailOpen, MapPin, UserRound, Bell, MessageSquare, CalendarDays } from "lucide-react";
 import { ProfileMenu } from "@/kalzo/extras/artist/ProfileMenu";
 export const Route = createFileRoute("/artist")({
   staticData: { sitemap: "exclude-subtree" },
@@ -34,6 +34,7 @@ function Tabs() {
   const tabs = [
     { to: "/artist/profile", label: "My profile", icon: UserRound },
     { to: "/artist", label: "Booking requests", icon: MailOpen },
+    { to: "/artist/availability", label: "Availability", icon: CalendarDays },
     { to: "/artist/location", label: "Location update", icon: MapPin },
     { to: "/artist/notifications", label: "Notifications", icon: Bell },
     { to: "/artist/chats", label: "Chats & calls", icon: MessageSquare },

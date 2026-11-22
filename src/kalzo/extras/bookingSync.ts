@@ -1,25 +1,35 @@
-import { api } from "@/lib/api";
+import { api, unwrapData } from "@/lib/api";
 
 export type BookingDetail = {
   artist_ref: string;
   artist_name: string;
   event_date: string;
-  slot: string;
+  slot?: string;
   address: string;
   guests: string;
   note: string;
   amount_inr: number;
 };
 
-/** Saves a booking request for the signed-in patron and returns its id. Status stays "awaiting_payment" until the payment is verified. */
+/** Creates a booking request (no payment, no time slots). */
 export async function saveBooking(d: BookingDetail): Promise<string | null> {
   const { data } = await api.auth.getUser();
   if (!data?.user) return null;
 
-  const res = await api.bookings.create({ ...d, patron_id: data.user.id });
+  const res = await api.bookings.create({
+    artistId: d.artist_ref,
+    eventDate: d.event_date,
+    address: d.address,
+    guests: d.guests || undefined,
+    note: d.note || undefined,
+    amountInr: d.amount_inr,
+  });
+
   if (res.error) {
     console.error("Booking save failed", res.error.message);
     return null;
   }
-  return res.data?.id ?? (res.data as any)?._id ?? null;
+
+  const payload = unwrapData(res.data) as { booking?: { id?: string }; id?: string } | null;
+  return payload?.booking?.id ?? payload?.id ?? null;
 }

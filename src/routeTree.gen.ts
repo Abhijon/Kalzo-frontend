@@ -24,6 +24,7 @@ import { Route as ApiCreateOrderRouteImport } from './routes/api/create-order'
 import { Route as ApiSupportChatRouteImport } from './routes/api/support-chat'
 import { Route as ApiVerifyPaymentRouteImport } from './routes/api/verify-payment'
 import { Route as ArtistIndexRouteImport } from './routes/artist.index'
+import { Route as ArtistAvailabilityRouteImport } from './routes/artist.availability'
 import { Route as ArtistBookingsRouteImport } from './routes/artist.bookings'
 import { Route as ArtistChatsRouteImport } from './routes/artist.chats'
 import { Route as ArtistLocationRouteImport } from './routes/artist.location'
@@ -33,6 +34,7 @@ import { Route as ArtistWalletRouteImport } from './routes/artist.wallet'
 import { Route as BookingsBookingIdRouteImport } from './routes/bookings.$bookingId'
 import { Route as ConversationsConversationIdRouteImport } from './routes/conversations.$conversationId'
 import { Route as SupportThreadIdRouteImport } from './routes/support_.$threadId'
+import { Route as ArtistBookingsBookingIdRouteImport } from './routes/artist.bookings.$bookingId'
 import { Route as ArtistKycCallbackRouteImport } from './routes/artist.kyc.callback'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -112,6 +114,11 @@ const ArtistIndexRoute = ArtistIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ArtistRoute,
 } as any)
+const ArtistAvailabilityRoute = ArtistAvailabilityRouteImport.update({
+  id: '/availability',
+  path: '/availability',
+  getParentRoute: () => ArtistRoute,
+} as any)
 const ArtistBookingsRoute = ArtistBookingsRouteImport.update({
   id: '/bookings',
   path: '/bookings',
@@ -158,6 +165,11 @@ const SupportThreadIdRoute = SupportThreadIdRouteImport.update({
   path: '/support/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArtistBookingsBookingIdRoute = ArtistBookingsBookingIdRouteImport.update({
+  id: '/$bookingId',
+  path: '/$bookingId',
+  getParentRoute: () => ArtistBookingsRoute,
+} as any)
 const ArtistKycCallbackRoute = ArtistKycCallbackRouteImport.update({
   id: '/kyc/callback',
   path: '/kyc/callback',
@@ -189,7 +201,8 @@ export interface FileRoutesByFullPath {
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/support-chat': typeof ApiSupportChatRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
-  '/artist/bookings': typeof ArtistBookingsRoute
+  '/artist/availability': typeof ArtistAvailabilityRoute
+  '/artist/bookings': typeof ArtistBookingsRouteWithChildren
   '/artist/chats': typeof ArtistChatsRoute
   '/artist/location': typeof ArtistLocationRoute
   '/artist/notifications': typeof ArtistNotificationsRoute
@@ -199,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/conversations/$conversationId': typeof ConversationsConversationIdRoute
   '/support/$threadId': typeof SupportThreadIdRoute
   '/artist/': typeof ArtistIndexRoute
+  '/artist/bookings/$bookingId': typeof ArtistBookingsBookingIdRoute
   '/artist/kyc/callback': typeof ArtistKycCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -217,7 +231,8 @@ export interface FileRoutesByTo {
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/support-chat': typeof ApiSupportChatRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
-  '/artist/bookings': typeof ArtistBookingsRoute
+  '/artist/availability': typeof ArtistAvailabilityRoute
+  '/artist/bookings': typeof ArtistBookingsRouteWithChildren
   '/artist/chats': typeof ArtistChatsRoute
   '/artist/location': typeof ArtistLocationRoute
   '/artist/notifications': typeof ArtistNotificationsRoute
@@ -227,6 +242,7 @@ export interface FileRoutesByTo {
   '/conversations/$conversationId': typeof ConversationsConversationIdRoute
   '/support/$threadId': typeof SupportThreadIdRoute
   '/artist': typeof ArtistIndexRoute
+  '/artist/bookings/$bookingId': typeof ArtistBookingsBookingIdRoute
   '/artist/kyc/callback': typeof ArtistKycCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -247,7 +263,8 @@ export interface FileRoutesById {
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/support-chat': typeof ApiSupportChatRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
-  '/artist/bookings': typeof ArtistBookingsRoute
+  '/artist/availability': typeof ArtistAvailabilityRoute
+  '/artist/bookings': typeof ArtistBookingsRouteWithChildren
   '/artist/chats': typeof ArtistChatsRoute
   '/artist/location': typeof ArtistLocationRoute
   '/artist/notifications': typeof ArtistNotificationsRoute
@@ -257,6 +274,7 @@ export interface FileRoutesById {
   '/conversations/$conversationId': typeof ConversationsConversationIdRoute
   '/support_/$threadId': typeof SupportThreadIdRoute
   '/artist/': typeof ArtistIndexRoute
+  '/artist/bookings/$bookingId': typeof ArtistBookingsBookingIdRoute
   '/artist/kyc/callback': typeof ArtistKycCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -278,6 +296,7 @@ export interface FileRouteTypes {
     | '/api/create-order'
     | '/api/support-chat'
     | '/api/verify-payment'
+    | '/artist/availability'
     | '/artist/bookings'
     | '/artist/chats'
     | '/artist/location'
@@ -288,6 +307,7 @@ export interface FileRouteTypes {
     | '/conversations/$conversationId'
     | '/support/$threadId'
     | '/artist/'
+    | '/artist/bookings/$bookingId'
     | '/artist/kyc/callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -306,6 +326,7 @@ export interface FileRouteTypes {
     | '/api/create-order'
     | '/api/support-chat'
     | '/api/verify-payment'
+    | '/artist/availability'
     | '/artist/bookings'
     | '/artist/chats'
     | '/artist/location'
@@ -316,6 +337,7 @@ export interface FileRouteTypes {
     | '/conversations/$conversationId'
     | '/support/$threadId'
     | '/artist'
+    | '/artist/bookings/$bookingId'
     | '/artist/kyc/callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -335,6 +357,7 @@ export interface FileRouteTypes {
     | '/api/create-order'
     | '/api/support-chat'
     | '/api/verify-payment'
+    | '/artist/availability'
     | '/artist/bookings'
     | '/artist/chats'
     | '/artist/location'
@@ -345,6 +368,7 @@ export interface FileRouteTypes {
     | '/conversations/$conversationId'
     | '/support_/$threadId'
     | '/artist/'
+    | '/artist/bookings/$bookingId'
     | '/artist/kyc/callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -479,6 +503,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArtistIndexRouteImport
       parentRoute: typeof ArtistRoute
     }
+    '/artist/availability': {
+      id: '/artist/availability'
+      path: '/availability'
+      fullPath: '/artist/availability'
+      preLoaderRoute: typeof ArtistAvailabilityRouteImport
+      parentRoute: typeof ArtistRoute
+    }
     '/artist/bookings': {
       id: '/artist/bookings'
       path: '/bookings'
@@ -542,6 +573,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SupportThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/artist/bookings/$bookingId': {
+      id: '/artist/bookings/$bookingId'
+      path: '/$bookingId'
+      fullPath: '/artist/bookings/$bookingId'
+      preLoaderRoute: typeof ArtistBookingsBookingIdRouteImport
+      parentRoute: typeof ArtistBookingsRoute
+    }
     '/artist/kyc/callback': {
       id: '/artist/kyc/callback'
       path: '/kyc/callback'
@@ -566,8 +604,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ArtistBookingsRouteChildren {
+  ArtistBookingsBookingIdRoute: typeof ArtistBookingsBookingIdRoute
+}
+
+const ArtistBookingsRouteChildren: ArtistBookingsRouteChildren = {
+  ArtistBookingsBookingIdRoute: ArtistBookingsBookingIdRoute,
+}
+
+const ArtistBookingsRouteWithChildren = ArtistBookingsRoute._addFileChildren(
+  ArtistBookingsRouteChildren,
+)
+
 interface ArtistRouteChildren {
-  ArtistBookingsRoute: typeof ArtistBookingsRoute
+  ArtistAvailabilityRoute: typeof ArtistAvailabilityRoute
+  ArtistBookingsRoute: typeof ArtistBookingsRouteWithChildren
   ArtistChatsRoute: typeof ArtistChatsRoute
   ArtistLocationRoute: typeof ArtistLocationRoute
   ArtistNotificationsRoute: typeof ArtistNotificationsRoute
@@ -578,7 +629,8 @@ interface ArtistRouteChildren {
 }
 
 const ArtistRouteChildren: ArtistRouteChildren = {
-  ArtistBookingsRoute: ArtistBookingsRoute,
+  ArtistAvailabilityRoute: ArtistAvailabilityRoute,
+  ArtistBookingsRoute: ArtistBookingsRouteWithChildren,
   ArtistChatsRoute: ArtistChatsRoute,
   ArtistLocationRoute: ArtistLocationRoute,
   ArtistNotificationsRoute: ArtistNotificationsRoute,
