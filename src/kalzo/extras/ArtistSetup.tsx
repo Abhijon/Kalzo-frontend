@@ -91,7 +91,19 @@ export function ArtistSetup() {
             <option value="hour">Per hour (performers)</option>
             <option value="start">Starting from (caterers, décor, planners)</option>
           </select>
-          <input className="kx-input" type="number" min={1} value={rate} onChange={(e) => setRate(Math.max(1, +e.target.value || 1))} onBlur={() => setShowFee(true)} aria-label="Rate in rupees" />
+          <input
+            className="kx-input"
+            type="number"
+            min={1}
+            placeholder="e.g. 5000"
+            value={rate === 0 ? "" : rate}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/^0+(?=\d)/, "");
+              setRate(raw === "" ? 0 : Math.max(1, Number(raw)));
+            }}
+            onBlur={() => setShowFee(true)}
+            aria-label="Rate in rupees"
+          />
           <button className="kx-btn" onClick={() => setShowFee(true)}>SEE BREAKUP</button>
         </div>
         <p>Kalzo commission <b>{inr(fee)}</b> · you receive <b>{inr(rate - fee)}</b></p>

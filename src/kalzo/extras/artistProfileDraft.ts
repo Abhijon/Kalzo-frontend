@@ -7,6 +7,7 @@ const IDB_STORE = "files";
 export type DraftForm = Record<string, unknown>;
 
 export type DraftMeta = {
+  userId?: string;
   form: DraftForm;
   customSub: boolean;
   savedCity: string;
@@ -81,13 +82,18 @@ function asFile(blob: Blob | File | null, fallbackName: string): File | null {
   return new File([blob], fallbackName, { type });
 }
 
-export function readDraftMeta(): DraftMeta | null {
+export function readDraftMeta(expectedUserId?: string): DraftMeta | null {
   if (typeof sessionStorage === "undefined") return null;
   try {
     const raw = sessionStorage.getItem(META_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as DraftMeta;
     if (!parsed?.form || typeof parsed.form !== "object") return null;
+    if (expectedUserId) {
+      if (!parsed.userId || parsed.userId !== expectedUserId) {
+        return null;
+      }
+    }
     return parsed;
   } catch {
     return null;
@@ -95,6 +101,7 @@ export function readDraftMeta(): DraftMeta | null {
 }
 
 export async function saveArtistProfileDraft(input: {
+  userId?: string;
   form: DraftForm;
   files: DraftFiles;
   customSub: boolean;
@@ -102,6 +109,7 @@ export async function saveArtistProfileDraft(input: {
 }): Promise<void> {
   if (typeof sessionStorage === "undefined") return;
   const meta: DraftMeta = {
+    userId: input.userId,
     form: input.form,
     customSub: input.customSub,
     savedCity: input.savedCity,
@@ -130,14 +138,19 @@ export async function saveArtistProfileDraft(input: {
   ]);
 }
 
-export async function loadArtistProfileDraft(): Promise<{
+export async function loadArtistProfileDraft(expectedUserId?: string): Promise<{
   form: DraftForm;
   files: DraftFiles;
   customSub: boolean;
   savedCity: string;
 } | null> {
-  const meta = readDraftMeta();
-  if (!meta) return null;
+  const meta = readDraftMeta(expectedUserId);
+  if (!meta) {
+    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(META_KEY)) {
+      void clearArtistProfileDraft();
+    }
+    return null;
+  }
   try {
     const [photo, artPhoto, faceVideo, r0, r1, r2, r3] = await Promise.all([
       idbGet("photo"),
@@ -180,7 +193,10 @@ export async function loadArtistProfileDraft(): Promise<{
 }
 
 export async function clearArtistProfileDraft() {
-  if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(META_KEY);
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.removeItem(META_KEY);
+    sessionStorage.removeItem("kalzo_digilocker_client_id");
+  }
   try {
     await idbClear();
   } catch {

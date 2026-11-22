@@ -36,7 +36,7 @@ export const bookingDetail = createServerFn({ method: "GET" })
       id: data.id,
       artist_ref: "artist-mock-profile",
       artist_owner_id: context.userId,
-      artist_name: "Navneet Live",
+      artist_name: "Artist",
       patron_id: "patron-01",
       patron_name: "Rahul & Priya",
       event_date: new Date(Date.now() + 86400000 * 3).toISOString().slice(0, 10),

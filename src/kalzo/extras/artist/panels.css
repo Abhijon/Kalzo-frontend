@@ -104,10 +104,10 @@
   gap: 10px;
   min-width: 0;
 }
-.kl-account label.ka-reel-empty {
+.kl-account :is(label.ka-reel-empty, div.ka-reel-empty) {
   display: flex;
   position: relative;
-  aspect-ratio: 1;
+  aspect-ratio: 9 / 16;
   width: 100%;
   min-height: 0;
   align-items: center;
@@ -116,7 +116,7 @@
   background: var(--desk-ink);
   color: var(--artist-gold);
   border: 4px double var(--artist-gold-deep);
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
   padding: 16px;
   box-sizing: border-box;
@@ -130,13 +130,23 @@
   height: 100%;
   cursor: pointer;
 }
+.kl-account .ka-reel-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
 .kl-account .ka-reel video {
-  aspect-ratio: 1;
+  aspect-ratio: 9 / 16;
   border: 4px double var(--artist-gold-deep);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--desk-ink);
   width: 100%;
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .kl-account .ka-star {
   height: 38px;
@@ -639,7 +649,7 @@
 .kl-account .ka-empty svg {
   color: var(--desk-brass);
 }
-.kl-account label.ka-reel-empty {
+.kl-account :is(label.ka-reel-empty, div.ka-reel-empty) {
   background: var(--artist-paper);
   color: var(--desk-ink);
 }

@@ -1,21 +1,58 @@
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
-import { artistPanelData, savePayout } from "@/lib/artistPanel.functions";
+import api, { artistFrom } from "@/lib/api";
+
 export function PayoutForm({ onSaved }: { onSaved?: (saved: boolean) => void }) {
-  const read = useServerFn(artistPanelData),
-    save = useServerFn(savePayout);
   const [saved, setSaved] = useState<{ holder_name: string; account_last4: string; ifsc: string; bank_name: string } | null>(null);
   const [f, setF] = useState({ holder: "", number: "", ifsc: "", bank: "" }),
     [msg, setMsg] = useState(""),
     [busy, setBusy] = useState(false);
-  const load = () => read().then((d) => { setSaved(d.payout); onSaved?.(!!d.payout); }).catch(() => {});
-  useEffect(() => void load(), [read]);
+
+  const load = async () => {
+    try {
+      const res = await api.artists.getProfile();
+      if (res.data) {
+        const a = artistFrom(res.data);
+        if (a?.bank_account_number) {
+          const digits = String(a.bank_account_number).replace(/\D/g, "");
+          const last4 = digits.length >= 4 ? digits.slice(-4) : digits;
+          const info = {
+            holder_name: a.bank_account_holder || "",
+            account_last4: last4,
+            ifsc: a.bank_ifsc || "",
+            bank_name: a.bank_name || "",
+          };
+          setSaved(info);
+          onSaved?.(true);
+          return;
+        }
+      }
+      setSaved(null);
+      onSaved?.(false);
+    } catch {
+      setSaved(null);
+      onSaved?.(false);
+    }
+  };
+
+  useEffect(() => {
+    void load();
+  }, []);
+
   async function submit() {
     setBusy(true);
     setMsg("");
     try {
-      await save({ data: f });
+      const res = await api.artists.updateProfile({
+        bankAccountHolder: f.holder.trim(),
+        bankAccountNumber: f.number.trim(),
+        bankIfsc: f.ifsc.trim().toUpperCase(),
+        bankName: f.bank.trim(),
+      });
+      if (res.error) {
+        setMsg(res.error.message || "Could not save bank details.");
+        return;
+      }
       setF({ holder: "", number: "", ifsc: "", bank: "" });
       setMsg("Bank details saved.");
       await load();

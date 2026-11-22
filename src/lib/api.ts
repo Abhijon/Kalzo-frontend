@@ -272,6 +272,10 @@ const authModule = {
     email: string;
     mobileNumber: string;
   }): Promise<ApiResponse<{ message: string; user: any; profile: any }>> {
+    try {
+      const { clearArtistProfileDraft } = await import("@/kalzo/extras/artistProfileDraft");
+      await clearArtistProfileDraft();
+    } catch {}
     const res = await req(`${API_V1}/artist-signup`, { method: "POST", body: params as any });
     return res as ApiResponse<{ message: string; user: any; profile: any }>;
   },
@@ -309,7 +313,18 @@ const authModule = {
       const payload = (res.data as any)?.data ?? res.data;
       const token: string = payload?.token;
       const user: any = payload?.user;
-      if (token) { setAuthToken(token); setStoredUser(user); notifyAuth("SIGNED_IN", { access_token: token, user }); }
+      if (token) {
+        setAuthToken(token);
+        setStoredUser(user);
+        try {
+          const { readDraftMeta, clearArtistProfileDraft } = await import("@/kalzo/extras/artistProfileDraft");
+          const meta = readDraftMeta();
+          if (meta && (!meta.userId || meta.userId !== user?.id)) {
+            await clearArtistProfileDraft();
+          }
+        } catch {}
+        notifyAuth("SIGNED_IN", { access_token: token, user });
+      }
       return { data: { token, user }, error: null };
     }
     return res as ApiResponse<{ token: string; user: any }>;
@@ -354,6 +369,14 @@ const authModule = {
 
   async signOut(): Promise<{ error: any }> {
     setAuthToken(null); setStoredUser(null); setStoredProfile(null);
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.removeItem("kalzo_artist_profile_draft_v1");
+      sessionStorage.removeItem("kalzo_digilocker_client_id");
+    }
+    try {
+      const { clearArtistProfileDraft } = await import("@/kalzo/extras/artistProfileDraft");
+      await clearArtistProfileDraft();
+    } catch {}
     notifyAuth("SIGNED_OUT", null);
     return { error: null };
   },
@@ -566,6 +589,9 @@ export const api = {
      */
     saveProfile: (body: FormData | Record<string, unknown>) =>
       req(`${API_V1}/artist/profile`, { method: "POST", body }),
+    /** Update an existing artist profile → PATCH /artist/profile */
+    updateProfile: (body: Record<string, unknown>) =>
+      req(`${API_V1}/artist/profile`, { method: "PATCH", body }),
     saveDraft:      (data: any)                    => req(`${API_V1}/artists/draft`,    { method: "POST",  body: data }),
     updateLocation: (data: any)                    => req(`${API_V1}/artists/location`, { method: "PUT",   body: data }),
   },

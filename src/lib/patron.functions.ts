@@ -7,19 +7,7 @@ export const patronData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const id = context.userId || "user-id";
-    const staticConversations = [
-      {
-        id: "c1010000-0000-4000-8000-000000000001",
-        artist_ref: "artist-mock-profile",
-        artist_owner_id: id,
-        artist_name: "Navneet Live",
-        patron_id: "patron-01",
-        participant_name: "Rahul & Priya",
-        latest_message: "Namaste Navneet, we loved your acoustic demo! Are you available for our upcoming sangeet?",
-        next_meeting: new Date(Date.now() + 86400000 * 2).toISOString(),
-        created_at: new Date().toISOString(),
-      },
-    ];
+    const staticConversations: any[] = [];
 
     return {
       profile: null,
@@ -62,26 +50,11 @@ export const conversationData = createServerFn({ method: "GET" })
     return {
       conversation: {
         id: data.id,
-        artist_name: "Navneet Live",
-        participant_name: "Rahul & Priya",
+        artist_name: "Artist",
+        participant_name: "Patron",
         status: "active",
       },
-      messages: [
-        {
-          id: "m-01",
-          conversation_id: data.id,
-          sender_id: "patron-01",
-          body: "Namaste Navneet! We are hosting a 100-guest sangeet evening and would love to have you perform.",
-          created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-        },
-        {
-          id: "m-02",
-          conversation_id: data.id,
-          sender_id: context.userId,
-          body: "Namaste Rahul & Priya! Thank you so much. I would love to perform. We can set up a quick 15-minute call to discuss the song list.",
-          created_at: new Date(Date.now() - 3600000 * 3).toISOString(),
-        },
-      ],
+      messages: [],
       meetings: [],
       userId: context.userId,
     };

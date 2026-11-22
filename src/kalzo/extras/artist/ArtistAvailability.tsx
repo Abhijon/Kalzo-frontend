@@ -13,17 +13,25 @@ type Day = {
 export function ArtistAvailability() {
   const [days, setDays] = useState<Day[]>([]);
   const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(true);
   const [busyDay, setBusyDay] = useState<number | null>(null);
 
   const load = async () => {
     setErr("");
-    const res = await api.availability.mine();
-    if (res.error) {
-      setErr(res.error.message);
-      return;
+    setLoading(true);
+    try {
+      const res = await api.availability.mine();
+      if (res.error) {
+        setErr(res.error.message);
+        return;
+      }
+      const data = unwrapData(res.data) as { days?: Day[] };
+      setDays(Array.isArray(data?.days) ? data.days : []);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Failed to load availability");
+    } finally {
+      setLoading(false);
     }
-    const data = unwrapData(res.data) as { days?: Day[] };
-    setDays(Array.isArray(data?.days) ? data.days : []);
   };
 
   useEffect(() => {
@@ -52,9 +60,17 @@ export function ArtistAvailability() {
         <CalendarDays size={26} />
         <h2>Weekly availability</h2>
       </div>
+      <p className="kl-note">
+        Recurring weekly schedule — days marked available are bookable by customers across all future dates.
+      </p>
       {err && <p className="kl-error">{err}</p>}
 
-      <div className="ka-availability-table-wrap">
+      {loading ? (
+        <p className="kl-note">Loading your weekly schedule…</p>
+      ) : days.length === 0 ? (
+        <p className="kl-note">No availability schedule found. Please refresh the page.</p>
+      ) : (
+        <div className="ka-availability-table-wrap">
         <table className="ka-availability-table">
           <thead>
             <tr>
@@ -92,6 +108,7 @@ export function ArtistAvailability() {
           </tbody>
         </table>
       </div>
+      )}
     </section>
   );
 }
