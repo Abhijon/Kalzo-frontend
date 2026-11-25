@@ -577,9 +577,23 @@ export const api = {
   artists: {
     list:           (params?: Record<string, any>) => req(`${API_V1}/artists`, { params }),
     getById:        (id: string)                   => req(`${API_V1}/artists/${id}`),
-    /** Verified artists for customers → GET /artists/verified (supports discipline, city, maxRate, date, startTime, endTime) */
-    listVerified:   (params?: Record<string, any>) =>
-      req(`${API_V1}/artists/verified`, { params }),
+    /**
+     * Verified artists → GET /artists/verified
+     * Filters: city, state, tier (all|current|base|preferred), discipline, maxRate, date/weekday
+     */
+    listVerified: (params?: {
+      page?: number;
+      limit?: number;
+      city?: string;
+      state?: string;
+      tier?: string;
+      discipline?: string;
+      subcategory?: string;
+      maxRate?: number;
+      date?: string;
+      weekday?: number;
+      day?: string;
+    }) => req(`${API_V1}/artists/verified`, { params }),
     /** Logged-in artist onboarding profile → GET /artist/profile */
     getProfile:     () => req(`${API_V1}/artist/profile`),
     /**

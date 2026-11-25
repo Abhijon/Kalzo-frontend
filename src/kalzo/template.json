@@ -11,11 +11,18 @@
     "c": [
       {
         "t": "svg",
-        "a": { "width": "0", "height": "0", "aria-hidden": "true", "style": "position: absolute" },
+        "a": {
+          "width": "0",
+          "height": "0",
+          "aria-hidden": "true",
+          "style": "position: absolute"
+        },
         "c": [
           {
             "t": "filter",
-            "a": { "id": "kwob" },
+            "a": {
+              "id": "kwob"
+            },
             "c": [
               {
                 "t": "feTurbulence",
@@ -27,12 +34,21 @@
                 },
                 "c": []
               },
-              { "t": "feDisplacementMap", "a": { "in": "SourceGraphic", "scale": "2.6" }, "c": [] }
+              {
+                "t": "feDisplacementMap",
+                "a": {
+                  "in": "SourceGraphic",
+                  "scale": "2.6"
+                },
+                "c": []
+              }
             ]
           },
           {
             "t": "filter",
-            "a": { "id": "kgrain" },
+            "a": {
+              "id": "kgrain"
+            },
             "c": [
               {
                 "t": "feTurbulence",
@@ -44,33 +60,82 @@
                 },
                 "c": []
               },
-              { "t": "feColorMatrix", "a": { "type": "saturate", "values": "0" }, "c": [] }
-            ]
-          },
-          {
-            "t": "radialGradient",
-            "a": { "id": "kglow" },
-            "c": [
-              { "t": "stop", "a": { "offset": "0", "stop-color": "#FFE9B5" }, "c": [] },
               {
-                "t": "stop",
-                "a": { "offset": ".45", "stop-color": "#F4A640", "stop-opacity": ".7" },
-                "c": []
-              },
-              {
-                "t": "stop",
-                "a": { "offset": "1", "stop-color": "#E07828", "stop-opacity": "0" },
+                "t": "feColorMatrix",
+                "a": {
+                  "type": "saturate",
+                  "values": "0"
+                },
                 "c": []
               }
             ]
           },
           {
             "t": "radialGradient",
-            "a": { "id": "kglass", "cx": ".5", "cy": ".55" },
+            "a": {
+              "id": "kglow"
+            },
             "c": [
-              { "t": "stop", "a": { "offset": "0", "stop-color": "#FFF6DC" }, "c": [] },
-              { "t": "stop", "a": { "offset": ".5", "stop-color": "#F7B455" }, "c": [] },
-              { "t": "stop", "a": { "offset": "1", "stop-color": "#B8601E" }, "c": [] }
+              {
+                "t": "stop",
+                "a": {
+                  "offset": "0",
+                  "stop-color": "#FFE9B5"
+                },
+                "c": []
+              },
+              {
+                "t": "stop",
+                "a": {
+                  "offset": ".45",
+                  "stop-color": "#F4A640",
+                  "stop-opacity": ".7"
+                },
+                "c": []
+              },
+              {
+                "t": "stop",
+                "a": {
+                  "offset": "1",
+                  "stop-color": "#E07828",
+                  "stop-opacity": "0"
+                },
+                "c": []
+              }
+            ]
+          },
+          {
+            "t": "radialGradient",
+            "a": {
+              "id": "kglass",
+              "cx": ".5",
+              "cy": ".55"
+            },
+            "c": [
+              {
+                "t": "stop",
+                "a": {
+                  "offset": "0",
+                  "stop-color": "#FFF6DC"
+                },
+                "c": []
+              },
+              {
+                "t": "stop",
+                "a": {
+                  "offset": ".5",
+                  "stop-color": "#F7B455"
+                },
+                "c": []
+              },
+              {
+                "t": "stop",
+                "a": {
+                  "offset": "1",
+                  "stop-color": "#B8601E"
+                },
+                "c": []
+              }
             ]
           }
         ]
@@ -84,7 +149,11 @@
         "c": [
           {
             "t": "rect",
-            "a": { "width": "100%", "height": "100%", "filter": "url(#kgrain)" },
+            "a": {
+              "width": "100%",
+              "height": "100%",
+              "filter": "url(#kgrain)"
+            },
             "c": []
           }
         ]
@@ -137,14 +206,19 @@
                   },
                   {
                     "t": "sc-if",
-                    "a": { "value": "{{ hasFav }}", "hint-placeholder-val": "{{ false }}" },
+                    "a": {
+                      "value": "{{ hasFav }}",
+                      "hint-placeholder-val": "{{ false }}"
+                    },
                     "c": [
                       {
                         "t": "span",
                         "a": {
                           "style": "position: absolute; right: -3px; top: -3px; min-width: 18px; height: 18px; border-radius: 999px; background: #9C3A22; color: #F7EEDD; border: 1px solid #8A6D3B; font-family: 'DM Mono', monospace; font-size: 11px; display: flex; align-items: center; justify-content: center"
                         },
-                        "c": ["{{ favCount }}"]
+                        "c": [
+                          "{{ favCount }}"
+                        ]
                       }
                     ]
                   }
@@ -169,7 +243,9 @@
                       "class": "klink knav",
                       "style": "padding: 10px 10px; text-decoration: none"
                     },
-                    "c": ["Find artists"]
+                    "c": [
+                      "Find artists"
+                    ]
                   },
                   {
                     "t": "a",
@@ -178,7 +254,9 @@
                       "class": "klink knav",
                       "style": "padding: 10px 10px; text-decoration: none"
                     },
-                    "c": ["Art forms"]
+                    "c": [
+                      "Art forms"
+                    ]
                   },
                   {
                     "t": "a",
@@ -187,7 +265,9 @@
                       "class": "klink knav",
                       "style": "padding: 10px 10px; text-decoration: none"
                     },
-                    "c": ["The Promise"]
+                    "c": [
+                      "The Promise"
+                    ]
                   },
                   {
                     "t": "a",
@@ -196,9 +276,15 @@
                       "class": "klink knav",
                       "style": "padding: 10px 10px; text-decoration: none"
                     },
-                    "c": ["For Artists"]
+                    "c": [
+                      "For Artists"
+                    ]
                   },
-                  { "t": "kalzo-profile-entry", "a": {}, "c": [] }
+                  {
+                    "t": "kalzo-profile-entry",
+                    "a": {},
+                    "c": []
+                  }
                 ]
               },
               {
@@ -242,14 +328,20 @@
             "t": "div",
             "a": { "class": "kheader-brand", "style": "text-align: center; padding: 18px 0 14px" },
             "c": [
-              { "t": "kalzo-brand", "a": {}, "c": [] },
+              {
+                "t": "kalzo-brand",
+                "a": {},
+                "c": []
+              },
               {
                 "t": "div",
                 "a": {
                   "class": "kheader-est",
                   "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.24em; color: #6B5246; margin-top: 8px"
                 },
-                "c": ["EST. MMXXVI — LIVE ARTS, AT YOUR DOOR"]
+                "c": [
+                  "EST. MMXXVI — LIVE ARTS, AT YOUR DOOR"
+                ]
               }
             ]
           },
@@ -265,11 +357,16 @@
       },
       {
         "t": "sc-if",
-        "a": { "value": "{{ isHome }}", "hint-placeholder-val": "{{ true }}" },
+        "a": {
+          "value": "{{ isHome }}",
+          "hint-placeholder-val": "{{ true }}"
+        },
         "c": [
           {
             "t": "section",
-            "a": { "style": "max-width: 1320px; margin: 0 auto; padding: 30px 24px 70px" },
+            "a": {
+              "style": "max-width: 1320px; margin: 0 auto; padding: 30px 24px 70px"
+            },
             "c": [
               {
                 "t": "div",
@@ -342,11 +439,16 @@
                               "style": "font-family: 'Instrument Serif', serif; font-style: italic; font-size: clamp(30px, 4.4vw, 58px); line-height: 1; align-self: center; margin-right: clamp(120px, 30vw, 430px); color: #E8BE84",
                               "class": "kart-house"
                             },
-                            "c": ["The House Of"]
+                            "c": [
+                              "The House Of"
+                            ]
                           },
                           {
                             "t": "kalzo-word",
-                            "a": { "size": "clamp(56px, 10vw, 140px)", "tone": "room" },
+                            "a": {
+                              "size": "clamp(56px, 10vw, 140px)",
+                              "tone": "room"
+                            },
                             "c": []
                           }
                         ]
@@ -355,7 +457,10 @@
                   },
                   {
                     "t": "div",
-                    "a": { "class": "knote", "style": "margin: 26px auto 0" },
+                    "a": {
+                      "class": "knote",
+                      "style": "margin: 26px auto 0"
+                    },
                     "c": [
                       {
                         "t": "p",
@@ -381,7 +486,9 @@
                           "class": "kpop knote-gold",
                           "style": "margin: 0; text-align: center; font-family: Newsreader, serif; font-weight: 700; font-size: clamp(23px, 3.3vw, 40px); line-height: 1.25; letter-spacing: .012em; color: #E8BE84; white-space: nowrap"
                         },
-                        "c": ["Kalzo makes it happen."]
+                        "c": [
+                          "Kalzo makes it happen."
+                        ]
                       }
                     ]
                   }
@@ -404,31 +511,9 @@
                 "c": [
                   {
                     "t": "span",
-                    "a": { "style": "display: flex; align-items: center; gap: 8px" },
-                    "c": [
-                      {
-                        "t": "svg",
-                        "a": {
-                          "aria-hidden": "true",
-                          "width": "13",
-                          "height": "13",
-                          "sc-camel-view-box": "0 0 24 24",
-                          "fill": "none",
-                          "stroke": "#9C3A22",
-                          "stroke-width": "1.6",
-                          "stroke-linecap": "round",
-                          "stroke-linejoin": "round"
-                        },
-                        "c": [
-                          { "t": "path", "a": { "d": "M3 7h12v10H3z M15 10l6-3v10l-6-3" }, "c": [] }
-                        ]
-                      },
-                      "EVERY ARTIST VERIFIED BY LIVE VIDEO"
-                    ]
-                  },
-                  {
-                    "t": "span",
-                    "a": { "style": "display: flex; align-items: center; gap: 8px" },
+                    "a": {
+                      "style": "display: flex; align-items: center; gap: 8px"
+                    },
                     "c": [
                       {
                         "t": "svg",
@@ -446,7 +531,41 @@
                         "c": [
                           {
                             "t": "path",
-                            "a": { "d": "M6 11h12v9H6z M8 11V8a4 4 0 0 1 8 0v3" },
+                            "a": {
+                              "d": "M3 7h12v10H3z M15 10l6-3v10l-6-3"
+                            },
+                            "c": []
+                          }
+                        ]
+                      },
+                      "EVERY ARTIST VERIFIED BY LIVE VIDEO"
+                    ]
+                  },
+                  {
+                    "t": "span",
+                    "a": {
+                      "style": "display: flex; align-items: center; gap: 8px"
+                    },
+                    "c": [
+                      {
+                        "t": "svg",
+                        "a": {
+                          "aria-hidden": "true",
+                          "width": "13",
+                          "height": "13",
+                          "sc-camel-view-box": "0 0 24 24",
+                          "fill": "none",
+                          "stroke": "#9C3A22",
+                          "stroke-width": "1.6",
+                          "stroke-linecap": "round",
+                          "stroke-linejoin": "round"
+                        },
+                        "c": [
+                          {
+                            "t": "path",
+                            "a": {
+                              "d": "M6 11h12v9H6z M8 11V8a4 4 0 0 1 8 0v3"
+                            },
                             "c": []
                           }
                         ]
@@ -456,7 +575,9 @@
                   },
                   {
                     "t": "span",
-                    "a": { "style": "display: flex; align-items: center; gap: 8px" },
+                    "a": {
+                      "style": "display: flex; align-items: center; gap: 8px"
+                    },
                     "c": [
                       {
                         "t": "svg",
@@ -486,7 +607,9 @@
                   },
                   {
                     "t": "span",
-                    "a": { "style": "display: flex; align-items: center; gap: 8px" },
+                    "a": {
+                      "style": "display: flex; align-items: center; gap: 8px"
+                    },
                     "c": [
                       {
                         "t": "svg",
@@ -520,7 +643,10 @@
           },
           {
             "t": "section",
-            "a": { "id": "artforms", "style": "padding: 36px 0 60px; overflow: hidden" },
+            "a": {
+              "id": "artforms",
+              "style": "padding: 36px 0 60px; overflow: hidden"
+            },
             "c": [
               {
                 "t": "div",
@@ -530,27 +656,42 @@
                 "c": [
                   {
                     "t": "div",
-                    "a": { "style": "display: flex; flex-direction: column; gap: 4px" },
+                    "a": {
+                      "style": "display: flex; flex-direction: column; gap: 4px"
+                    },
                     "c": [
                       {
                         "t": "span",
                         "a": {
                           "style": "font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.22em; color: #9C3A22"
                         },
-                        "c": ["§ 01 — THE ART FORMS"]
+                        "c": [
+                          "§ 01 — THE ART FORMS"
+                        ]
                       },
                       {
                         "t": "h2",
                         "a": {
                           "style": "margin: 0; font-family: Newsreader, serif; font-weight: 400; font-size: clamp(44px, 5.4vw, 74px); line-height: 1"
                         },
-                        "c": ["Choose an ", { "t": "em", "a": {}, "c": ["art form"] }]
+                        "c": [
+                          "Choose an ",
+                          {
+                            "t": "em",
+                            "a": {},
+                            "c": [
+                              "art form"
+                            ]
+                          }
+                        ]
                       }
                     ]
                   },
                   {
                     "t": "div",
-                    "a": { "style": "display: flex; align-items: center; gap: 14px" },
+                    "a": {
+                      "style": "display: flex; align-items: center; gap: 14px"
+                    },
                     "c": [
                       {
                         "t": "span",
@@ -561,8 +702,12 @@
                           "{{ ciNum }}",
                           {
                             "t": "span",
-                            "a": { "style": "font-size: 20px; color: #6B5246" },
-                            "c": [" / 18"]
+                            "a": {
+                              "style": "font-size: 20px; color: #6B5246"
+                            },
+                            "c": [
+                              " / 18"
+                            ]
                           }
                         ]
                       },
@@ -574,7 +719,9 @@
                           "class": "kpill",
                           "style": "width: 48px; height: 48px; border-radius: 999px; border: 1px solid #2A1D18; background: transparent; color: #2A1D18; font-size: 20px"
                         },
-                        "c": ["←"]
+                        "c": [
+                          "←"
+                        ]
                       },
                       {
                         "t": "button",
@@ -584,7 +731,9 @@
                           "class": "kpill",
                           "style": "width: 48px; height: 48px; border-radius: 999px; border: 1px solid #2A1D18; background: transparent; color: #2A1D18; font-size: 20px"
                         },
-                        "c": ["→"]
+                        "c": [
+                          "→"
+                        ]
                       }
                     ]
                   }
@@ -595,7 +744,9 @@
                 "a": {
                   "style": "max-width: 1320px; margin: 10px auto 0; padding: 0 24px; font-style: italic; color: #6B5246"
                 },
-                "c": ["Swipe through eighteen crafts. Each one plays its own little tune."]
+                "c": [
+                  "Swipe through eighteen crafts. Each one plays its own little tune."
+                ]
               },
               {
                 "t": "div",
@@ -607,7 +758,9 @@
                 "c": [
                   {
                     "t": "div",
-                    "a": { "style": "{{ trackStyle }}" },
+                    "a": {
+                      "style": "{{ trackStyle }}"
+                    },
                     "c": [
                       {
                         "t": "sc-for",
@@ -619,7 +772,9 @@
                         "c": [
                           {
                             "t": "div",
-                            "a": { "style": "{{ it.wrap }}" },
+                            "a": {
+                              "style": "{{ it.wrap }}"
+                            },
                             "c": [
                               {
                                 "t": "button",
@@ -713,14 +868,18 @@
                                 "a": {
                                   "style": "font-family: Newsreader, serif; font-style: italic; font-size: 34px; line-height: 1"
                                 },
-                                "c": ["{{ it.label }}"]
+                                "c": [
+                                  "{{ it.label }}"
+                                ]
                               },
                               {
                                 "t": "span",
                                 "a": {
                                   "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #6B5246"
                                 },
-                                "c": ["{{ it.count }}"]
+                                "c": [
+                                  "{{ it.count }}"
+                                ]
                               },
                               {
                                 "t": "sc-if",
@@ -737,7 +896,9 @@
                                       "class": "kbtn",
                                       "style": "border-radius: 999px; border: 1px solid #2A1D18; background: #2A1D18; color: #F2E7D3; padding: 11px 20px; font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-decoration: none"
                                     },
-                                    "c": ["FIND {{ it.labelUp }} NEAR YOU →"]
+                                    "c": [
+                                      "FIND {{ it.labelUp }} NEAR YOU →"
+                                    ]
                                   }
                                 ]
                               }
@@ -766,28 +927,45 @@
                 "c": [
                   {
                     "t": "div",
-                    "a": { "style": "display: flex; flex-direction: column; gap: 4px" },
+                    "a": {
+                      "style": "display: flex; flex-direction: column; gap: 4px"
+                    },
                     "c": [
                       {
                         "t": "span",
                         "a": {
                           "style": "font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.22em; color: #9C3A22"
                         },
-                        "c": ["§ 02 — FIND YOUR ARTIST"]
+                        "c": [
+                          "§ 02 — FIND YOUR ARTIST"
+                        ]
                       },
                       {
                         "t": "h2",
                         "a": {
                           "style": "margin: 0; font-family: Newsreader, serif; font-weight: 400; font-size: clamp(44px, 5.4vw, 74px); line-height: 1"
                         },
-                        "c": ["Where is the ", { "t": "em", "a": {}, "c": ["celebration?"] }]
+                        "c": [
+                          "Where is the ",
+                          {
+                            "t": "em",
+                            "a": {},
+                            "c": [
+                              "celebration?"
+                            ]
+                          }
+                        ]
                       }
                     ]
                   },
                   {
                     "t": "span",
-                    "a": { "style": "font-style: italic; color: #6B5246; max-width: 420px" },
-                    "c": ["Search any state or city in India, then choose who, when and how much."]
+                    "a": {
+                      "style": "font-style: italic; color: #6B5246; max-width: 420px"
+                    },
+                    "c": [
+                      "Search any state or city in India, then choose who, when and how much."
+                    ]
                   }
                 ]
               },
@@ -848,7 +1026,13 @@
                                               "fill-rule": "evenodd"
                                             },
                                             "c": [
-                                              { "t": "title", "a": {}, "c": ["{{ region.name }}"] }
+                                              {
+                                                "t": "title",
+                                                "a": {},
+                                                "c": [
+                                                  "{{ region.name }}"
+                                                ]
+                                              }
                                             ]
                                           }
                                         ]
@@ -859,7 +1043,9 @@
                                         "c": [
                                           {
                                             "t": "clipPath",
-                                            "a": { "id": "kindia-clip" },
+                                            "a": {
+                                              "id": "kindia-clip"
+                                            },
                                             "c": [
                                               {
                                                 "t": "sc-for",
@@ -871,7 +1057,9 @@
                                                 "c": [
                                                   {
                                                     "t": "path",
-                                                    "a": { "d": "{{ cr.d }}" },
+                                                    "a": {
+                                                      "d": "{{ cr.d }}"
+                                                    },
                                                     "c": []
                                                   }
                                                 ]
@@ -882,7 +1070,9 @@
                                       },
                                       {
                                         "t": "g",
-                                        "a": { "clip-path": "url(#kindia-clip)" },
+                                        "a": {
+                                          "clip-path": "url(#kindia-clip)"
+                                        },
                                         "c": [
                                           {
                                             "t": "sc-for",
@@ -894,7 +1084,9 @@
                                             "c": [
                                               {
                                                 "t": "g",
-                                                "a": { "transform": "{{ st.tr }}" },
+                                                "a": {
+                                                  "transform": "{{ st.tr }}"
+                                                },
                                                 "c": [
                                                   {
                                                     "t": "circle",
@@ -931,7 +1123,9 @@
                                     "c": [
                                       {
                                         "t": "g",
-                                        "a": { "class": "kpopland" },
+                                        "a": {
+                                          "class": "kpopland"
+                                        },
                                         "c": [
                                           {
                                             "t": "sc-for",
@@ -976,21 +1170,27 @@
                             "a": {
                               "style": "font-family: Newsreader, serif; font-size: 36px; line-height: 1; text-align: center"
                             },
-                            "c": ["{{ locName }}"]
+                            "c": [
+                              "{{ locName }}"
+                            ]
                           },
                           {
                             "t": "span",
                             "a": {
                               "style": "font-style: italic; color: #6B5246; text-align: center"
                             },
-                            "c": ["{{ locSub }}"]
+                            "c": [
+                              "{{ locSub }}"
+                            ]
                           },
                           {
                             "t": "span",
                             "a": {
                               "style": "font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.12em; text-align: center; border: 1px solid #2A1D18; border-radius: 999px; padding: 6px 14px"
                             },
-                            "c": ["{{ castleCap }}"]
+                            "c": [
+                              "{{ castleCap }}"
+                            ]
                           },
                           {
                             "t": "div",
@@ -1000,7 +1200,9 @@
                             "c": [
                               {
                                 "t": "span",
-                                "a": { "style": "display: flex; align-items: center; gap: 6px" },
+                                "a": {
+                                  "style": "display: flex; align-items: center; gap: 6px"
+                                },
                                 "c": [
                                   {
                                     "t": "span",
@@ -1014,7 +1216,9 @@
                               },
                               {
                                 "t": "span",
-                                "a": { "style": "display: flex; align-items: center; gap: 6px" },
+                                "a": {
+                                  "style": "display: flex; align-items: center; gap: 6px"
+                                },
                                 "c": [
                                   {
                                     "t": "span",
@@ -1046,100 +1250,104 @@
                         },
                         "c": [
                           {
-                            "t": "sc-if",
-                            "a": { "value": "{{ false }}", "hint-placeholder-val": "{{ false }}" },
+                            "t": "div",
+                            "a": {
+                              "class": "kfilter",
+                              "style": "position: relative; display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border: 1px solid rgba(42,29,24,.45); background: #EFE6D6; min-height: 100px; box-sizing: border-box"
+                            },
                             "c": [
                               {
-                                "t": "div",
+                                "t": "label",
                                 "a": {
-                                  "class": "kfilter",
-                                  "style": "position: relative; display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border: 1px solid rgba(42,29,24,.45); background: #EFE6D6; min-height: 100px; box-sizing: border-box"
+                                  "style": "display: flex; flex-direction: column; gap: 10px"
                                 },
                                 "c": [
                                   {
-                                    "t": "label",
+                                    "t": "span",
                                     "a": {
-                                      "style": "display: flex; flex-direction: column; gap: 10px"
+                                      "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
                                     },
                                     "c": [
-                                      {
-                                        "t": "span",
-                                        "a": {
-                                          "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
-                                        },
-                                        "c": ["1. STATE / CITY"]
-                                      },
-                                      {
-                                        "t": "input",
-                                        "a": {
-                                          "value": "{{ locQ }}",
-                                          "sc-camel-on-change": "{{ setLocQ }}",
-                                          "placeholder": "Type a state or city (e.g. Mizoram, Udaipur)",
-                                          "style": "width: 100%; box-sizing: border-box; border: none; background: transparent; font-family: Newsreader, serif; font-size: 22px; padding: 2px 0; color: #2A1D18; outline: none"
-                                        },
-                                        "c": []
-                                      }
+                                      "1. PAN-INDIA CITY / DISTRICT"
                                     ]
                                   },
                                   {
-                                    "t": "sc-if",
+                                    "t": "input",
                                     "a": {
-                                      "value": "{{ hasLoc }}",
-                                      "hint-placeholder-val": "{{ false }}"
+                                      "value": "{{ locQ }}",
+                                      "sc-camel-on-change": "{{ setLocQ }}",
+                                      "placeholder": "Type a state or city (e.g. Mizoram, Udaipur)",
+                                      "style": "width: 100%; box-sizing: border-box; border: none; background: transparent; font-family: Newsreader, serif; font-size: 22px; padding: 2px 0; color: #2A1D18; outline: none"
                                     },
-                                    "c": [
-                                      {
-                                        "t": "button",
-                                        "a": {
-                                          "sc-camel-on-click": "{{ clearLoc }}",
-                                          "class": "klink",
-                                          "style": "align-self: flex-start; background: none; border: none; padding: 0; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #9C3A22; min-height: 24px"
-                                        },
-                                        "c": ["× CLEAR · ALL OF INDIA"]
-                                      }
-                                    ]
-                                  },
+                                    "c": []
+                                  }
+                                ]
+                              },
+                              {
+                                "t": "sc-if",
+                                "a": {
+                                  "value": "{{ hasLoc }}",
+                                  "hint-placeholder-val": "{{ false }}"
+                                },
+                                "c": [
                                   {
-                                    "t": "sc-if",
+                                    "t": "button",
                                     "a": {
-                                      "value": "{{ hasSugg }}",
-                                      "hint-placeholder-val": "{{ false }}"
+                                      "sc-camel-on-click": "{{ clearLoc }}",
+                                      "class": "klink",
+                                      "style": "align-self: flex-start; background: none; border: none; padding: 0; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #9C3A22; min-height: 24px"
+                                    },
+                                    "c": [
+                                      "× CLEAR · ALL OF INDIA"
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "t": "sc-if",
+                                "a": {
+                                  "value": "{{ hasSugg }}",
+                                  "hint-placeholder-val": "{{ false }}"
+                                },
+                                "c": [
+                                  {
+                                    "t": "div",
+                                    "a": {
+                                      "style": "position: absolute; left: -1px; right: -1px; top: 100%; z-index: 30; max-height: 360px; overflow-y: auto; background: #2A1D18; color: #F2E7D3; box-shadow: 0 18px 30px rgba(42,29,24,.3)"
                                     },
                                     "c": [
                                       {
-                                        "t": "div",
+                                        "t": "sc-for",
                                         "a": {
-                                          "style": "position: absolute; left: -1px; right: -1px; top: 100%; z-index: 30; max-height: 360px; overflow-y: auto; background: #2A1D18; color: #F2E7D3; box-shadow: 0 18px 30px rgba(42,29,24,.3)"
+                                          "list": "{{ sugg }}",
+                                          "as": "g",
+                                          "hint-placeholder-count": "6"
                                         },
                                         "c": [
                                           {
-                                            "t": "sc-for",
+                                            "t": "button",
                                             "a": {
-                                              "list": "{{ sugg }}",
-                                              "as": "g",
-                                              "hint-placeholder-count": "6"
+                                              "sc-camel-on-click": "{{ g.pick }}",
+                                              "class": "ksug",
+                                              "style": "display: flex; width: 100%; flex-direction: column; align-items: flex-start; gap: 2px; background: none; border: none; border-bottom: 1px solid rgba(242,231,211,.12); padding: 10px 16px; min-height: 52px; text-align: left; color: #F2E7D3"
                                             },
                                             "c": [
                                               {
-                                                "t": "button",
+                                                "t": "span",
                                                 "a": {
-                                                  "sc-camel-on-click": "{{ g.pick }}",
-                                                  "class": "ksug",
-                                                  "style": "display: flex; width: 100%; flex-direction: column; align-items: flex-start; gap: 2px; background: none; border: none; border-bottom: 1px solid rgba(242,231,211,.12); padding: 10px 16px; min-height: 52px; text-align: left; color: #F2E7D3"
+                                                  "style": "font-size: 20px"
                                                 },
                                                 "c": [
-                                                  {
-                                                    "t": "span",
-                                                    "a": { "style": "font-size: 20px" },
-                                                    "c": ["{{ g.label }}"]
-                                                  },
-                                                  {
-                                                    "t": "span",
-                                                    "a": {
-                                                      "style": "font-size: 14px; opacity: .75"
-                                                    },
-                                                    "c": ["{{ g.sub }} · {{ g.count }}"]
-                                                  }
+                                                  "{{ g.label }}"
+                                                ]
+                                              },
+                                              {
+                                                "t": "span",
+                                                "a": {
+                                                  "style": "font-size: 14px; opacity: .75"
+                                                },
+                                                "c": [
+                                                  "{{ g.sub }} · {{ g.count }}"
                                                 ]
                                               }
                                             ]
@@ -1170,32 +1378,40 @@
                                     "a": {
                                       "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
                                     },
-                                    "c": ["1. STATE"]
+                                    "c": [
+                                      "2. LOCATION TIER MATCH"
+                                    ]
                                   },
                                   {
                                     "t": "span",
-                                    "a": { "style": "position: relative; display: block" },
+                                    "a": {
+                                      "style": "position: relative; display: block"
+                                    },
                                     "c": [
                                       {
                                         "t": "sc-raw-select",
                                         "a": {
-                                          "value": "{{ stateVal }}",
-                                          "sc-camel-on-change": "{{ setStateLoc }}",
+                                          "value": "{{ tier }}",
+                                          "sc-camel-on-change": "{{ setTier }}",
                                           "style": "width: 100%; appearance: none; -webkit-appearance: none; border: none; background: transparent; font-family: Newsreader, serif; font-size: 22px; color: #2A1D18; padding: 2px 30px 2px 0; cursor: pointer; outline: none"
                                         },
                                         "c": [
                                           {
                                             "t": "sc-for",
                                             "a": {
-                                              "list": "{{ stateOpts }}",
+                                              "list": "{{ tierOpts }}",
                                               "as": "o",
-                                              "hint-placeholder-count": "10"
+                                              "hint-placeholder-count": "4"
                                             },
                                             "c": [
                                               {
                                                 "t": "option",
-                                                "a": { "value": "{{ o.v }}" },
-                                                "c": ["{{ o.label }}"]
+                                                "a": {
+                                                  "value": "{{ o.v }}"
+                                                },
+                                                "c": [
+                                                  "{{ o.label }}"
+                                                ]
                                               }
                                             ]
                                           }
@@ -1216,7 +1432,13 @@
                                           "style": "position: absolute; right: 0; top: 50%; transform: translateY(-50%); pointer-events: none"
                                         },
                                         "c": [
-                                          { "t": "path", "a": { "d": "M6 9l6 6 6-6" }, "c": [] }
+                                          {
+                                            "t": "path",
+                                            "a": {
+                                              "d": "M6 9l6 6 6-6"
+                                            },
+                                            "c": []
+                                          }
                                         ]
                                       }
                                     ]
@@ -1243,11 +1465,15 @@
                                     "a": {
                                       "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
                                     },
-                                    "c": ["2. ART FORM / SKILL"]
+                                    "c": [
+                                      "3. ART FORM / SKILL"
+                                    ]
                                   },
                                   {
                                     "t": "span",
-                                    "a": { "style": "position: relative; display: block" },
+                                    "a": {
+                                      "style": "position: relative; display: block"
+                                    },
                                     "c": [
                                       {
                                         "t": "sc-raw-select",
@@ -1267,8 +1493,12 @@
                                             "c": [
                                               {
                                                 "t": "option",
-                                                "a": { "value": "{{ o.v }}" },
-                                                "c": ["{{ o.label }}"]
+                                                "a": {
+                                                  "value": "{{ o.v }}"
+                                                },
+                                                "c": [
+                                                  "{{ o.label }}"
+                                                ]
                                               }
                                             ]
                                           }
@@ -1289,7 +1519,13 @@
                                           "style": "position: absolute; right: 0; top: 50%; transform: translateY(-50%); pointer-events: none"
                                         },
                                         "c": [
-                                          { "t": "path", "a": { "d": "M6 9l6 6 6-6" }, "c": [] }
+                                          {
+                                            "t": "path",
+                                            "a": {
+                                              "d": "M6 9l6 6 6-6"
+                                            },
+                                            "c": []
+                                          }
                                         ]
                                       }
                                     ]
@@ -1310,29 +1546,37 @@
                                 "a": {
                                   "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
                                 },
-                                "c": ["3. AVAILABILITY DAY & TIME"]
+                                "c": [
+                                  "4. AVAILABILITY DAY & TIME"
+                                ]
                               },
                               {
                                 "t": "div",
-                                "a": { "style": "display: flex; gap: 14px" },
+                                "a": {
+                                  "style": "display: flex; flex-direction: column; gap: 6px; min-width: 0; width: 100%"
+                                },
                                 "c": [
                                   {
                                     "t": "label",
-                                    "a": { "style": "position: relative; flex: 1; min-width: 0" },
+                                    "a": {
+                                      "style": "position: relative; display: block; width: 100%; min-width: 0"
+                                    },
                                     "c": [
                                       {
                                         "t": "span",
                                         "a": {
                                           "style": "position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)"
                                         },
-                                        "c": ["Day"]
+                                        "c": [
+                                          "Day"
+                                        ]
                                       },
                                       {
                                         "t": "sc-raw-select",
                                         "a": {
                                           "value": "{{ fDayV }}",
                                           "sc-camel-on-change": "{{ setDayF }}",
-                                          "style": "width: 100%; appearance: none; -webkit-appearance: none; border: none; background: transparent; font-family: Newsreader, serif; font-size: 22px; color: #2A1D18; padding: 2px 30px 2px 0; cursor: pointer; outline: none"
+                                          "style": "width: 100%; appearance: none; -webkit-appearance: none; border: none; background: transparent; font-family: Newsreader, serif; font-size: 18px; color: #2A1D18; padding: 2px 24px 2px 0; cursor: pointer; outline: none"
                                         },
                                         "c": [
                                           {
@@ -1345,8 +1589,12 @@
                                             "c": [
                                               {
                                                 "t": "option",
-                                                "a": { "value": "{{ o.v }}" },
-                                                "c": ["{{ o.label }}"]
+                                                "a": {
+                                                  "value": "{{ o.v }}"
+                                                },
+                                                "c": [
+                                                  "{{ o.label }}"
+                                                ]
                                               }
                                             ]
                                           }
@@ -1367,28 +1615,38 @@
                                           "style": "position: absolute; right: 0; top: 50%; transform: translateY(-50%); pointer-events: none"
                                         },
                                         "c": [
-                                          { "t": "path", "a": { "d": "M6 9l6 6 6-6" }, "c": [] }
+                                          {
+                                            "t": "path",
+                                            "a": {
+                                              "d": "M6 9l6 6 6-6"
+                                            },
+                                            "c": []
+                                          }
                                         ]
                                       }
                                     ]
                                   },
                                   {
                                     "t": "label",
-                                    "a": { "style": "position: relative; flex: 1; min-width: 0" },
+                                    "a": {
+                                      "style": "position: relative; display: block; width: 100%; min-width: 0"
+                                    },
                                     "c": [
                                       {
                                         "t": "span",
                                         "a": {
                                           "style": "position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)"
                                         },
-                                        "c": ["Time"]
+                                        "c": [
+                                          "Time"
+                                        ]
                                       },
                                       {
                                         "t": "sc-raw-select",
                                         "a": {
                                           "value": "{{ todV }}",
                                           "sc-camel-on-change": "{{ setTod }}",
-                                          "style": "width: 100%; appearance: none; -webkit-appearance: none; border: none; background: transparent; font-family: Newsreader, serif; font-size: 22px; color: #2A1D18; padding: 2px 30px 2px 0; cursor: pointer; outline: none"
+                                          "style": "width: 100%; appearance: none; -webkit-appearance: none; border: none; background: transparent; font-family: Newsreader, serif; font-size: 18px; color: #2A1D18; padding: 2px 24px 2px 0; cursor: pointer; outline: none"
                                         },
                                         "c": [
                                           {
@@ -1401,8 +1659,12 @@
                                             "c": [
                                               {
                                                 "t": "option",
-                                                "a": { "value": "{{ o.v }}" },
-                                                "c": ["{{ o.label }}"]
+                                                "a": {
+                                                  "value": "{{ o.v }}"
+                                                },
+                                                "c": [
+                                                  "{{ o.label }}"
+                                                ]
                                               }
                                             ]
                                           }
@@ -1423,7 +1685,13 @@
                                           "style": "position: absolute; right: 0; top: 50%; transform: translateY(-50%); pointer-events: none"
                                         },
                                         "c": [
-                                          { "t": "path", "a": { "d": "M6 9l6 6 6-6" }, "c": [] }
+                                          {
+                                            "t": "path",
+                                            "a": {
+                                              "d": "M6 9l6 6 6-6"
+                                            },
+                                            "c": []
+                                          }
                                         ]
                                       }
                                     ]
@@ -1433,58 +1701,66 @@
                             ]
                           },
                           {
-                            "t": "sc-if",
-                            "a": { "value": "{{ false }}", "hint-placeholder-val": "{{ false }}" },
+                            "t": "div",
+                            "a": {
+                              "class": "kfilter",
+                              "style": "position: relative; display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border: 1px solid rgba(42,29,24,.45); background: #EFE6D6; min-height: 100px; box-sizing: border-box"
+                            },
                             "c": [
                               {
                                 "t": "div",
                                 "a": {
-                                  "class": "kfilter",
-                                  "style": "position: relative; display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border: 1px solid rgba(42,29,24,.45); background: #EFE6D6; min-height: 100px; box-sizing: border-box"
+                                  "style": "display: flex; flex-direction: column; gap: 6px"
                                 },
                                 "c": [
                                   {
-                                    "t": "div",
+                                    "t": "span",
                                     "a": {
-                                      "style": "display: flex; flex-direction: column; gap: 6px"
+                                      "style": "display: flex; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
                                     },
                                     "c": [
                                       {
                                         "t": "span",
-                                        "a": {
-                                          "style": "display: flex; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
-                                        },
+                                        "a": {},
                                         "c": [
-                                          { "t": "span", "a": {}, "c": ["5. DURATION"] },
-                                          {
-                                            "t": "strong",
-                                            "a": { "style": "color: #2A1D18" },
-                                            "c": ["{{ hrsLabel }}"]
-                                          }
+                                          "5. DURATION"
                                         ]
                                       },
                                       {
-                                        "t": "div",
-                                        "a": { "class": "khrs" },
+                                        "t": "strong",
+                                        "a": {
+                                          "style": "color: #2A1D18"
+                                        },
+                                        "c": [
+                                          "{{ hrsLabel }}"
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "t": "div",
+                                    "a": {
+                                      "class": "khrs"
+                                    },
+                                    "c": [
+                                      {
+                                        "t": "sc-for",
+                                        "a": {
+                                          "list": "{{ hrsOpts }}",
+                                          "as": "o",
+                                          "hint-placeholder-count": 7
+                                        },
                                         "c": [
                                           {
-                                            "t": "sc-for",
+                                            "t": "button",
                                             "a": {
-                                              "list": "{{ hrsOpts }}",
-                                              "as": "o",
-                                              "hint-placeholder-count": 7
+                                              "sc-camel-on-click": "{{ o.pick }}",
+                                              "type": "button",
+                                              "aria-pressed": "{{ o.on }}",
+                                              "style": "{{ o.style }}"
                                             },
                                             "c": [
-                                              {
-                                                "t": "button",
-                                                "a": {
-                                                  "sc-camel-on-click": "{{ o.pick }}",
-                                                  "type": "button",
-                                                  "aria-pressed": "{{ o.on }}",
-                                                  "style": "{{ o.style }}"
-                                                },
-                                                "c": ["{{ o.label }}"]
-                                              }
+                                              "{{ o.label }}"
                                             ]
                                           }
                                         ]
@@ -1504,7 +1780,9 @@
                             "c": [
                               {
                                 "t": "label",
-                                "a": { "style": "display: flex; flex-direction: column; gap: 6px" },
+                                "a": {
+                                  "style": "display: flex; flex-direction: column; gap: 6px"
+                                },
                                 "c": [
                                   {
                                     "t": "span",
@@ -1512,11 +1790,21 @@
                                       "style": "display: flex; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
                                     },
                                     "c": [
-                                      { "t": "span", "a": {}, "c": ["4. MAX RATE / HR"] },
+                                      {
+                                        "t": "span",
+                                        "a": {},
+                                        "c": [
+                                          "6. MAX RATE / HR"
+                                        ]
+                                      },
                                       {
                                         "t": "strong",
-                                        "a": { "style": "color: #2A1D18" },
-                                        "c": ["{{ rateLabel }}"]
+                                        "a": {
+                                          "style": "color: #2A1D18"
+                                        },
+                                        "c": [
+                                          "{{ rateLabel }}"
+                                        ]
                                       }
                                     ]
                                   },
@@ -1555,11 +1843,15 @@
                                     "a": {
                                       "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
                                     },
-                                    "c": ["5. SORT BY"]
+                                    "c": [
+                                      "7. SORT BY STARS & RENOWN"
+                                    ]
                                   },
                                   {
                                     "t": "span",
-                                    "a": { "style": "position: relative; display: block" },
+                                    "a": {
+                                      "style": "position: relative; display: block"
+                                    },
                                     "c": [
                                       {
                                         "t": "sc-raw-select",
@@ -1579,8 +1871,12 @@
                                             "c": [
                                               {
                                                 "t": "option",
-                                                "a": { "value": "{{ o.v }}" },
-                                                "c": ["{{ o.label }}"]
+                                                "a": {
+                                                  "value": "{{ o.v }}"
+                                                },
+                                                "c": [
+                                                  "{{ o.label }}"
+                                                ]
                                               }
                                             ]
                                           }
@@ -1601,7 +1897,13 @@
                                           "style": "position: absolute; right: 0; top: 50%; transform: translateY(-50%); pointer-events: none"
                                         },
                                         "c": [
-                                          { "t": "path", "a": { "d": "M6 9l6 6 6-6" }, "c": [] }
+                                          {
+                                            "t": "path",
+                                            "a": {
+                                              "d": "M6 9l6 6 6-6"
+                                            },
+                                            "c": []
+                                          }
                                         ]
                                       }
                                     ]
@@ -1635,11 +1937,15 @@
                                         "a": {
                                           "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
                                         },
-                                        "c": ["8. MINIMUM RATING"]
+                                        "c": [
+                                          "8. MINIMUM RATING"
+                                        ]
                                       },
                                       {
                                         "t": "span",
-                                        "a": { "style": "position: relative; display: block" },
+                                        "a": {
+                                          "style": "position: relative; display: block"
+                                        },
                                         "c": [
                                           {
                                             "t": "sc-raw-select",
@@ -1659,8 +1965,12 @@
                                                 "c": [
                                                   {
                                                     "t": "option",
-                                                    "a": { "value": "{{ o.v }}" },
-                                                    "c": ["{{ o.label }}"]
+                                                    "a": {
+                                                      "value": "{{ o.v }}"
+                                                    },
+                                                    "c": [
+                                                      "{{ o.label }}"
+                                                    ]
                                                   }
                                                 ]
                                               }
@@ -1681,7 +1991,13 @@
                                               "style": "position: absolute; right: 0; top: 50%; transform: translateY(-50%); pointer-events: none"
                                             },
                                             "c": [
-                                              { "t": "path", "a": { "d": "M6 9l6 6 6-6" }, "c": [] }
+                                              {
+                                                "t": "path",
+                                                "a": {
+                                                  "d": "M6 9l6 6 6-6"
+                                                },
+                                                "c": []
+                                              }
                                             ]
                                           }
                                         ]
@@ -1708,7 +2024,9 @@
                               "class": "kpill",
                               "style": "{{ freeStyle }}"
                             },
-                            "c": ["{{ freeLabel }}"]
+                            "c": [
+                              "{{ freeLabel }}"
+                            ]
                           },
                           {
                             "t": "label",
@@ -1731,10 +2049,20 @@
                                 "c": [
                                   {
                                     "t": "circle",
-                                    "a": { "cx": "11", "cy": "11", "r": "7" },
+                                    "a": {
+                                      "cx": "11",
+                                      "cy": "11",
+                                      "r": "7"
+                                    },
                                     "c": []
                                   },
-                                  { "t": "path", "a": { "d": "M20 20l-3.5-3.5" }, "c": [] }
+                                  {
+                                    "t": "path",
+                                    "a": {
+                                      "d": "M20 20l-3.5-3.5"
+                                    },
+                                    "c": []
+                                  }
                                 ]
                               },
                               {
@@ -1742,7 +2070,9 @@
                                 "a": {
                                   "style": "position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)"
                                 },
-                                "c": ["Search by artist name"]
+                                "c": [
+                                  "Search by artist name"
+                                ]
                               },
                               {
                                 "t": "input",
@@ -1763,7 +2093,9 @@
                               "class": "klink",
                               "style": "background: none; border: none; padding: 6px 0; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #9C3A22; min-height: 36px"
                             },
-                            "c": ["RESET FILTERS"]
+                            "c": [
+                              "RESET FILTERS"
+                            ]
                           }
                         ]
                       }
@@ -1773,18 +2105,25 @@
               },
               {
                 "t": "div",
-                "a": { "style": "display: flex; flex-direction: column; gap: 14px" },
+                "a": {
+                  "style": "display: flex; flex-direction: column; gap: 14px"
+                },
                 "c": [
                   {
                     "t": "span",
                     "a": {
                       "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.18em; color: #6B5246"
                     },
-                    "c": ["METROS & STATE CAPITALS · TAP A HOUSE TO SEE ITS ARTISTS"]
+                    "c": [
+                      "METROS & STATE CAPITALS · TAP A HOUSE TO SEE ITS ARTISTS"
+                    ]
                   },
                   {
                     "t": "sc-if",
-                    "a": { "value": "{{ hasHouses }}", "hint-placeholder-val": "{{ false }}" },
+                    "a": {
+                      "value": "{{ hasHouses }}",
+                      "hint-placeholder-val": "{{ false }}"
+                    },
                     "c": [
                       {
                         "t": "div",
@@ -1813,7 +2152,9 @@
                                     "a": {
                                       "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.12em; padding: 4px 8px; white-space: nowrap; background: #C98A6A; color: #2A1D18; border: 1px solid #2A1D18"
                                     },
-                                    "c": ["★ {{ h.badge }}"]
+                                    "c": [
+                                      "★ {{ h.badge }}"
+                                    ]
                                   },
                                   {
                                     "t": "svg",
@@ -1882,14 +2223,18 @@
                                     "a": {
                                       "style": "display: block; width: 100%; min-height: 36px; font-family: Newsreader, serif; font-size: 15px; letter-spacing: 0.04em; line-height: 1.15; text-align: center; overflow-wrap: anywhere; word-break: break-word; hyphens: auto"
                                     },
-                                    "c": ["{{ h.label }}"]
+                                    "c": [
+                                      "{{ h.label }}"
+                                    ]
                                   },
                                   {
                                     "t": "span",
                                     "a": {
                                       "style": "font-style: italic; font-size: 14px; color: #6B5246"
                                     },
-                                    "c": ["{{ h.sub }}"]
+                                    "c": [
+                                      "{{ h.sub }}"
+                                    ]
                                   }
                                 ]
                               }
@@ -1916,7 +2261,9 @@
                             "a": {
                               "style": "font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.12em; color: #F2C46B"
                             },
-                            "c": ["LIT UP ·"]
+                            "c": [
+                              "LIT UP ·"
+                            ]
                           },
                           " {{ litLine }}"
                         ]
@@ -1927,21 +2274,36 @@
               },
               {
                 "t": "div",
-                "a": { "class": "kartist-heading" },
+                "a": {
+                  "class": "kartist-heading"
+                },
                 "c": [
-                  { "t": "h3", "a": { "class": "kartist-heading-title" }, "c": ["{{ resTitle }}"] },
+                  {
+                    "t": "h3",
+                    "a": {
+                      "class": "kartist-heading-title"
+                    },
+                    "c": [
+                      "{{ resTitle }}"
+                    ]
+                  },
                   {
                     "t": "span",
                     "a": {
                       "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
                     },
-                    "c": ["{{ resSub }}"]
+                    "c": [
+                      "{{ resSub }}"
+                    ]
                   }
                 ]
               },
               {
                 "t": "sc-if",
-                "a": { "value": "{{ noResults }}", "hint-placeholder-val": "{{ false }}" },
+                "a": {
+                  "value": "{{ noResults }}",
+                  "hint-placeholder-val": "{{ false }}"
+                },
                 "c": [
                   {
                     "t": "div",
@@ -1954,7 +2316,9 @@
                         "a": {
                           "style": "font-family: Newsreader, serif; font-style: italic; font-size: 30px"
                         },
-                        "c": ["No one matches yet. Try another day, time or art form."]
+                        "c": [
+                          "No one matches yet. Try another day, time or art form."
+                        ]
                       },
                       {
                         "t": "button",
@@ -1963,7 +2327,9 @@
                           "class": "kbtn",
                           "style": "background: #2A1D18; color: #F2E7D3; border: 1px solid #2A1D18; border-radius: 999px; padding: 11px 22px; font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.16em; min-height: 46px"
                         },
-                        "c": ["RESET FILTERS"]
+                        "c": [
+                          "RESET FILTERS"
+                        ]
                       }
                     ]
                   }
@@ -1971,16 +2337,31 @@
               },
               {
                 "t": "sc-if",
-                "a": { "value": "{{ isSavedView }}", "hint-placeholder-val": "{{ false }}" },
-                "c": [{ "t": "kalzo-saved", "a": {}, "c": [] }]
+                "a": {
+                  "value": "{{ isSavedView }}",
+                  "hint-placeholder-val": "{{ false }}"
+                },
+                "c": [
+                  {
+                    "t": "kalzo-saved",
+                    "a": {},
+                    "c": []
+                  }
+                ]
               },
               {
                 "t": "div",
-                "a": { "style": "display: grid; grid-template-columns: 1fr" },
+                "a": {
+                  "style": "display: grid; grid-template-columns: 1fr"
+                },
                 "c": [
                   {
                     "t": "sc-for",
-                    "a": { "list": "{{ rows }}", "as": "r", "hint-placeholder-count": "10" },
+                    "a": {
+                      "list": "{{ rows }}",
+                      "as": "r",
+                      "hint-placeholder-count": "10"
+                    },
                     "c": [
                       {
                         "t": "article",
@@ -1988,7 +2369,9 @@
                         "c": [
                           {
                             "t": "div",
-                            "a": { "class": "kartist-media" },
+                            "a": {
+                              "class": "kartist-media"
+                            },
                             "c": [
                               {
                                 "t": "div",
@@ -2035,7 +2418,9 @@
                                   },
                                   {
                                     "t": "span",
-                                    "a": { "class": "kartist-media-tools" },
+                                    "a": {
+                                      "class": "kartist-media-tools"
+                                    },
                                     "c": [
                                       {
                                         "t": "button",
@@ -2098,7 +2483,9 @@
                                             "c": [
                                               {
                                                 "t": "path",
-                                                "a": { "d": "M3 6h13v12H3z M16 10l5-3v10l-5-3" },
+                                                "a": {
+                                                  "d": "M3 6h13v12H3z M16 10l5-3v10l-5-3"
+                                                },
                                                 "c": []
                                               }
                                             ]
@@ -2188,7 +2575,9 @@
                                   },
                                   {
                                     "t": "span",
-                                    "a": { "class": "kartist-save-tools" },
+                                    "a": {
+                                      "class": "kartist-save-tools"
+                                    },
                                     "c": [
                                       {
                                         "t": "button",
@@ -2251,7 +2640,9 @@
                                             "c": [
                                               {
                                                 "t": "path",
-                                                "a": { "d": "M6 3h12v18l-6-4-6 4z" },
+                                                "a": {
+                                                  "d": "M6 3h12v18l-6-4-6 4z"
+                                                },
                                                 "c": []
                                               }
                                             ]
@@ -2264,34 +2655,50 @@
                               },
                               {
                                 "t": "div",
-                                "a": { "class": "kartist-footer" },
+                                "a": {
+                                  "class": "kartist-footer"
+                                },
                                 "c": [
                                   {
                                     "t": "div",
-                                    "a": { "class": "kartist-price-block" },
+                                    "a": {
+                                      "class": "kartist-price-block"
+                                    },
                                     "c": [
                                       {
                                         "t": "span",
-                                        "a": { "class": "kartist-price" },
+                                        "a": {
+                                          "class": "kartist-price"
+                                        },
                                         "c": [
                                           "{{ r.rateText }} ",
                                           {
                                             "t": "span",
-                                            "a": { "class": "kartist-unit" },
-                                            "c": ["{{ r.unit }}"]
+                                            "a": {
+                                              "class": "kartist-unit"
+                                            },
+                                            "c": [
+                                              "{{ r.unit }}"
+                                            ]
                                           }
                                         ]
                                       },
                                       {
                                         "t": "span",
-                                        "a": { "class": "kartist-travel" },
-                                        "c": ["{{ r.travelNote }}"]
+                                        "a": {
+                                          "class": "kartist-travel"
+                                        },
+                                        "c": [
+                                          "{{ r.travelNote }}"
+                                        ]
                                       }
                                     ]
                                   },
                                   {
                                     "t": "div",
-                                    "a": { "class": "kartist-actions" },
+                                    "a": {
+                                      "class": "kartist-actions"
+                                    },
                                     "c": [
                                       {
                                         "t": "button",
@@ -2312,7 +2719,9 @@
                                             "c": [
                                               {
                                                 "t": "path",
-                                                "a": { "d": "M6 4v16l14-8z" },
+                                                "a": {
+                                                  "d": "M6 4v16l14-8z"
+                                                },
                                                 "c": []
                                               }
                                             ]
@@ -2326,7 +2735,9 @@
                                           "sc-camel-on-click": "{{ r.book }}",
                                           "class": "kartist-action kartist-book"
                                         },
-                                        "c": ["BOOK NOW ↗"]
+                                        "c": [
+                                          "BOOK NOW ↗"
+                                        ]
                                       }
                                     ]
                                   }
@@ -2336,15 +2747,21 @@
                           },
                           {
                             "t": "div",
-                            "a": { "class": "kartist-info" },
+                            "a": {
+                              "class": "kartist-info"
+                            },
                             "c": [
                               {
                                 "t": "div",
-                                "a": { "class": "kartist-topline" },
+                                "a": {
+                                  "class": "kartist-topline"
+                                },
                                 "c": [
                                   {
                                     "t": "span",
-                                    "a": { "class": "kartist-discipline" },
+                                    "a": {
+                                      "class": "kartist-discipline"
+                                    },
                                     "c": [
                                       {
                                         "t": "svg",
@@ -2360,7 +2777,13 @@
                                           "stroke-linejoin": "round"
                                         },
                                         "c": [
-                                          { "t": "path", "a": { "d": "{{ r.icon }}" }, "c": [] }
+                                          {
+                                            "t": "path",
+                                            "a": {
+                                              "d": "{{ r.icon }}"
+                                            },
+                                            "c": []
+                                          }
                                         ]
                                       },
                                       "{{ r.craft }}"
@@ -2368,8 +2791,12 @@
                                   },
                                   {
                                     "t": "span",
-                                    "a": { "class": "kartist-status" },
-                                    "c": ["{{ r.status }}"]
+                                    "a": {
+                                      "class": "kartist-status"
+                                    },
+                                    "c": [
+                                      "{{ r.status }}"
+                                    ]
                                   }
                                 ]
                               },
@@ -2379,16 +2806,24 @@
                                   "sc-camel-on-click": "{{ r.open }}",
                                   "class": "kartist-name klink"
                                 },
-                                "c": ["{{ r.name }}"]
+                                "c": [
+                                  "{{ r.name }}"
+                                ]
                               },
                               {
                                 "t": "span",
-                                "a": { "class": "kartist-instruments" },
-                                "c": ["{{ r.instr }}"]
+                                "a": {
+                                  "class": "kartist-instruments"
+                                },
+                                "c": [
+                                  "{{ r.instr }}"
+                                ]
                               },
                               {
                                 "t": "div",
-                                "a": { "class": "kartist-ratingline" },
+                                "a": {
+                                  "class": "kartist-ratingline"
+                                },
                                 "c": [
                                   {
                                     "t": "span",
@@ -2399,111 +2834,207 @@
                                     "c": [
                                       {
                                         "t": "span",
-                                        "a": { "class": "kstars-base" },
-                                        "c": ["★★★★★"]
+                                        "a": {
+                                          "class": "kstars-base"
+                                        },
+                                        "c": [
+                                          "★★★★★"
+                                        ]
                                       },
                                       {
                                         "t": "span",
-                                        "a": { "class": "kstars-fill", "style": "{{ r.starPct }}" },
-                                        "c": ["★★★★★"]
+                                        "a": {
+                                          "class": "kstars-fill",
+                                          "style": "{{ r.starPct }}"
+                                        },
+                                        "c": [
+                                          "★★★★★"
+                                        ]
                                       }
                                     ]
                                   },
                                   {
                                     "t": "b",
-                                    "a": { "class": "kartist-score" },
-                                    "c": ["{{ r.rating }}"]
+                                    "a": {
+                                      "class": "kartist-score"
+                                    },
+                                    "c": [
+                                      "{{ r.rating }}"
+                                    ]
                                   },
                                   {
                                     "t": "span",
-                                    "a": { "class": "kartist-reviews" },
-                                    "c": ["{{ r.reviewsText }}"]
+                                    "a": {
+                                      "class": "kartist-reviews"
+                                    },
+                                    "c": [
+                                      "{{ r.reviewsText }}"
+                                    ]
                                   },
                                   {
                                     "t": "span",
-                                    "a": { "class": "kartist-avail", "style": "{{ r.availDot }}" },
-                                    "c": ["● {{ r.availWord }}"]
+                                    "a": {
+                                      "class": "kartist-avail",
+                                      "style": "{{ r.availDot }}"
+                                    },
+                                    "c": [
+                                      "● {{ r.availWord }}"
+                                    ]
                                   }
                                 ]
                               },
                               {
                                 "t": "div",
-                                "a": { "class": "kartist-locations" },
+                                "a": {
+                                  "class": "kartist-locations"
+                                },
                                 "c": [
                                   {
                                     "t": "div",
-                                    "a": { "class": "kartist-location kloc-cur" },
+                                    "a": {
+                                      "class": "kartist-location kloc-cur"
+                                    },
                                     "c": [
                                       {
                                         "t": "span",
-                                        "a": { "class": "kartist-location-label" },
-                                        "c": ["CURRENT LOCATION"]
+                                        "a": {
+                                          "class": "kartist-location-label"
+                                        },
+                                        "c": [
+                                          "CURRENT LOCATION"
+                                        ]
                                       },
                                       {
                                         "t": "strong",
-                                        "a": { "class": "kartist-location-value" },
-                                        "c": ["{{ r.curLoc }}"]
+                                        "a": {
+                                          "class": "kartist-location-value"
+                                        },
+                                        "c": [
+                                          "{{ r.curLoc }}"
+                                        ]
                                       }
                                     ]
                                   },
                                   {
                                     "t": "div",
-                                    "a": { "class": "kartist-location kloc-base" },
+                                    "a": {
+                                      "class": "kartist-location kloc-base"
+                                    },
                                     "c": [
                                       {
                                         "t": "span",
-                                        "a": { "class": "kartist-location-label" },
-                                        "c": ["BASE LOCATION"]
+                                        "a": {
+                                          "class": "kartist-location-label"
+                                        },
+                                        "c": [
+                                          "BASE LOCATION"
+                                        ]
                                       },
                                       {
                                         "t": "strong",
-                                        "a": { "class": "kartist-location-value" },
-                                        "c": ["{{ r.baseLoc }}"]
+                                        "a": {
+                                          "class": "kartist-location-value"
+                                        },
+                                        "c": [
+                                          "{{ r.baseLoc }}"
+                                        ]
                                       }
                                     ]
                                   },
                                   {
                                     "t": "div",
-                                    "a": { "class": "kartist-location kloc-pref" },
+                                    "a": {
+                                      "class": "kartist-location kloc-pref"
+                                    },
                                     "c": [
                                       {
                                         "t": "span",
-                                        "a": { "class": "kartist-location-label" },
-                                        "c": ["PREFERRED CITIES"]
+                                        "a": {
+                                          "class": "kartist-location-label"
+                                        },
+                                        "c": [
+                                          "PREFERRED CITIES"
+                                        ]
                                       },
                                       {
                                         "t": "strong",
-                                        "a": { "class": "kartist-location-value" },
-                                        "c": ["{{ r.prefLoc }}"]
+                                        "a": {
+                                          "class": "kartist-location-value"
+                                        },
+                                        "c": [
+                                          "{{ r.prefLoc }}"
+                                        ]
                                       }
                                     ]
                                   }
                                 ]
                               },
-                              { "t": "p", "a": { "class": "kartist-bio" }, "c": ["{{ r.desc }}"] },
+                              {
+                                "t": "p",
+                                "a": {
+                                  "class": "kartist-bio"
+                                },
+                                "c": [
+                                  "{{ r.desc }}"
+                                ]
+                              },
                               {
                                 "t": "div",
-                                "a": { "class": "kartist-week" },
+                                "a": {
+                                  "class": "kartist-week"
+                                },
                                 "c": [
                                   {
                                     "t": "span",
-                                    "a": { "class": "kartist-sublabel" },
-                                    "c": ["THIS WEEK"]
+                                    "a": {
+                                      "class": "kartist-sublabel"
+                                    },
+                                    "c": [
+                                      "THIS WEEK"
+                                    ]
                                   },
                                   {
                                     "t": "div",
-                                    "a": { "class": "kweek" },
+                                    "a": {
+                                      "class": "kweek"
+                                    },
                                     "c": [
                                       {
                                         "t": "sc-for",
-                                        "a": { "list": "{{ r.week }}", "as": "d" },
+                                        "a": {
+                                          "list": "{{ r.week }}",
+                                          "as": "d"
+                                        },
                                         "c": [
                                           {
                                             "t": "span",
-                                            "a": { "class": "{{ d.cls }}" },
+                                            "a": {
+                                              "class": "{{ d.cls }}"
+                                            },
                                             "c": [
-                                              { "t": "small", "a": {}, "c": ["{{ d.dow }}"] },
-                                              { "t": "em", "a": {}, "c": ["{{ d.word }}"] }
+                                              {
+                                                "t": "small",
+                                                "a": {},
+                                                "c": [
+                                                  "{{ d.dow }}"
+                                                ]
+                                              },
+                                              {
+                                                "t": "strong",
+                                                "a": {
+                                                  "class": "kweek-num"
+                                                },
+                                                "c": [
+                                                  "{{ d.num }}"
+                                                ]
+                                              },
+                                              {
+                                                "t": "em",
+                                                "a": {},
+                                                "c": [
+                                                  "{{ d.word }}"
+                                                ]
+                                              }
                                             ]
                                           }
                                         ]
@@ -2514,21 +3045,34 @@
                               },
                               {
                                 "t": "div",
-                                "a": { "class": "kartist-skills" },
+                                "a": {
+                                  "class": "kartist-skills"
+                                },
                                 "c": [
                                   {
                                     "t": "span",
-                                    "a": { "class": "kartist-sublabel" },
-                                    "c": ["SKILLS"]
+                                    "a": {
+                                      "class": "kartist-sublabel"
+                                    },
+                                    "c": [
+                                      "SKILLS"
+                                    ]
                                   },
                                   {
                                     "t": "sc-for",
-                                    "a": { "list": "{{ r.skills }}", "as": "sk" },
+                                    "a": {
+                                      "list": "{{ r.skills }}",
+                                      "as": "sk"
+                                    },
                                     "c": [
                                       {
                                         "t": "span",
-                                        "a": { "class": "kartist-skill" },
-                                        "c": ["✦ {{ sk }}"]
+                                        "a": {
+                                          "class": "kartist-skill"
+                                        },
+                                        "c": [
+                                          "✦ {{ sk }}"
+                                        ]
                                       }
                                     ]
                                   }
@@ -2544,7 +3088,10 @@
               },
               {
                 "t": "sc-if",
-                "a": { "value": "{{ hasMore }}", "hint-placeholder-val": "{{ false }}" },
+                "a": {
+                  "value": "{{ hasMore }}",
+                  "hint-placeholder-val": "{{ false }}"
+                },
                 "c": [
                   {
                     "t": "button",
@@ -2553,7 +3100,9 @@
                       "class": "kbtn",
                       "style": "align-self: center; border-radius: 999px; border: 1px solid #2A1D18; background: transparent; color: #2A1D18; padding: 12px 24px; font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.14em; min-height: 46px"
                     },
-                    "c": ["{{ moreLabel }}"]
+                    "c": [
+                      "{{ moreLabel }}"
+                    ]
                   }
                 ]
               }
@@ -2585,18 +3134,24 @@
                     "a": {
                       "style": "font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.22em; color: #E7A042"
                     },
-                    "c": ["§ 04 — THE KALZO PROMISE"]
+                    "c": [
+                      "§ 04 — THE KALZO PROMISE"
+                    ]
                   },
                   {
                     "t": "h2",
                     "a": {
                       "style": "margin: 0; font-family: Newsreader, serif; font-weight: 400; font-size: clamp(40px, 5.2vw, 72px); line-height: 1"
                     },
-                    "c": ["Follow the money."]
+                    "c": [
+                      "Follow the money."
+                    ]
                   },
                   {
                     "t": "p",
-                    "a": { "style": "margin: 0; max-width: 620px; font-size: 19px; opacity: .9" },
+                    "a": {
+                      "style": "margin: 0; max-width: 620px; font-size: 19px; opacity: .9"
+                    },
                     "c": [
                       "Every artist is verified by a live video before they appear on Kalzo. Pay in full, and the money waits with Kalzo until both sides confirm the show."
                     ]
@@ -2626,7 +3181,9 @@
                         "c": [
                           {
                             "t": "path",
-                            "a": { "d": "M6 11h12v9H6z M8 11V8a4 4 0 0 1 8 0v3" },
+                            "a": {
+                              "d": "M6 11h12v9H6z M8 11V8a4 4 0 0 1 8 0v3"
+                            },
                             "c": []
                           }
                         ]
@@ -2638,18 +3195,29 @@
                     "a": {
                       "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.18em; color: #E7A042"
                     },
-                    "c": ["{{ flowLabel }}"]
+                    "c": [
+                      "{{ flowLabel }}"
+                    ]
                   },
                   {
                     "t": "sc-if",
-                    "a": { "value": "{{ flowOpen }}", "hint-placeholder-val": "{{ false }}" },
+                    "a": {
+                      "value": "{{ flowOpen }}",
+                      "hint-placeholder-val": "{{ false }}"
+                    },
                     "c": [
                       {
                         "t": "div",
                         "a": {
                           "style": "width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 42px"
                         },
-                        "c": [{ "t": "kalzo-moneypath", "a": {}, "c": [] }]
+                        "c": [
+                          {
+                            "t": "kalzo-moneypath",
+                            "a": {},
+                            "c": []
+                          }
+                        ]
                       }
                     ]
                   }
@@ -2666,24 +3234,43 @@
             "c": [
               {
                 "t": "div",
-                "a": { "class": "khow-section", "id": "how-it-works" },
+                "a": {
+                  "class": "khow-section",
+                  "id": "how-it-works"
+                },
                 "c": [
                   {
                     "t": "span",
-                    "a": { "class": "khow-label" },
-                    "c": ["§ 05 — HOW DOES IT WORK?"]
+                    "a": {
+                      "class": "khow-label"
+                    },
+                    "c": [
+                      "§ 05 — HOW DOES IT WORK?"
+                    ]
                   },
-                  { "t": "h2", "a": { "class": "khow-title" }, "c": ["One booking, two phones."] },
+                  {
+                    "t": "h2",
+                    "a": {
+                      "class": "khow-title"
+                    },
+                    "c": [
+                      "One booking, two phones."
+                    ]
+                  },
                   {
                     "t": "p",
-                    "a": { "class": "khow-copy" },
+                    "a": {
+                      "class": "khow-copy"
+                    },
                     "c": [
                       "See exactly what you see and what the artist sees — from the invitation to the final code that releases the payment."
                     ]
                   },
                   {
                     "t": "details",
-                    "a": { "class": "khow-details" },
+                    "a": {
+                      "class": "khow-details"
+                    },
                     "c": [
                       {
                         "t": "summary",
@@ -2694,7 +3281,10 @@
                         "c": [
                           {
                             "t": "span",
-                            "a": { "class": "khow-play", "aria-hidden": "true" },
+                            "a": {
+                              "class": "khow-play",
+                              "aria-hidden": "true"
+                            },
                             "c": [
                               {
                                 "t": "svg",
@@ -2709,26 +3299,51 @@
                                   "stroke-linecap": "round",
                                   "stroke-linejoin": "round"
                                 },
-                                "c": [{ "t": "path", "a": { "d": "M8 5v14l11-7z" }, "c": [] }]
+                                "c": [
+                                  {
+                                    "t": "path",
+                                    "a": {
+                                      "d": "M8 5v14l11-7z"
+                                    },
+                                    "c": []
+                                  }
+                                ]
                               }
                             ]
                           },
                           {
                             "t": "span",
-                            "a": { "class": "khow-label khow-open-label" },
-                            "c": ["SEE PATRON & ARTIST VIEWS"]
+                            "a": {
+                              "class": "khow-label khow-open-label"
+                            },
+                            "c": [
+                              "SEE PATRON & ARTIST VIEWS"
+                            ]
                           },
                           {
                             "t": "span",
-                            "a": { "class": "khow-label khow-close-label" },
-                            "c": ["CLOSE THE WALKTHROUGH"]
+                            "a": {
+                              "class": "khow-label khow-close-label"
+                            },
+                            "c": [
+                              "CLOSE THE WALKTHROUGH"
+                            ]
                           }
                         ]
                       },
                       {
                         "t": "div",
-                        "a": { "class": "khow-content", "id": "booking-practice" },
-                        "c": [{ "t": "kalzo-bookingroom", "a": {}, "c": [] }]
+                        "a": {
+                          "class": "khow-content",
+                          "id": "booking-practice"
+                        },
+                        "c": [
+                          {
+                            "t": "kalzo-bookingroom",
+                            "a": {},
+                            "c": []
+                          }
+                        ]
                       }
                     ]
                   }
@@ -2810,7 +3425,9 @@
                                 "c": [
                                   {
                                     "t": "radialGradient",
-                                    "a": { "id": "kglowD" },
+                                    "a": {
+                                      "id": "kglowD"
+                                    },
                                     "c": [
                                       {
                                         "t": "stop",
@@ -2847,7 +3464,9 @@
                               },
                               {
                                 "t": "g",
-                                "a": { "class": "kburn" },
+                                "a": {
+                                  "class": "kburn"
+                                },
                                 "c": [
                                   {
                                     "t": "path",
@@ -2959,7 +3578,9 @@
                             "a": {
                               "style": "font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.32em; color: #E7A042"
                             },
-                            "c": ["JOIN THE HOUSE"]
+                            "c": [
+                              "JOIN THE HOUSE"
+                            ]
                           },
                           {
                             "t": "h2",
@@ -2970,13 +3591,20 @@
                               "Become a ",
                               {
                                 "t": "kalzo-word",
-                                "a": { "size": "0.78em", "tone": "light" },
+                                "a": {
+                                  "size": "0.78em",
+                                  "tone": "light"
+                                },
                                 "c": []
                               },
                               " Artist"
                             ]
                           },
-                          { "t": "kalzo-counter", "a": {}, "c": [] },
+                          {
+                            "t": "kalzo-counter",
+                            "a": {},
+                            "c": []
+                          },
                           {
                             "t": "p",
                             "a": {
@@ -2995,7 +3623,9 @@
                           "class": "kbtn",
                           "style": "flex: none; border-radius: 999px; padding: 16px 30px; min-height: 54px; box-sizing: border-box; background: #E7A042; color: #2A1D18; border: 1px solid #E7A042; font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.16em; text-decoration: none; display: inline-flex; align-items: center; animation: kglow 3s ease-in-out infinite"
                         },
-                        "c": ["JOIN THE HOUSE →"]
+                        "c": [
+                          "JOIN THE HOUSE →"
+                        ]
                       }
                     ]
                   }
@@ -3008,13 +3638,18 @@
             "a": {
               "style": "max-width: 1100px; margin: 0 auto; padding: 0 24px 56px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .18em; color: #6B5246; text-align: center"
             },
-            "c": ["SEEN ACROSS INDIA · {{ statesText }}"]
+            "c": [
+              "SEEN ACROSS INDIA · {{ statesText }}"
+            ]
           }
         ]
       },
       {
         "t": "sc-if",
-        "a": { "value": "{{ isProfile }}", "hint-placeholder-val": "{{ false }}" },
+        "a": {
+          "value": "{{ isProfile }}",
+          "hint-placeholder-val": "{{ false }}"
+        },
         "c": [
           {
             "t": "section",
@@ -3029,7 +3664,9 @@
                   "class": "klink",
                   "style": "align-self: flex-start; background: none; border: none; padding: 8px 0; font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.16em; color: #2A1D18; min-height: 44px"
                 },
-                "c": ["← BACK TO THE SEARCH"]
+                "c": [
+                  "← BACK TO THE SEARCH"
+                ]
               },
               {
                 "t": "div",
@@ -3045,11 +3682,15 @@
                     "c": [
                       {
                         "t": "div",
-                        "a": { "class": "kartist-profile-media" },
+                        "a": {
+                          "class": "kartist-profile-media"
+                        },
                         "c": [
                           {
                             "t": "sc-if",
-                            "a": { "value": "{{ profilePhoto }}" },
+                            "a": {
+                              "value": "{{ profilePhoto }}"
+                            },
                             "c": [
                               {
                                 "t": "img",
@@ -3095,7 +3736,9 @@
                         "a": {
                           "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #6B5246; text-align: center"
                         },
-                        "c": ["Nº {{ sel.no }} · {{ sel.catUp }} · {{ sel.cityUp }}"]
+                        "c": [
+                          "Nº {{ sel.no }} · {{ sel.catUp }} · {{ sel.cityUp }}"
+                        ]
                       },
                       {
                         "t": "span",
@@ -3108,14 +3751,18 @@
                             "a": {
                               "style": "color: #C27E1E; font-size: 18px; letter-spacing: 2px"
                             },
-                            "c": ["{{ sel.starStr }}"]
+                            "c": [
+                              "{{ sel.starStr }}"
+                            ]
                           },
                           "{{ sel.rating }} ({{ sel.reviews }})"
                         ]
                       },
                       {
                         "t": "div",
-                        "a": { "style": "display: flex; gap: 12px; width: 100%; max-width: 420px" },
+                        "a": {
+                          "style": "display: flex; gap: 12px; width: 100%; max-width: 420px"
+                        },
                         "c": [
                           {
                             "t": "button",
@@ -3141,7 +3788,9 @@
                                 "c": [
                                   {
                                     "t": "path",
-                                    "a": { "d": "M4 5h16v14H4z M4 16l5-5 4 4 3-3 4 4" },
+                                    "a": {
+                                      "d": "M4 5h16v14H4z M4 16l5-5 4 4 3-3 4 4"
+                                    },
                                     "c": []
                                   }
                                 ]
@@ -3173,7 +3822,9 @@
                                 "c": [
                                   {
                                     "t": "path",
-                                    "a": { "d": "M3 6h13v12H3z M16 10l5-3v10l-5-3" },
+                                    "a": {
+                                      "d": "M3 6h13v12H3z M16 10l5-3v10l-5-3"
+                                    },
                                     "c": []
                                   }
                                 ]
@@ -3185,7 +3836,10 @@
                       },
                       {
                         "t": "sc-if",
-                        "a": { "value": "{{ photoOn }}", "hint-placeholder-val": "{{ false }}" },
+                        "a": {
+                          "value": "{{ photoOn }}",
+                          "hint-placeholder-val": "{{ false }}"
+                        },
                         "c": [
                           {
                             "t": "div",
@@ -3215,7 +3869,9 @@
                                 "a": {
                                   "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #6B5246; text-align: center"
                                 },
-                                "c": ["PROFILE PHOTO"]
+                                "c": [
+                                  "PROFILE PHOTO"
+                                ]
                               }
                             ]
                           }
@@ -3223,7 +3879,10 @@
                       },
                       {
                         "t": "sc-if",
-                        "a": { "value": "{{ videoOn }}", "hint-placeholder-val": "{{ false }}" },
+                        "a": {
+                          "value": "{{ videoOn }}",
+                          "hint-placeholder-val": "{{ false }}"
+                        },
                         "c": [
                           {
                             "t": "div",
@@ -3256,7 +3915,9 @@
                                     "a": {
                                       "style": "position: absolute; left: 12px; top: 10px; padding: 3px 10px; border-radius: 999px; background: #2A1D18; color: #F2E7D3; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.14em; pointer-events: none"
                                     },
-                                    "c": ["● LIVE VIDEO · VERIFIED"]
+                                    "c": [
+                                      "● LIVE VIDEO · VERIFIED"
+                                    ]
                                   }
                                 ]
                               },
@@ -3265,7 +3926,9 @@
                                 "a": {
                                   "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #6B5246"
                                 },
-                                "c": ["{{ sel.showreelCaption }}"]
+                                "c": [
+                                  "{{ sel.showreelCaption }}"
+                                ]
                               }
                             ]
                           }
@@ -3284,21 +3947,27 @@
                         "a": {
                           "style": "font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.2em; color: #9C3A22"
                         },
-                        "c": ["CATALOGUE Nº {{ sel.no }} · {{ sel.catUp }}"]
+                        "c": [
+                          "CATALOGUE Nº {{ sel.no }} · {{ sel.catUp }}"
+                        ]
                       },
                       {
                         "t": "h1",
                         "a": {
                           "style": "margin: 0; font-family: Newsreader, serif; font-weight: 400; font-size: clamp(56px, 6.6vw, 96px); line-height: 0.95"
                         },
-                        "c": ["{{ sel.name }}"]
+                        "c": [
+                          "{{ sel.name }}"
+                        ]
                       },
                       {
                         "t": "span",
                         "a": {
                           "style": "font-family: Newsreader, serif; font-style: italic; font-size: 30px; color: #6F4E49"
                         },
-                        "c": ["{{ sel.craft }}"]
+                        "c": [
+                          "{{ sel.craft }}"
+                        ]
                       },
                       {
                         "t": "span",
@@ -3311,26 +3980,36 @@
                             "a": {
                               "style": "color: #C27E1E; font-size: 20px; letter-spacing: 2px"
                             },
-                            "c": ["{{ sel.starStr }}"]
+                            "c": [
+                              "{{ sel.starStr }}"
+                            ]
                           },
                           "{{ sel.rating }} · {{ sel.reviews }} REVIEWS"
                         ]
                       },
                       {
                         "t": "p",
-                        "a": { "style": "margin: 0; font-size: 21px; max-width: 640px" },
-                        "c": ["{{ sel.bio }}"]
+                        "a": {
+                          "style": "margin: 0; font-size: 21px; max-width: 640px"
+                        },
+                        "c": [
+                          "{{ sel.bio }}"
+                        ]
                       },
                       {
                         "t": "div",
-                        "a": { "style": "margin-top: 10px; display: flex; flex-direction: column" },
+                        "a": {
+                          "style": "margin-top: 10px; display: flex; flex-direction: column"
+                        },
                         "c": [
                           {
                             "t": "span",
                             "a": {
                               "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.22em; padding-bottom: 8px; border-bottom: 1px solid #2A1D18"
                             },
-                            "c": ["SPECIFICATIONS"]
+                            "c": [
+                              "SPECIFICATIONS"
+                            ]
                           },
                           {
                             "t": "sc-for",
@@ -3351,12 +4030,18 @@
                                     "a": {
                                       "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #6B5246; padding-top: 4px"
                                     },
-                                    "c": ["{{ f.k }}"]
+                                    "c": [
+                                      "{{ f.k }}"
+                                    ]
                                   },
                                   {
                                     "t": "span",
-                                    "a": { "style": "font-size: 19px" },
-                                    "c": ["{{ f.v }}"]
+                                    "a": {
+                                      "style": "font-size: 19px"
+                                    },
+                                    "c": [
+                                      "{{ f.v }}"
+                                    ]
                                   }
                                 ]
                               }
@@ -3383,7 +4068,9 @@
                                 "a": {
                                   "style": "border: 1px solid #2A1D18; border-radius: 999px; padding: 5px 14px; font-style: italic; font-size: 17px"
                                 },
-                                "c": ["{{ t }}"]
+                                "c": [
+                                  "{{ t }}"
+                                ]
                               }
                             ]
                           }
@@ -3416,7 +4103,11 @@
                     "c": [
                       {
                         "t": "sc-for",
-                        "a": { "list": "{{ tabs }}", "as": "t", "hint-placeholder-count": "3" },
+                        "a": {
+                          "list": "{{ tabs }}",
+                          "as": "t",
+                          "hint-placeholder-count": "3"
+                        },
                         "c": [
                           {
                             "t": "button",
@@ -3426,7 +4117,9 @@
                               "sc-camel-on-click": "{{ t.pick }}",
                               "style": "{{ t.style }}"
                             },
-                            "c": ["{{ t.label }}"]
+                            "c": [
+                              "{{ t.label }}"
+                            ]
                           }
                         ]
                       }
@@ -3434,7 +4127,10 @@
                   },
                   {
                     "t": "sc-if",
-                    "a": { "value": "{{ tabAboutOn }}", "hint-placeholder-val": "{{ true }}" },
+                    "a": {
+                      "value": "{{ tabAboutOn }}",
+                      "hint-placeholder-val": "{{ true }}"
+                    },
                     "c": [
                       {
                         "t": "div",
@@ -3452,7 +4148,9 @@
                             "c": [
                               {
                                 "t": "div",
-                                "a": { "class": "kartist-reel" },
+                                "a": {
+                                  "class": "kartist-reel"
+                                },
                                 "c": [
                                   {
                                     "t": "video",
@@ -3472,14 +4170,18 @@
                                     "a": {
                                       "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #9C3A22"
                                     },
-                                    "c": ["REEL {{ d.n }}"]
+                                    "c": [
+                                      "REEL {{ d.n }}"
+                                    ]
                                   },
                                   {
                                     "t": "span",
                                     "a": {
                                       "style": "font-family: Newsreader, serif; font-size: 24px; line-height: 1.1; color: #2A1D18"
                                     },
-                                    "c": ["{{ d.title }}"]
+                                    "c": [
+                                      "{{ d.title }}"
+                                    ]
                                   }
                                 ]
                               }
@@ -3491,15 +4193,22 @@
                   },
                   {
                     "t": "sc-if",
-                    "a": { "value": "{{ tabAvailOn }}", "hint-placeholder-val": "{{ false }}" },
+                    "a": {
+                      "value": "{{ tabAvailOn }}",
+                      "hint-placeholder-val": "{{ false }}"
+                    },
                     "c": [
                       {
                         "t": "div",
-                        "a": { "style": "display: flex; flex-direction: column; gap: 18px" },
+                        "a": {
+                          "style": "display: flex; flex-direction: column; gap: 18px"
+                        },
                         "c": [
                           {
                             "t": "span",
-                            "a": { "style": "font-style: italic; color: #6B5246" },
+                            "a": {
+                              "style": "font-style: italic; color: #6B5246"
+                            },
                             "c": [
                               "Choose a date. A filled dot means open hours; a hollow one, a full diary."
                             ]
@@ -3532,16 +4241,26 @@
                                         "a": {
                                           "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.12em"
                                         },
-                                        "c": ["{{ d.dow }}"]
+                                        "c": [
+                                          "{{ d.dow }}"
+                                        ]
                                       },
                                       {
                                         "t": "span",
                                         "a": {
                                           "style": "font-family: Newsreader, serif; font-size: 32px; line-height: 1"
                                         },
-                                        "c": ["{{ d.num }}"]
+                                        "c": [
+                                          "{{ d.num }}"
+                                        ]
                                       },
-                                      { "t": "span", "a": { "style": "{{ d.dotStyle }}" }, "c": [] }
+                                      {
+                                        "t": "span",
+                                        "a": {
+                                          "style": "{{ d.dotStyle }}"
+                                        },
+                                        "c": []
+                                      }
                                     ]
                                   }
                                 ]
@@ -3553,7 +4272,9 @@
                             "a": {
                               "style": "font-family: Newsreader, serif; font-weight: 400; font-size: 34px"
                             },
-                            "c": ["{{ bDayLong }}"]
+                            "c": [
+                              "{{ bDayLong }}"
+                            ]
                           },
                           {
                             "t": "sc-if",
@@ -3564,7 +4285,9 @@
                             "c": [
                               {
                                 "t": "span",
-                                "a": { "style": "font-style: italic; color: #9C3A22" },
+                                "a": {
+                                  "style": "font-style: italic; color: #9C3A22"
+                                },
                                 "c": [
                                   "The diary is Unavailable on this date. Kindly choose another."
                                 ]
@@ -3573,7 +4296,9 @@
                           },
                           {
                             "t": "div",
-                            "a": { "style": "display: flex; flex-wrap: wrap; gap: 10px" },
+                            "a": {
+                              "style": "display: flex; flex-wrap: wrap; gap: 10px"
+                            },
                             "c": [
                               {
                                 "t": "sc-for",
@@ -3598,7 +4323,9 @@
                                         "a": {
                                           "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.12em; margin-left: 6px"
                                         },
-                                        "c": ["{{ s.status }}"]
+                                        "c": [
+                                          "{{ s.status }}"
+                                        ]
                                       }
                                     ]
                                   }
@@ -3612,11 +4339,16 @@
                   },
                   {
                     "t": "sc-if",
-                    "a": { "value": "{{ tabReviewsOn }}", "hint-placeholder-val": "{{ false }}" },
+                    "a": {
+                      "value": "{{ tabReviewsOn }}",
+                      "hint-placeholder-val": "{{ false }}"
+                    },
                     "c": [
                       {
                         "t": "div",
-                        "a": { "style": "display: flex; flex-direction: column; gap: 26px" },
+                        "a": {
+                          "style": "display: flex; flex-direction: column; gap: 26px"
+                        },
                         "c": [
                           {
                             "t": "div",
@@ -3626,26 +4358,36 @@
                             "c": [
                               {
                                 "t": "div",
-                                "a": { "style": "display: flex; flex-direction: column" },
+                                "a": {
+                                  "style": "display: flex; flex-direction: column"
+                                },
                                 "c": [
                                   {
                                     "t": "strong",
                                     "a": {
                                       "style": "font-family: Newsreader, serif; font-weight: 400; font-size: 110px; line-height: 0.85"
                                     },
-                                    "c": ["{{ sel.rating }}"]
+                                    "c": [
+                                      "{{ sel.rating }}"
+                                    ]
                                   },
                                   {
                                     "t": "span",
-                                    "a": { "style": "letter-spacing: 3px; color: #9C3A22" },
-                                    "c": ["{{ sel.starStr }}"]
+                                    "a": {
+                                      "style": "letter-spacing: 3px; color: #9C3A22"
+                                    },
+                                    "c": [
+                                      "{{ sel.starStr }}"
+                                    ]
                                   },
                                   {
                                     "t": "span",
                                     "a": {
                                       "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
                                     },
-                                    "c": ["{{ sel.reviews }} PATRONS"]
+                                    "c": [
+                                      "{{ sel.reviews }} PATRONS"
+                                    ]
                                   }
                                 ]
                               },
@@ -3671,8 +4413,12 @@
                                         "c": [
                                           {
                                             "t": "span",
-                                            "a": { "style": "width: 24px" },
-                                            "c": ["{{ r.n }}★"]
+                                            "a": {
+                                              "style": "width: 24px"
+                                            },
+                                            "c": [
+                                              "{{ r.n }}★"
+                                            ]
                                           },
                                           {
                                             "t": "div",
@@ -3682,15 +4428,21 @@
                                             "c": [
                                               {
                                                 "t": "div",
-                                                "a": { "style": "{{ r.bar }}" },
+                                                "a": {
+                                                  "style": "{{ r.bar }}"
+                                                },
                                                 "c": []
                                               }
                                             ]
                                           },
                                           {
                                             "t": "span",
-                                            "a": { "style": "width: 34px; text-align: right" },
-                                            "c": ["{{ r.count }}"]
+                                            "a": {
+                                              "style": "width: 34px; text-align: right"
+                                            },
+                                            "c": [
+                                              "{{ r.count }}"
+                                            ]
                                           }
                                         ]
                                       }
@@ -3702,7 +4454,9 @@
                           },
                           {
                             "t": "div",
-                            "a": { "style": "display: flex; flex-wrap: wrap; gap: 8px" },
+                            "a": {
+                              "style": "display: flex; flex-wrap: wrap; gap: 8px"
+                            },
                             "c": [
                               {
                                 "t": "sc-for",
@@ -3724,7 +4478,9 @@
                                         "a": {
                                           "style": "font-family: 'DM Mono', monospace; font-style: normal; font-size: 11px; color: #9C3A22"
                                         },
-                                        "c": ["×{{ t.count }}"]
+                                        "c": [
+                                          "×{{ t.count }}"
+                                        ]
                                       }
                                     ]
                                   }
@@ -3734,7 +4490,9 @@
                           },
                           {
                             "t": "div",
-                            "a": { "style": "display: flex; flex-direction: column" },
+                            "a": {
+                              "style": "display: flex; flex-direction: column"
+                            },
                             "c": [
                               {
                                 "t": "sc-for",
@@ -3755,7 +4513,9 @@
                                         "a": {
                                           "style": "font-family: Newsreader, serif; font-style: italic; font-size: 28px; line-height: 1.25"
                                         },
-                                        "c": ["“{{ r.text }}”"]
+                                        "c": [
+                                          "“{{ r.text }}”"
+                                        ]
                                       },
                                       {
                                         "t": "span",
@@ -3806,25 +4566,45 @@
                       "style": "display: flex; justify-content: space-between; font-family: Newsreader, serif; font-size: 18px; text-transform: uppercase; letter-spacing: 0.06em"
                     },
                     "c": [
-                      { "t": "span", "a": {}, "c": ["Invite"] },
-                      { "t": "span", "a": {}, "c": ["Kalzo"] }
+                      {
+                        "t": "span",
+                        "a": {},
+                        "c": [
+                          "Invite"
+                        ]
+                      },
+                      {
+                        "t": "span",
+                        "a": {},
+                        "c": [
+                          "Kalzo"
+                        ]
+                      }
                     ]
                   },
                   {
                     "t": "div",
-                    "a": { "style": "text-align: center; padding: 10px 0" },
+                    "a": {
+                      "style": "text-align: center; padding: 10px 0"
+                    },
                     "c": [
                       {
                         "t": "span",
                         "a": {
                           "style": "font-family: Newsreader, serif; font-size: 72px; line-height: 0.9"
                         },
-                        "c": ["{{ sel.rateText }}"]
+                        "c": [
+                          "{{ sel.rateText }}"
+                        ]
                       },
                       {
                         "t": "div",
-                        "a": { "style": "font-style: italic; opacity: .85" },
-                        "c": ["{{ sel.unitLong }}"]
+                        "a": {
+                          "style": "font-style: italic; opacity: .85"
+                        },
+                        "c": [
+                          "{{ sel.unitLong }}"
+                        ]
                       }
                     ]
                   },
@@ -3839,12 +4619,18 @@
                         "a": {
                           "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.18em; color: #E7A042"
                         },
-                        "c": ["YOUR CHOSEN HOUR"]
+                        "c": [
+                          "YOUR CHOSEN HOUR"
+                        ]
                       },
                       {
                         "t": "div",
-                        "a": { "style": "font-size: 21px" },
-                        "c": ["{{ pickedText }}"]
+                        "a": {
+                          "style": "font-size: 21px"
+                        },
+                        "c": [
+                          "{{ pickedText }}"
+                        ]
                       },
                       {
                         "t": "button",
@@ -3853,7 +4639,9 @@
                           "class": "klink",
                           "style": "background: none; border: none; padding: 4px; font-style: italic; text-decoration: underline; color: #F2E7D3; font-size: 16px; min-height: 32px"
                         },
-                        "c": ["open the diary"]
+                        "c": [
+                          "open the diary"
+                        ]
                       }
                     ]
                   },
@@ -3864,7 +4652,9 @@
                       "class": "kbtn",
                       "style": "border-radius: 999px; background: #E7A042; color: #2A1D18; border: 1px solid #E7A042; padding: 15px; font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.16em; min-height: 54px"
                     },
-                    "c": ["SEND AN INVITATION"]
+                    "c": [
+                      "SEND AN INVITATION"
+                    ]
                   },
                   {
                     "t": "button",
@@ -3874,11 +4664,15 @@
                       "class": "klink",
                       "style": "background: none; border: none; padding: 6px; font-style: italic; color: #F2E7D3; font-size: 17px; min-height: 40px"
                     },
-                    "c": ["{{ selFavLabel }}"]
+                    "c": [
+                      "{{ selFavLabel }}"
+                    ]
                   },
                   {
                     "t": "span",
-                    "a": { "style": "display: flex; gap: 10px; font-size: 15px; opacity: .85" },
+                    "a": {
+                      "style": "display: flex; gap: 10px; font-size: 15px; opacity: .85"
+                    },
                     "c": [
                       {
                         "t": "svg",
@@ -3897,7 +4691,9 @@
                         "c": [
                           {
                             "t": "path",
-                            "a": { "d": "M6 11h12v9H6z M8 11V8a4 4 0 0 1 8 0v3" },
+                            "a": {
+                              "d": "M6 11h12v9H6z M8 11V8a4 4 0 0 1 8 0v3"
+                            },
                             "c": []
                           }
                         ]
@@ -3911,14 +4707,25 @@
           },
           {
             "t": "sc-if",
-            "a": { "value": "{{ notSample }}" },
-            "c": [{ "t": "kalzo-contact", "a": {}, "c": [] }]
+            "a": {
+              "value": "{{ notSample }}"
+            },
+            "c": [
+              {
+                "t": "kalzo-contact",
+                "a": {},
+                "c": []
+              }
+            ]
           }
         ]
       },
       {
         "t": "sc-if",
-        "a": { "value": "{{ inFlow }}", "hint-placeholder-val": "{{ false }}" },
+        "a": {
+          "value": "{{ inFlow }}",
+          "hint-placeholder-val": "{{ false }}"
+        },
         "c": [
           {
             "t": "section",
@@ -3933,7 +4740,9 @@
                   "class": "klink",
                   "style": "background: none; border: none; padding: 8px 0; font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.16em; color: #2A1D18; min-height: 44px"
                 },
-                "c": ["← {{ flowBackLabel }}"]
+                "c": [
+                  "← {{ flowBackLabel }}"
+                ]
               },
               {
                 "t": "div",
@@ -3943,16 +4752,33 @@
                 "c": [
                   {
                     "t": "sc-for",
-                    "a": { "list": "{{ steps }}", "as": "st", "hint-placeholder-count": "3" },
+                    "a": {
+                      "list": "{{ steps }}",
+                      "as": "st",
+                      "hint-placeholder-count": "3"
+                    },
                     "c": [
-                      { "t": "span", "a": { "style": "{{ st.style }}" }, "c": ["{{ st.label }}"] },
+                      {
+                        "t": "span",
+                        "a": {
+                          "style": "{{ st.style }}"
+                        },
+                        "c": [
+                          "{{ st.label }}"
+                        ]
+                      },
                       {
                         "t": "sc-if",
-                        "a": { "value": "{{ st.sep }}", "hint-placeholder-val": "{{ true }}" },
+                        "a": {
+                          "value": "{{ st.sep }}",
+                          "hint-placeholder-val": "{{ true }}"
+                        },
                         "c": [
                           {
                             "t": "span",
-                            "a": { "style": "width: 30px; height: 1px; background: #2A1D18" },
+                            "a": {
+                              "style": "width: 30px; height: 1px; background: #2A1D18"
+                            },
                             "c": []
                           }
                         ]
@@ -3967,13 +4793,22 @@
       },
       {
         "t": "sc-if",
-        "a": { "value": "{{ isBook }}", "hint-placeholder-val": "{{ false }}" },
+        "a": {
+          "value": "{{ isBook }}",
+          "hint-placeholder-val": "{{ false }}"
+        },
         "c": [
           {
             "t": "section",
-            "a": { "style": "max-width: 980px; margin: 0 auto; padding: 30px 16px 90px" },
+            "a": {
+              "style": "max-width: 980px; margin: 0 auto; padding: 30px 16px 90px"
+            },
             "c": [
-              { "t": "kalzo-patron", "a": {}, "c": [] },
+              {
+                "t": "kalzo-patron",
+                "a": {},
+                "c": []
+              },
               {
                 "t": "div",
                 "a": {
@@ -4002,12 +4837,30 @@
                       "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: #8A6D3B"
                     },
                     "c": [
-                      { "t": "span", "a": {}, "c": ["Invitation"] },
-                      { "t": "span", "a": { "style": "text-align: center" }, "c": ["Kalzo"] },
                       {
                         "t": "span",
-                        "a": { "style": "text-align: right" },
-                        "c": ["{{ bookingId }}"]
+                        "a": {},
+                        "c": [
+                          "Invitation"
+                        ]
+                      },
+                      {
+                        "t": "span",
+                        "a": {
+                          "style": "text-align: center"
+                        },
+                        "c": [
+                          "Kalzo"
+                        ]
+                      },
+                      {
+                        "t": "span",
+                        "a": {
+                          "style": "text-align: right"
+                        },
+                        "c": [
+                          "{{ bookingId }}"
+                        ]
                       }
                     ]
                   },
@@ -4022,14 +4875,18 @@
                         "a": {
                           "style": "display: block; font-family: 'Instrument Serif', serif; font-style: italic; font-size: clamp(24px, 3vw, 34px); line-height: 1; color: #6B4F2A"
                         },
-                        "c": ["you are cordially"]
+                        "c": [
+                          "you are cordially"
+                        ]
                       },
                       {
                         "t": "span",
                         "a": {
                           "style": "display: block; font-family: Newsreader, serif; font-size: clamp(38px, 6vw, 60px); line-height: 1.15; letter-spacing: 0.32em; margin-top: 12px; color: #2A1D18"
                         },
-                        "c": ["INVITED"]
+                        "c": [
+                          "INVITED"
+                        ]
                       }
                     ]
                   },
@@ -4051,7 +4908,9 @@
                             "a": {
                               "style": "font-family: 'Instrument Serif', serif; font-size: 26px"
                             },
-                            "c": ["{{ sel.name }}"]
+                            "c": [
+                              "{{ sel.name }}"
+                            ]
                           },
                           ", {{ sel.craftLower }}, to grace our"
                         ]
@@ -4078,7 +4937,9 @@
                                   "class": "kpillD",
                                   "style": "{{ e.style }}"
                                 },
-                                "c": ["{{ e.label }}"]
+                                "c": [
+                                  "{{ e.label }}"
+                                ]
                               }
                             ]
                           }
@@ -4086,8 +4947,12 @@
                       },
                       {
                         "t": "p",
-                        "a": { "style": "margin: 0; font-size: 20px" },
-                        "c": ["on the day of"]
+                        "a": {
+                          "style": "margin: 0; font-size: 20px"
+                        },
+                        "c": [
+                          "on the day of"
+                        ]
                       },
                       {
                         "t": "div",
@@ -4117,16 +4982,26 @@
                                     "a": {
                                       "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.12em"
                                     },
-                                    "c": ["{{ d.dow }}"]
+                                    "c": [
+                                      "{{ d.dow }}"
+                                    ]
                                   },
                                   {
                                     "t": "span",
                                     "a": {
                                       "style": "font-family: Newsreader, serif; font-size: 32px; line-height: 1"
                                     },
-                                    "c": ["{{ d.num }}"]
+                                    "c": [
+                                      "{{ d.num }}"
+                                    ]
                                   },
-                                  { "t": "span", "a": { "style": "{{ d.dotStyle }}" }, "c": [] }
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "style": "{{ d.dotStyle }}"
+                                    },
+                                    "c": []
+                                  }
                                 ]
                               }
                             ]
@@ -4135,16 +5010,25 @@
                       },
                       {
                         "t": "p",
-                        "a": { "style": "margin: 0; font-size: 20px" },
-                        "c": ["commencing at"]
+                        "a": {
+                          "style": "margin: 0; font-size: 20px"
+                        },
+                        "c": [
+                          "commencing at"
+                        ]
                       },
                       {
                         "t": "sc-if",
-                        "a": { "value": "{{ bDayOff }}", "hint-placeholder-val": "{{ false }}" },
+                        "a": {
+                          "value": "{{ bDayOff }}",
+                          "hint-placeholder-val": "{{ false }}"
+                        },
                         "c": [
                           {
                             "t": "span",
-                            "a": { "style": "font-style: italic; color: #F6C6A8" },
+                            "a": {
+                              "style": "font-style: italic; color: #F6C6A8"
+                            },
                             "c": [
                               "{{ sel.first }}'s diary is full that day. Kindly choose another."
                             ]
@@ -4180,7 +5064,9 @@
                                     "a": {
                                       "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.12em; margin-left: 6px"
                                     },
-                                    "c": ["{{ s.status }}"]
+                                    "c": [
+                                      "{{ s.status }}"
+                                    ]
                                   }
                                 ]
                               }
@@ -4190,7 +5076,10 @@
                       },
                       {
                         "t": "sc-if",
-                        "a": { "value": "{{ showStepper }}", "hint-placeholder-val": "{{ true }}" },
+                        "a": {
+                          "value": "{{ showStepper }}",
+                          "hint-placeholder-val": "{{ true }}"
+                        },
                         "c": [
                           {
                             "t": "div",
@@ -4198,7 +5087,13 @@
                               "style": "display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; font-size: 20px"
                             },
                             "c": [
-                              { "t": "span", "a": {}, "c": ["for"] },
+                              {
+                                "t": "span",
+                                "a": {},
+                                "c": [
+                                  "for"
+                                ]
+                              },
                               {
                                 "t": "button",
                                 "a": {
@@ -4207,14 +5102,18 @@
                                   "class": "kpillD",
                                   "style": "width: 44px; height: 44px; border-radius: 999px; border: 1px solid #2A1D18; background: transparent; color: #2A1D18; font-size: 22px"
                                 },
-                                "c": ["−"]
+                                "c": [
+                                  "−"
+                                ]
                               },
                               {
                                 "t": "strong",
                                 "a": {
                                   "style": "font-family: Newsreader, serif; font-weight: 400; font-style: italic; font-size: 34px; min-width: 160px"
                                 },
-                                "c": ["{{ hoursText }}"]
+                                "c": [
+                                  "{{ hoursText }}"
+                                ]
                               },
                               {
                                 "t": "button",
@@ -4224,7 +5123,9 @@
                                   "class": "kpillD",
                                   "style": "width: 44px; height: 44px; border-radius: 999px; border: 1px solid #2A1D18; background: transparent; color: #2A1D18; font-size: 22px"
                                 },
-                                "c": ["+"]
+                                "c": [
+                                  "+"
+                                ]
                               }
                             ]
                           }
@@ -4232,8 +5133,12 @@
                       },
                       {
                         "t": "p",
-                        "a": { "style": "margin: 0; font-size: 20px" },
-                        "c": ["at the residence of"]
+                        "a": {
+                          "style": "margin: 0; font-size: 20px"
+                        },
+                        "c": [
+                          "at the residence of"
+                        ]
                       },
                       {
                         "t": "div",
@@ -4243,14 +5148,18 @@
                         "c": [
                           {
                             "t": "label",
-                            "a": { "style": "display: flex; flex-direction: column" },
+                            "a": {
+                              "style": "display: flex; flex-direction: column"
+                            },
                             "c": [
                               {
                                 "t": "span",
                                 "a": {
                                   "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.18em; opacity: .8"
                                 },
-                                "c": ["FULL ADDRESS"]
+                                "c": [
+                                  "FULL ADDRESS"
+                                ]
                               },
                               {
                                 "t": "input",
@@ -4266,7 +5175,9 @@
                           },
                           {
                             "t": "div",
-                            "a": { "style": "display: flex; flex-wrap: wrap; gap: 24px" },
+                            "a": {
+                              "style": "display: flex; flex-wrap: wrap; gap: 24px"
+                            },
                             "c": [
                               {
                                 "t": "label",
@@ -4279,7 +5190,9 @@
                                     "a": {
                                       "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.18em; opacity: .8"
                                     },
-                                    "c": ["CITY & PINCODE"]
+                                    "c": [
+                                      "CITY & PINCODE"
+                                    ]
                                   },
                                   {
                                     "t": "input",
@@ -4304,7 +5217,9 @@
                                     "a": {
                                       "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.18em; opacity: .8"
                                     },
-                                    "c": ["LANDMARK"]
+                                    "c": [
+                                      "LANDMARK"
+                                    ]
                                   },
                                   {
                                     "t": "input",
@@ -4329,7 +5244,9 @@
                                     "a": {
                                       "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.18em; opacity: .8"
                                     },
-                                    "c": ["GUESTS"]
+                                    "c": [
+                                      "GUESTS"
+                                    ]
                                   },
                                   {
                                     "t": "input",
@@ -4347,14 +5264,18 @@
                           },
                           {
                             "t": "label",
-                            "a": { "style": "display: flex; flex-direction: column" },
+                            "a": {
+                              "style": "display: flex; flex-direction: column"
+                            },
                             "c": [
                               {
                                 "t": "span",
                                 "a": {
                                   "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.18em; opacity: .8"
                                 },
-                                "c": ["A NOTE FOR {{ sel.firstUp }}"]
+                                "c": [
+                                  "A NOTE FOR {{ sel.firstUp }}"
+                                ]
                               },
                               {
                                 "t": "input",
@@ -4378,7 +5299,9 @@
                         "c": [
                           {
                             "t": "div",
-                            "a": { "style": "display: flex; flex-direction: column" },
+                            "a": {
+                              "style": "display: flex; flex-direction: column"
+                            },
                             "c": [
                               {
                                 "t": "span",
@@ -4394,7 +5317,9 @@
                                 "a": {
                                   "style": "font-family: Newsreader, serif; font-size: 44px; line-height: 1"
                                 },
-                                "c": ["Total {{ totalText }}"]
+                                "c": [
+                                  "Total {{ totalText }}"
+                                ]
                               }
                             ]
                           },
@@ -4404,7 +5329,9 @@
                               "sc-camel-on-click": "{{ toPay }}",
                               "style": "{{ continueStyle }}"
                             },
-                            "c": ["{{ continueLabel }}"]
+                            "c": [
+                              "{{ continueLabel }}"
+                            ]
                           }
                         ]
                       }
@@ -4412,14 +5339,21 @@
                   }
                 ]
               },
-              { "t": "kalzo-talk", "a": {}, "c": [] }
+              {
+                "t": "kalzo-talk",
+                "a": {},
+                "c": []
+              }
             ]
           }
         ]
       },
       {
         "t": "sc-if",
-        "a": { "value": "{{ isPay }}", "hint-placeholder-val": "{{ false }}" },
+        "a": {
+          "value": "{{ isPay }}",
+          "hint-placeholder-val": "{{ false }}"
+        },
         "c": [
           {
             "t": "section",
@@ -4438,25 +5372,40 @@
                     "a": {
                       "style": "font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.22em; color: #9C3A22"
                     },
-                    "c": ["§ SAFE-KEEPING"]
+                    "c": [
+                      "§ SAFE-KEEPING"
+                    ]
                   },
                   {
                     "t": "h1",
                     "a": {
                       "style": "margin: 0; font-family: Newsreader, serif; font-weight: 400; font-size: clamp(54px, 6.4vw, 88px); line-height: 0.95"
                     },
-                    "c": ["Your fee waits ", { "t": "em", "a": {}, "c": ["backstage."] }]
+                    "c": [
+                      "Your fee waits ",
+                      {
+                        "t": "em",
+                        "a": {},
+                        "c": [
+                          "backstage."
+                        ]
+                      }
+                    ]
                   },
                   {
                     "t": "p",
-                    "a": { "style": "margin: 0; font-size: 21px; max-width: 600px" },
+                    "a": {
+                      "style": "margin: 0; font-size: 21px; max-width: 600px"
+                    },
                     "c": [
                       "You pay the full amount now. It stays with Kalzo, untouched, and reaches {{ sel.first }} only after:"
                     ]
                   },
                   {
                     "t": "div",
-                    "a": { "style": "display: flex; flex-direction: column" },
+                    "a": {
+                      "style": "display: flex; flex-direction: column"
+                    },
                     "c": [
                       {
                         "t": "sc-for",
@@ -4491,26 +5440,46 @@
                                       "stroke-linecap": "round",
                                       "stroke-linejoin": "round"
                                     },
-                                    "c": [{ "t": "path", "a": { "d": "{{ r.icon }}" }, "c": [] }]
+                                    "c": [
+                                      {
+                                        "t": "path",
+                                        "a": {
+                                          "d": "{{ r.icon }}"
+                                        },
+                                        "c": []
+                                      }
+                                    ]
                                   }
                                 ]
                               },
                               {
                                 "t": "span",
-                                "a": { "style": "font-size: 20px" },
+                                "a": {
+                                  "style": "font-size: 20px"
+                                },
                                 "c": [
                                   {
                                     "t": "strong",
                                     "a": {
                                       "style": "font-family: Newsreader, serif; font-weight: 400; font-size: 26px"
                                     },
-                                    "c": ["{{ r.title }}"]
+                                    "c": [
+                                      "{{ r.title }}"
+                                    ]
                                   },
-                                  { "t": "br", "a": {}, "c": [] },
+                                  {
+                                    "t": "br",
+                                    "a": {},
+                                    "c": []
+                                  },
                                   {
                                     "t": "em",
-                                    "a": { "style": "color: #6B5246" },
-                                    "c": ["{{ r.text }}"]
+                                    "a": {
+                                      "style": "color: #6B5246"
+                                    },
+                                    "c": [
+                                      "{{ r.text }}"
+                                    ]
                                   }
                                 ]
                               }
@@ -4531,11 +5500,17 @@
                         "a": {
                           "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #6B5246; margin-right: 6px"
                         },
-                        "c": ["PAY BY"]
+                        "c": [
+                          "PAY BY"
+                        ]
                       },
                       {
                         "t": "sc-for",
-                        "a": { "list": "{{ methods }}", "as": "m", "hint-placeholder-count": "3" },
+                        "a": {
+                          "list": "{{ methods }}",
+                          "as": "m",
+                          "hint-placeholder-count": "3"
+                        },
                         "c": [
                           {
                             "t": "button",
@@ -4545,7 +5520,9 @@
                               "class": "kpill",
                               "style": "{{ m.style }}"
                             },
-                            "c": ["{{ m.label }}"]
+                            "c": [
+                              "{{ m.label }}"
+                            ]
                           }
                         ]
                       }
@@ -4581,8 +5558,20 @@
                       "style": "display: flex; justify-content: space-between; font-family: Newsreader, serif; font-size: 18px; text-transform: uppercase; letter-spacing: 0.06em"
                     },
                     "c": [
-                      { "t": "span", "a": {}, "c": ["Held in trust"] },
-                      { "t": "span", "a": {}, "c": ["Kalzo"] }
+                      {
+                        "t": "span",
+                        "a": {},
+                        "c": [
+                          "Held in trust"
+                        ]
+                      },
+                      {
+                        "t": "span",
+                        "a": {},
+                        "c": [
+                          "Kalzo"
+                        ]
+                      }
                     ]
                   },
                   {
@@ -4590,22 +5579,36 @@
                     "a": {
                       "style": "font-family: Newsreader, serif; font-size: 84px; line-height: 0.95; margin-top: 10px"
                     },
-                    "c": ["{{ totalText }}"]
+                    "c": [
+                      "{{ totalText }}"
+                    ]
                   },
                   {
                     "t": "span",
-                    "a": { "style": "font-style: italic; opacity: .9" },
-                    "c": ["for {{ sel.name }} · {{ event }}"]
+                    "a": {
+                      "style": "font-style: italic; opacity: .9"
+                    },
+                    "c": [
+                      "for {{ sel.name }} · {{ event }}"
+                    ]
                   },
                   {
                     "t": "span",
-                    "a": { "style": "font-style: italic; opacity: .9" },
-                    "c": ["{{ pickedText }} · {{ hoursText }}"]
+                    "a": {
+                      "style": "font-style: italic; opacity: .9"
+                    },
+                    "c": [
+                      "{{ pickedText }} · {{ hoursText }}"
+                    ]
                   },
                   {
                     "t": "span",
-                    "a": { "style": "font-style: italic; opacity: .9" },
-                    "c": ["{{ addressShort }}"]
+                    "a": {
+                      "style": "font-style: italic; opacity: .9"
+                    },
+                    "c": [
+                      "{{ addressShort }}"
+                    ]
                   },
                   {
                     "t": "button",
@@ -4614,38 +5617,53 @@
                       "class": "kbtn",
                       "style": "margin-top: 12px; border-radius: 999px; background: #E7A042; color: #2A1D18; border: 1px solid #E7A042; padding: 16px; font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.14em; min-height: 56px"
                     },
-                    "c": ["{{ payLabel }}"]
+                    "c": [
+                      "{{ payLabel }}"
+                    ]
                   },
                   {
                     "t": "sc-if",
-                    "a": { "value": "{{ hasPayErr }}" },
+                    "a": {
+                      "value": "{{ hasPayErr }}"
+                    },
                     "c": [
                       {
                         "t": "p",
                         "a": {
                           "style": "margin:10px 0 0;font-size:15px;line-height:1.45;color:#B4563A;text-align:center"
                         },
-                        "c": ["{{ payErr }}"]
+                        "c": [
+                          "{{ payErr }}"
+                        ]
                       }
                     ]
                   },
                   {
                     "t": "span",
-                    "a": { "style": "font-size: 14px; font-style: italic; opacity: .75" },
+                    "a": {
+                      "style": "font-size: 14px; font-style: italic; opacity: .75"
+                    },
                     "c": [
                       "Full refund if the artist declines. Held by Kalzo until the show is done."
                     ]
                   }
                 ]
               },
-              { "t": "kalzo-fees", "a": {}, "c": [] }
+              {
+                "t": "kalzo-fees",
+                "a": {},
+                "c": []
+              }
             ]
           }
         ]
       },
       {
         "t": "sc-if",
-        "a": { "value": "{{ isDone }}", "hint-placeholder-val": "{{ false }}" },
+        "a": {
+          "value": "{{ isDone }}",
+          "hint-placeholder-val": "{{ false }}"
+        },
         "c": [
           {
             "t": "section",
@@ -4665,21 +5683,40 @@
                       "class": "kseal",
                       "style": "width: 140px; height: 140px; border-radius: 999px; background: radial-gradient(circle at 35% 30%, #F3D98F, #C9963C 55%, #7E5A1C); box-shadow: inset 0 0 0 5px rgba(255,248,225,.45), inset 0 0 0 7px #7E5A1C, 0 0 0 6px #E9DECA, 0 0 0 7px #2A1D18, 0 14px 28px rgba(42,29,24,.35); display: flex; align-items: center; justify-content: center; font-family: Newsreader, serif; font-style: italic; font-size: 76px; color: #4A3112"
                     },
-                    "c": ["K"]
+                    "c": [
+                      "K"
+                    ]
                   },
                   {
                     "t": "h1",
                     "a": {
                       "style": "margin: 10px 0 0; font-family: Newsreader, serif; font-weight: 400; font-size: 64px; line-height: 0.95"
                     },
-                    "c": ["Sealed ", { "t": "em", "a": {}, "c": ["& sent"] }]
+                    "c": [
+                      "Sealed ",
+                      {
+                        "t": "em",
+                        "a": {},
+                        "c": [
+                          "& sent"
+                        ]
+                      }
+                    ]
                   },
                   {
                     "t": "span",
-                    "a": { "style": "font-size: 21px" },
+                    "a": {
+                      "style": "font-size: 21px"
+                    },
                     "c": [
                       "Your invitation has reached ",
-                      { "t": "em", "a": {}, "c": ["{{ sel.name }}"] },
+                      {
+                        "t": "em",
+                        "a": {},
+                        "c": [
+                          "{{ sel.name }}"
+                        ]
+                      },
                       "."
                     ]
                   },
@@ -4688,7 +5725,9 @@
                     "a": {
                       "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
                     },
-                    "c": ["{{ bookingId }} · {{ totalText }} HELD BACKSTAGE"]
+                    "c": [
+                      "{{ bookingId }} · {{ totalText }} HELD BACKSTAGE"
+                    ]
                   }
                 ]
               },
@@ -4703,7 +5742,9 @@
                     "a": {
                       "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.2em; color: #9C3A22"
                     },
-                    "c": ["FOLLOW YOUR FEE · TRY THE DEMO"]
+                    "c": [
+                      "FOLLOW YOUR FEE · TRY THE DEMO"
+                    ]
                   },
                   {
                     "t": "h2",
@@ -4712,12 +5753,22 @@
                     },
                     "c": [
                       "From your purse to the ",
-                      { "t": "em", "a": {}, "c": ["artist's hands"] }
+                      {
+                        "t": "em",
+                        "a": {},
+                        "c": [
+                          "artist's hands"
+                        ]
+                      }
                     ]
                   },
                   {
                     "t": "sc-for",
-                    "a": { "list": "{{ escSteps }}", "as": "e", "hint-placeholder-count": "5" },
+                    "a": {
+                      "list": "{{ escSteps }}",
+                      "as": "e",
+                      "hint-placeholder-count": "5"
+                    },
                     "c": [
                       {
                         "t": "div",
@@ -4727,7 +5778,9 @@
                         "c": [
                           {
                             "t": "span",
-                            "a": { "style": "{{ e.dot }}" },
+                            "a": {
+                              "style": "{{ e.dot }}"
+                            },
                             "c": [
                               {
                                 "t": "svg",
@@ -4742,7 +5795,15 @@
                                   "stroke-linecap": "round",
                                   "stroke-linejoin": "round"
                                 },
-                                "c": [{ "t": "path", "a": { "d": "{{ e.icon }}" }, "c": [] }]
+                                "c": [
+                                  {
+                                    "t": "path",
+                                    "a": {
+                                      "d": "{{ e.icon }}"
+                                    },
+                                    "c": []
+                                  }
+                                ]
                               }
                             ]
                           },
@@ -4754,15 +5815,21 @@
                             "c": [
                               {
                                 "t": "strong",
-                                "a": { "style": "{{ e.titleStyle }}" },
-                                "c": ["{{ e.title }}"]
+                                "a": {
+                                  "style": "{{ e.titleStyle }}"
+                                },
+                                "c": [
+                                  "{{ e.title }}"
+                                ]
                               },
                               {
                                 "t": "span",
                                 "a": {
                                   "style": "font-style: italic; color: #6B5246; font-size: 18px"
                                 },
-                                "c": ["{{ e.text }}"]
+                                "c": [
+                                  "{{ e.text }}"
+                                ]
                               },
                               {
                                 "t": "sc-if",
@@ -4778,7 +5845,9 @@
                                       "class": "kbtn",
                                       "style": "align-self: flex-start; border-radius: 999px; background: #2A1D18; color: #F2E7D3; border: 1px solid #2A1D18; padding: 9px 18px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.12em; min-height: 42px"
                                     },
-                                    "c": ["{{ e.actLabel }}"]
+                                    "c": [
+                                      "{{ e.actLabel }}"
+                                    ]
                                   }
                                 ]
                               },
@@ -4791,7 +5860,9 @@
                                 "c": [
                                   {
                                     "t": "div",
-                                    "a": { "style": "display: flex; flex-wrap: wrap; gap: 16px" },
+                                    "a": {
+                                      "style": "display: flex; flex-wrap: wrap; gap: 16px"
+                                    },
                                     "c": [
                                       {
                                         "t": "div",
@@ -4804,21 +5875,27 @@
                                             "a": {
                                               "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: #E7A042"
                                             },
-                                            "c": ["YOUR PHONE · PATRON"]
+                                            "c": [
+                                              "YOUR PHONE · PATRON"
+                                            ]
                                           },
                                           {
                                             "t": "div",
                                             "a": {
                                               "style": "font-family: Newsreader, serif; font-size: 50px; letter-spacing: 0.3em; line-height: 1.1"
                                             },
-                                            "c": ["4817"]
+                                            "c": [
+                                              "4817"
+                                            ]
                                           },
                                           {
                                             "t": "div",
                                             "a": {
                                               "style": "font-style: italic; font-size: 15px; opacity: .85"
                                             },
-                                            "c": ["Share only once you're happy with the show"]
+                                            "c": [
+                                              "Share only once you're happy with the show"
+                                            ]
                                           }
                                         ]
                                       },
@@ -4839,7 +5916,9 @@
                                                 "a": {
                                                   "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #6B5246"
                                                 },
-                                                "c": ["{{ sel.firstUp }}'S PHONE · ENTER CODE"]
+                                                "c": [
+                                                  "{{ sel.firstUp }}'S PHONE · ENTER CODE"
+                                                ]
                                               },
                                               {
                                                 "t": "input",
@@ -4862,7 +5941,9 @@
                                               "class": "kbtn",
                                               "style": "border-radius: 999px; background: #2A1D18; color: #F2E7D3; border: 1px solid #2A1D18; padding: 9px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.12em; min-height: 42px"
                                             },
-                                            "c": ["CONFIRM & RELEASE"]
+                                            "c": [
+                                              "CONFIRM & RELEASE"
+                                            ]
                                           },
                                           {
                                             "t": "sc-if",
@@ -4876,7 +5957,9 @@
                                                 "a": {
                                                   "style": "color: #9C3A22; font-style: italic; font-size: 16px"
                                                 },
-                                                "c": ["That code doesn't match. Try 4817."]
+                                                "c": [
+                                                  "That code doesn't match. Try 4817."
+                                                ]
                                               }
                                             ]
                                           }
@@ -4894,7 +5977,10 @@
                   },
                   {
                     "t": "sc-if",
-                    "a": { "value": "{{ released }}", "hint-placeholder-val": "{{ false }}" },
+                    "a": {
+                      "value": "{{ released }}",
+                      "hint-placeholder-val": "{{ false }}"
+                    },
                     "c": [
                       {
                         "t": "div",
@@ -4922,12 +6008,20 @@
                                     },
                                     "c": [
                                       "Leave a word for ",
-                                      { "t": "em", "a": {}, "c": ["{{ sel.first }}"] }
+                                      {
+                                        "t": "em",
+                                        "a": {},
+                                        "c": [
+                                          "{{ sel.first }}"
+                                        ]
+                                      }
                                     ]
                                   },
                                   {
                                     "t": "div",
-                                    "a": { "style": "display: flex; gap: 4px" },
+                                    "a": {
+                                      "style": "display: flex; gap: 4px"
+                                    },
                                     "c": [
                                       {
                                         "t": "sc-for",
@@ -4945,7 +6039,9 @@
                                               "aria-pressed": "{{ b.on }}",
                                               "style": "{{ b.style }}"
                                             },
-                                            "c": ["★"]
+                                            "c": [
+                                              "★"
+                                            ]
                                           }
                                         ]
                                       }
@@ -4953,7 +6049,9 @@
                                   },
                                   {
                                     "t": "div",
-                                    "a": { "style": "display: flex; flex-wrap: wrap; gap: 8px" },
+                                    "a": {
+                                      "style": "display: flex; flex-wrap: wrap; gap: 8px"
+                                    },
                                     "c": [
                                       {
                                         "t": "sc-for",
@@ -4971,7 +6069,9 @@
                                               "class": "kpill",
                                               "style": "{{ t.style }}"
                                             },
-                                            "c": ["{{ t.label }}"]
+                                            "c": [
+                                              "{{ t.label }}"
+                                            ]
                                           }
                                         ]
                                       }
@@ -4983,7 +6083,9 @@
                                       "sc-camel-on-click": "{{ submitRating }}",
                                       "style": "{{ rateBtnStyle }}"
                                     },
-                                    "c": ["INSCRIBE"]
+                                    "c": [
+                                      "INSCRIBE"
+                                    ]
                                   }
                                 ]
                               }
@@ -4991,19 +6093,34 @@
                           },
                           {
                             "t": "sc-if",
-                            "a": { "value": "{{ rated }}", "hint-placeholder-val": "{{ false }}" },
+                            "a": {
+                              "value": "{{ rated }}",
+                              "hint-placeholder-val": "{{ false }}"
+                            },
                             "c": [
                               {
                                 "t": "span",
-                                "a": { "style": "font-size: 21px" },
+                                "a": {
+                                  "style": "font-size: 21px"
+                                },
                                 "c": [
                                   {
                                     "t": "span",
-                                    "a": { "style": "color: #9C3A22; letter-spacing: 3px" },
-                                    "c": ["{{ myStars }}"]
+                                    "a": {
+                                      "style": "color: #9C3A22; letter-spacing: 3px"
+                                    },
+                                    "c": [
+                                      "{{ myStars }}"
+                                    ]
                                   },
                                   " — ",
-                                  { "t": "em", "a": {}, "c": ["{{ myTags }}"] },
+                                  {
+                                    "t": "em",
+                                    "a": {},
+                                    "c": [
+                                      "{{ myTags }}"
+                                    ]
+                                  },
                                   ". Thank you."
                                 ]
                               }
@@ -5020,7 +6137,9 @@
                       "class": "klink",
                       "style": "margin-top: 16px; align-self: flex-start; background: none; border: none; border-bottom: 1px solid #2A1D18; padding: 4px 0; font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.14em; color: #2A1D18; min-height: 40px"
                     },
-                    "c": ["RETURN TO THE SEARCH"]
+                    "c": [
+                      "RETURN TO THE SEARCH"
+                    ]
                   }
                 ]
               }
@@ -5030,7 +6149,9 @@
       },
       {
         "t": "footer",
-        "a": { "style": "max-width: 1320px; margin: 0 auto; padding: 0 24px" },
+        "a": {
+          "style": "max-width: 1320px; margin: 0 auto; padding: 0 24px"
+        },
         "c": [
           {
             "t": "div",
@@ -5047,7 +6168,10 @@
             "c": [
               {
                 "t": "kalzo-word",
-                "a": { "size": "clamp(60px, 10vw, 140px)", "tone": "bronze" },
+                "a": {
+                  "size": "clamp(60px, 10vw, 140px)",
+                  "tone": "bronze"
+                },
                 "c": []
               },
               {
@@ -5061,7 +6185,9 @@
                     "a": {
                       "style": "font-family: 'Instrument Serif', serif; font-style: italic; font-size: 26px"
                     },
-                    "c": ["har mehfil ka apna kalakar"]
+                    "c": [
+                      "har mehfil ka apna kalakar"
+                    ]
                   },
                   {
                     "t": "span",
