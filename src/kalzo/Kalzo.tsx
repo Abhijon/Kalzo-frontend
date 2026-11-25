@@ -16,6 +16,7 @@ import { api, artistFrom, unwrapData } from "@/lib/api";
 import { ArtistContact } from "./extras/ArtistContact";
 import { useState } from "react";
 import { ProfileEntry } from "./extras/ProfileEntry";
+import { MobileMenu } from "./extras/MobileMenu";
 import { loadArtForms } from "./extras/artist/artFormsCatalog";
 import { loadLocations } from "./extras/artist/locationsCatalog";
 
@@ -77,12 +78,20 @@ function render(n: Node, scope: Scope, key: string | number): ReactNode {
   if (n.t === "kalzo-contact")
     return <ArtistContact key={key} artist={String(scope["selectedArtistId"] ?? "")} />;
   if (n.t === "kalzo-profile-entry") return <ProfileEntry key={key} />;
+  if (n.t === "kalzo-menu") return <MobileMenu key={key} />;
   if (n.t === "kalzo-patron")
     return <PatronGate key={key} onBack={scope["flowBack"] as () => void} />;
   if (n.t === "kalzo-moneypath") return <MoneyPath key={key} />;
   if (n.t === "kalzo-talk") return <KalzoTalk key={key} info={scope["flowInfo"] as FlowInfo} />;
   if (n.t === "kalzo-fees") return <KalzoFees key={key} info={scope["flowInfo"] as FlowInfo} />;
-  if (n.t === "kalzo-brand") return <BrandMark key={key} onHome={scope["goHome"] as () => void} />;
+  if (n.t === "kalzo-brand")
+    return (
+      <BrandMark
+        key={key}
+        onHome={scope["goHome"] as () => void}
+        compact={n.a["compact"] === "true"}
+      />
+    );
   if (n.t === "kalzo-counter")
     return (
       <HouseCounter

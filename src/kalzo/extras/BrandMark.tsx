@@ -1,14 +1,23 @@
 import logoImg from "@/assets/kalzo-logo.png";
 
-export function BrandMark({ onHome }: { onHome?: () => void }) {
+export function BrandMark({
+  onHome,
+  compact = false,
+}: {
+  onHome?: () => void;
+  compact?: boolean;
+}) {
   return (
-    <button type="button" onClick={onHome} aria-label="Kalzo home" className="kbrand">
-      <img
-        src={logoImg}
-        alt="Kalzo logo"
-        className="kbrand-logo"
-      />
-      <span className="kbrand-tag">where every mehfil finds its artist</span>
+    <button
+      type="button"
+      onClick={onHome}
+      aria-label="Kalzo home"
+      className={compact ? "kbrand kbrand-compact" : "kbrand"}
+    >
+      <img src={logoImg} alt="Kalzo logo" className="kbrand-logo" />
+      {!compact && (
+        <span className="kbrand-tag">where every mehfil finds its artist</span>
+      )}
     </button>
   );
 }

@@ -46,7 +46,7 @@ export function ProfileEntry() {
     return () => { active = false; data.subscription.unsubscribe(); };
   }, []);
   return <Popover><PopoverTrigger asChild><Button variant="ghost" className="klink knav k-profile-entry" aria-label="Profile"><UserRound size={17} /><span>Profile</span></Button></PopoverTrigger>
-    <PopoverContent className="kpm">
+    <PopoverContent className="kpm z-[120]">
       <div className="kpm-head">Your Kalzo</div><div className="kpm-list">
         {kind === "guest" && <>
           <Link to="/profile" search={{ mode: "create" }} className="kpm-item">Sign up</Link>
