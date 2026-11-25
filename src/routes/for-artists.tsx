@@ -30,7 +30,7 @@ function ForArtists() {
         // Use role from /me directly — no extra API calls
         const role = (data.user.role as string | undefined)?.toUpperCase();
         if (active && role === "ARTIST") {
-          await navigate({ to: "/artist", replace: true }); return;
+          await navigate({ to: "/artist/profile", replace: true }); return;
         }
       }
       if (active) setChecking(false);

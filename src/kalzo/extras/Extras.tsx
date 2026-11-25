@@ -56,7 +56,7 @@ export function KalzoTalk({ info }: { info?: FlowInfo }) {
       </div>
       <div className="kx-row">
         <button className={"kx-btn" + (mode === "chat" ? "" : " kx-ghost")} onClick={() => open("chat")}>CHAT</button>
-        <button className={"kx-btn" + (mode === "call" ? "" : " kx-ghost")} onClick={() => open("call")}>CALL VIA KALZO</button>
+        <button className={"kx-btn" + (mode === "call" ? "" : " kx-ghost")} onClick={() => open("call")}>SCHEDULE VIRTUAL CALL</button>
       </div>
       {mode === "chat" && warned && (
         <div className="kx-chat">

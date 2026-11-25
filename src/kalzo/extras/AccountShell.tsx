@@ -46,7 +46,7 @@ export function AccountShell({
       const k = isArtist ? "artist" : "patron";
       setKind(k);
       if (audience === "artist" && k === "patron") void navigate({ to: "/account" });
-      if (audience === "patron" && k === "artist" && title === "Your Kalzo") void navigate({ to: "/artist" });
+      if (audience === "patron" && k === "artist" && title === "Your Kalzo") void navigate({ to: "/artist/profile" });
     });
     const { data } = api.auth.onAuthStateChange((_e, s) => setSigned(!!s));
     return () => data.subscription.unsubscribe();
@@ -66,7 +66,7 @@ export function AccountShell({
         <nav className="kl-nav">
           <Link to="/">Kalzo</Link>
           {kind !== "artist" && <Link to="/account">My bookings</Link>}
-          {kind !== "patron" && <Link to="/artist">Artist panel</Link>}
+          {kind !== "patron" && <Link to="/artist/profile">Artist panel</Link>}
           <Link to="/support">Support</Link>
           <Link to="/faqs">FAQs</Link>
           {signed && <Button variant="outline" onClick={() => void logout()}><LogOut size={16} /> Log out</Button>}
