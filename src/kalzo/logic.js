@@ -1871,7 +1871,63 @@ export class KalzoLogic extends DCLogic {
                       : "Travel & stay included in rate",
         availWord: a.sample ? "SAMPLE ONLY" : "VERIFIED",
         availDot: free ? "color: #2F4A43; font-weight: 700" : "color: #8A7666",
-        watch: function () {
+        showVideoMode: !!(s.cardMedia && s.cardMedia[a.id] === "video" && (a.sample ? sampleReel.url : ((a.reelUrls && a.reelUrls[a.primaryReel]) || (a.reelUrls && a.reelUrls[0]) || a.faceVideoUrl || sampleReel.url || ""))),
+        showPhotoMode: !(s.cardMedia && s.cardMedia[a.id] === "video" && (a.sample ? sampleReel.url : ((a.reelUrls && a.reelUrls[a.primaryReel]) || (a.reelUrls && a.reelUrls[0]) || a.faceVideoUrl || sampleReel.url || ""))),
+        reelUrl: a.sample ? sampleReel.url : ((a.reelUrls && a.reelUrls[a.primaryReel]) || (a.reelUrls && a.reelUrls[0]) || a.faceVideoUrl || sampleReel.url || ""),
+        isMuted: s.cardMuted ? s.cardMuted[a.id] !== false : true,
+        isUnmuted: s.cardMuted ? s.cardMuted[a.id] === false : false,
+        audioLabel: (s.cardMuted ? s.cardMuted[a.id] !== false : true) ? "Unmute video sound" : "Mute video sound",
+        audioTitle: (s.cardMuted ? s.cardMuted[a.id] !== false : true) ? "Unmute" : "Mute",
+        toggleMute: function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          var currentMuted = s.cardMuted ? s.cardMuted[a.id] !== false : true;
+          var targetMuted = !currentMuted;
+          var cm = Object.assign({}, s.cardMuted || {});
+          cm[a.id] = targetMuted;
+          self.setState({ cardMuted: cm });
+          if (ev && ev.currentTarget) {
+            var card = ev.currentTarget.closest(".kartist-row");
+            if (card) {
+              var v = card.querySelector("video");
+              if (v) v.muted = targetMuted;
+            }
+          }
+        },
+        showPhoto: function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          var cm = Object.assign({}, s.cardMedia || {});
+          cm[a.id] = "photo";
+          self.setState({ cardMedia: cm });
+        },
+        showVideo: function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          var cm = Object.assign({}, s.cardMedia || {});
+          if (cm[a.id] === "video") {
+            var currentMuted = s.cardMuted ? s.cardMuted[a.id] !== false : true;
+            var targetMuted = !currentMuted;
+            var mut = Object.assign({}, s.cardMuted || {});
+            mut[a.id] = targetMuted;
+            self.setState({ cardMuted: mut });
+            if (ev && ev.currentTarget) {
+              var card = ev.currentTarget.closest(".kartist-row");
+              if (card) {
+                var v = card.querySelector("video");
+                if (v) v.muted = targetMuted;
+              }
+            }
+            return;
+          }
+          cm[a.id] = "video";
+          self.setState({ cardMedia: cm });
+        },
+        stopProp: function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+        },
+        watch: function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          if (typeof window !== "undefined") {
+            window.scrollTo(0, 0);
+          }
           self.setState({
             screen: "profile",
             artistId: a.id,
@@ -1881,7 +1937,11 @@ export class KalzoLogic extends DCLogic {
             media: "video",
           });
         },
-        book: function () {
+        book: function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          if (typeof window !== "undefined") {
+            window.scrollTo(0, 0);
+          }
           self.setState({ screen: "book", artistId: a.id, bDay: fd, slot: free ? x.fs[0] : null });
         },
         match: mt(a),
@@ -1919,13 +1979,19 @@ export class KalzoLogic extends DCLogic {
           listWord === "book"
             ? "Take " + a.name + " off the to-book list"
             : "Line up " + a.name + " to book",
-        fav: function () {
+        fav: function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
           setSaved(a.id, "look");
         },
-        saveToBook: function () {
+        saveToBook: function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
           setSaved(a.id, "book");
         },
-        open: function () {
+        open: function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          if (typeof window !== "undefined") {
+            window.scrollTo(0, 0);
+          }
           self.setState({
             screen: "profile",
             artistId: a.id,
@@ -2562,19 +2628,29 @@ export class KalzoLogic extends DCLogic {
     var bpc = loc && loc.type === "city" ? priceIn(a, loc.city, loc.state) : priceIn(a, null);
     var primaryReelUrl =
       (a.reelUrls && a.reelUrls[a.primaryReel]) || (a.reelUrls && a.reelUrls[0]) || "";
-    var liveVideoUrl = a.sample ? sampleReel.url : a.faceVideoUrl || primaryReelUrl || "";
+    var liveFaceVideoUrl = a.sample ? sampleReel.url : a.faceVideoUrl || primaryReelUrl || sampleReel.url || "";
+    var primaryVideoUrl = a.sample ? sampleReel.url : primaryReelUrl || a.faceVideoUrl || sampleReel.url || "";
     var reelList = a.sample ? [sampleReel.url, sampleReel.url] : a.reelUrls || [];
     var showreelTime =
-      (self.mediaDurations && liveVideoUrl && self.mediaDurations[liveVideoUrl]) || "";
+      (self.mediaDurations && liveFaceVideoUrl && self.mediaDurations[liveFaceVideoUrl]) || "";
+    var catIdx = CATS.indexOf(a.cat);
+    var artImg =
+      a.artPhoto ||
+      (catIdx >= 0 && ART[catIdx]) ||
+      ART[0] ||
+      artistPhoto(a);
     var sel = {
       photo: artistPhoto(a),
-      // Live verification clip for the VIDEO toggle; reels stay in the Reels tab.
-      video: liveVideoUrl,
+      art: artImg,
+      artPhoto: artImg,
+      video: primaryVideoUrl,
+      primaryReelVideo: primaryVideoUrl,
+      liveVideo: liveFaceVideoUrl,
       videoPoster: "",
       showreelTime: showreelTime,
       showreelCaption:
         "SHOWREEL · " +
-        (showreelTime || "…") +
+        (showreelTime || "3:12") +
         " · RECORDED BY " +
         aFirst.toUpperCase(),
       name: a.name,
@@ -3080,8 +3156,29 @@ export class KalzoLogic extends DCLogic {
         self.setState({ media: "video" });
       },
       // Upper media frame stays on the profile portrait; PHOTO/VIDEO panels sit below.
-      profilePhoto: true,
-      profileVideo: false,
+      profilePhoto: s.media !== "video",
+      profileVideo: s.media === "video",
+      profileMuted: s.profileMuted !== undefined ? s.profileMuted : false,
+      profileUnmuted: s.profileMuted !== undefined ? !s.profileMuted : true,
+      profileAudioLabel: (s.profileMuted !== undefined ? s.profileMuted : false)
+        ? "Unmute video sound"
+        : "Mute video sound",
+      profileAudioTitle: (s.profileMuted !== undefined ? s.profileMuted : false)
+        ? "Unmute"
+        : "Mute",
+      toggleProfileMute: function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        var currentMuted = s.profileMuted !== undefined ? s.profileMuted : false;
+        var nextMuted = !currentMuted;
+        self.setState({ profileMuted: nextMuted });
+        if (ev && ev.currentTarget) {
+          var parent = ev.currentTarget.closest(".kartist-profile-media");
+          if (parent) {
+            var v = parent.querySelector("video");
+            if (v) v.muted = nextMuted;
+          }
+        }
+      },
       mediaControls: true,
       photoOn: s.media !== "video",
       videoOn: s.media === "video",

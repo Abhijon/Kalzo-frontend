@@ -670,6 +670,7 @@ input:focus {
 .kartist-row {
   display: grid;
   grid-template-columns: 164px minmax(0, 1fr);
+  cursor: pointer;
   gap: 20px;
   padding: 20px;
   background: var(--artist-paper);
@@ -707,27 +708,54 @@ input:focus {
   position: absolute;
   left: 12px;
   top: 12px;
-  display: flex
+  display: flex;
+  gap: 6px;
+  z-index: 4;
 }
 
 .kartist-media-tool {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 27px;
-  height: 27px;
-  border: 1px solid var(--artist-ink);
-  padding: 4px
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(42, 29, 24, 0.4);
+  border-radius: 6px;
+  padding: 5px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.kartist-media-tool:hover {
+  transform: translateY(-1px);
 }
 
 .kartist-camera {
-  background: var(--artist-terra);
-  color: var(--artist-ink)
+  background: rgba(246, 239, 227, 0.94);
+  color: #2A1D18;
 }
 
-.kartist-video-tool {
-  background: var(--artist-ink);
-  color: var(--artist-paper)
+.kartist-video-tool,
+.kartist-audio-tool {
+  background: rgba(42, 29, 24, 0.9);
+  color: #F2E7D3;
+}
+
+.kartist-audio-tool:hover {
+  background: rgba(42, 29, 24, 1);
+  color: var(--artist-gold, #c5a059);
+}
+
+.kartist-media-tool[aria-pressed="true"] {
+  border: 1.5px solid var(--artist-gold, #c5a059);
+  box-shadow: 0 0 0 1.5px var(--artist-gold, #c5a059), 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+  opacity: 1;
+}
+
+.kartist-media-tool[aria-pressed="false"] {
+  opacity: 0.72;
 }
 
 .kartist-rating {
@@ -942,11 +970,12 @@ input:focus {
 }
 
 .kartist-profile-media {
+  position: relative;
   width: min(100%, 300px);
   aspect-ratio: 3/4;
   overflow: hidden;
   border: 1px solid var(--artist-border);
-  background: var(--artist-ink)
+  background: var(--artist-ink);
 }
 
 .kartist-profile-photo,
@@ -954,26 +983,28 @@ input:focus {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover
+  object-fit: cover;
 }
 
 .kartist-profile-video {
-  object-fit: contain
+  background: #000;
+  object-fit: cover;
 }
 
 .kartist-reel {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 0
+  min-width: 0;
 }
 
 .kartist-reel-video {
   display: block;
   width: 100%;
-  height: 200px;
-  object-fit: contain;
-  background: var(--artist-ink)
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: var(--artist-ink, #1a120e);
+  border: 1px solid var(--artist-border, #d1c7b7);
 }
 
 
@@ -1268,6 +1299,10 @@ input:focus {
   object-fit: cover;
   object-position: center 18%;
   border: 2px solid var(--artist-ink)
+}
+
+video.kartist-art {
+  background: #000;
 }
 
 .kartist-avatar {
@@ -2232,7 +2267,7 @@ input:focus {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  z-index: 3
+  z-index: 4
 }
 
 .kartist-save-btn {

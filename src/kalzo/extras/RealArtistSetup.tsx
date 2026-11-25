@@ -527,7 +527,7 @@ function ProfileDetailsOverview({
       {/* Photographs and showreels */}
       <fieldset className="ka-card">
         <legend>Photographs and showreels</legend>
-        <div style={{ marginBottom: 18 }}>
+        <div style={{ paddingBottom: 24, marginBottom: 24, borderBottom: "1px solid var(--artist-border, #ddd)" }}>
           <span style={{ display: "block", fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--artist-rust, #8b5a2b)", fontWeight: 700, marginBottom: 12 }}>
             Attached photographs
           </span>
@@ -555,7 +555,7 @@ function ProfileDetailsOverview({
           </div>
         </div>
 
-        <div>
+        <div style={{ paddingTop: 4 }}>
           <span style={{ display: "block", fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--artist-rust, #8b5a2b)", fontWeight: 700, marginBottom: 12 }}>
             Performance showreels
           </span>
