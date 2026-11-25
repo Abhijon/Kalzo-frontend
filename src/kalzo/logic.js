@@ -3,6 +3,7 @@ import { DCLogic } from "./dc";
 import { assignArtistPhotos } from "./artist-photos";
 import { serviceFee, bookingMoney } from "./extras/fees";
 import { artistCityPrice } from "../lib/bookingPrice";
+import { loadVerifiedArtistsList } from "../lib/artists.functions";
 
 // Bookable hours for real artists until they set their own (10 AM to 10 PM).
 const REAL_SLOTS = ["10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM", "6:00 PM", "7:00 PM", "8:00 PM", "9:00 PM", "10:00 PM"];
@@ -43,6 +44,7 @@ export class KalzoLogic extends DCLogic {
     super(props);
     this.publicArtists = [];
     this.artistDetails = {};
+    this._verifiedReqId = 0;
     this.mediaDurations = {};
     /** GET /art-forms map: { Type: subtypes[] } — finder uses main types only. */
     this.catalogArtForms = null;
@@ -118,6 +120,33 @@ export class KalzoLogic extends DCLogic {
       );
     }
   }
+
+  /**
+   * Refetch GET /artists/verified with city/state + location tier.
+   * Called when the finder location or tier changes.
+   */
+  refreshVerifiedFromApi(overrides) {
+    var s = Object.assign({}, this.state, overrides || {});
+    var loc = s.loc;
+    var params = { page: 1, limit: 100 };
+    if (loc && loc.type === "city" && loc.city) {
+      params.city = loc.city;
+      params.tier = s.tier || "all";
+    } else if (loc && loc.type === "state" && loc.state) {
+      params.state = loc.state;
+      params.tier = s.tier || "all";
+    }
+    var reqId = ++this._verifiedReqId;
+    var self = this;
+    loadVerifiedArtistsList(params)
+      .then(function (artists) {
+        if (reqId !== self._verifiedReqId) return;
+        self.publicArtists = artists;
+        if (self._notify) self._notify();
+      })
+      .catch(function () {});
+  }
+
   renderVals() {
     var s = this.state,
       self = this;
@@ -910,18 +939,24 @@ export class KalzoLogic extends DCLogic {
       return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay();
     }
     function dayOff(a, d) {
+      if (a.sample) return false;
       var week = a.weekAvailability || [];
       if (week.length) {
         var wd = weekdayFromIso(dates[d].iso);
         var row = week.find(function (v) {
           return Number(v.weekday) === wd;
         });
+        // Explicit closed, or weekday row missing → treat as unavailable.
         return !(row && row.isActive);
       }
-      if (a.sample || !(a.availability || []).length) return false;
-      return !(a.availability || []).some(function (v) {
-        return v.day === d;
-      });
+      var legacy = a.availability || [];
+      if (legacy.length) {
+        return !legacy.some(function (v) {
+          return v.day === d;
+        });
+      }
+      // No schedule loaded yet — don't hide the card; OPEN/CLOSED strip stays empty-data open.
+      return false;
     }
     function slotFree(a, d, si) {
       if (a.sample) return true;
@@ -1533,11 +1568,14 @@ export class KalzoLogic extends DCLogic {
           sub: "· " + h.sub,
           count: h.count + " ARTISTS",
           pick: function () {
-            self.setState({
+            var patch = {
               loc: h.v,
               locQ: h.v.type === "state" ? h.v.state : h.v.city + ", " + h.v.state,
+              tier: "all",
               limit: 24,
-            });
+            };
+            self.setState(patch);
+            self.refreshVerifiedFromApi(patch);
           },
         };
       });
@@ -1567,6 +1605,8 @@ export class KalzoLogic extends DCLogic {
         // if (a.rating < s.minStar) return false;
         if (s.hrs && a.unit === "hour" && maxHrs(a) < s.hrs) return false;
         if (qn && a.name.toLowerCase().indexOf(qn) < 0) return false;
+        // Availability date filter (Tonight / Tomorrow / …) — hide artists closed that day.
+        if (!a.sample && !freeOn(a, fd)) return false;
         return true;
       })
       .map(function (a) {
@@ -1574,7 +1614,7 @@ export class KalzoLogic extends DCLogic {
       });
     if (s.onlyFree && !s.onlySaved)
       list = list.filter(function (x) {
-        return x.a.sample || x.fs.length > 0 || !(x.a.availability || []).length;
+        return x.a.sample || freeOn(x.a, fd);
       });
     var MATCH_RANK = { current: 0, visiting: 0, base: 1, pref: 2, any: 3 };
     var SORT = {
@@ -1794,32 +1834,19 @@ export class KalzoLogic extends DCLogic {
         (PERFORMS[a.cat] || "weddings and private events") +
         ".";
       var skills = [CATSKILL[a.cat] || "Seasoned Performer", tg[0], tg[1], tg[2]];
-      // Fixed Mon→Sun order (same as artist weekly availability), not "next 7 from today".
-      var week = DOW.map(function (label, i) {
-        var jsWd = (i + 1) % 7; // Mon=1 … Sat=6, Sun=0
-        var ok = false;
-        var weekRows = a.weekAvailability || [];
-        if (weekRows.length) {
-          var row = weekRows.find(function (v) {
-            return Number(v.weekday) === jsWd;
-          });
-          ok = !!(row && row.isActive);
-        } else {
-          var di = -1;
-          for (var j = 0; j < dates.length; j++) {
-            if (weekdayFromIso(dates[j].iso) === jsWd) {
-              di = j;
-              break;
-            }
-          }
-          ok = di >= 0 ? freeOn(a, di) : false;
-        }
-        return {
-          dow: label,
-          word: ok ? "Available" : "Unavailable",
-          cls: "kweek-day " + (ok ? "kweek-open" : "kweek-full"),
-        };
-      });
+      // Rolling next 7 days from today (same window as the availability date filter).
+      var week = [];
+      for (var wi = 0; wi < 7; wi++) {
+        var day = dates[wi];
+        var ok = freeOn(a, wi);
+        var onDay = fd === wi;
+        week.push({
+          dow: wi === 0 ? "TODAY" : DOW[day.d],
+          num: String(day.num),
+          word: ok ? "OPEN" : "CLOSED",
+          cls: "kweek-day " + (ok ? "kweek-open" : "kweek-full") + (onDay ? " kweek-on" : ""),
+        });
+      }
       return {
         // Small circle under the poster: live art photo when present.
         art: a.artPhoto || ART[ci] || ART[0],
@@ -2366,11 +2393,14 @@ export class KalzoLogic extends DCLogic {
         roofFill: ROOFC[hi % 8],
         aria: "Show artists in " + p[0] + (kind ? ", " + kind.toLowerCase() : ""),
         pick: function () {
-          self.setState({
+          var patch = {
             loc: { type: "city", city: p[0], state: p[1] },
             locQ: p[0] + ", " + p[1],
+            tier: "all",
             limit: 24,
-          });
+          };
+          self.setState(patch);
+          self.refreshVerifiedFromApi(patch);
         },
       };
     });
@@ -2500,8 +2530,8 @@ export class KalzoLogic extends DCLogic {
         return { v: String(p[0]), label: p[1] };
       });
     }
-    // Location filter is a state dropdown (GET /locations). Tier stays "all"
-    // so current + base + preferred artists in that state all show.
+    // City/district search + location tier (current / base / preferred) drive
+    // GET /artists/verified via refreshVerifiedFromApi.
     var stateOpts = opts(
       [["", "All of India"]].concat(
         STATES.map(function (st) {
@@ -2511,9 +2541,9 @@ export class KalzoLogic extends DCLogic {
     );
     var tierOpts = opts([
       ["all", "All (current + base + preferred)"],
-      ["current", "Currently in " + placeN],
-      ["base", "Base / hometown: " + placeN],
-      ["pref", "Preferred for " + placeN],
+      ["current", "Currently in " + placeN + " today"],
+      ["base", "Base hometown: " + placeN],
+      ["pref", "Preferred city: " + placeN],
     ]);
     var artOpts = opts(
       [["", "All art forms"]].concat(
@@ -3068,7 +3098,12 @@ export class KalzoLogic extends DCLogic {
     });
     var setLocQ = function (ev) {
       var v = ev.target.value;
-      self.setState(v.trim() ? { locQ: v } : { locQ: "", loc: null });
+      if (v.trim()) {
+        self.setState({ locQ: v });
+        return;
+      }
+      self.setState({ locQ: "", loc: null, tier: "all" });
+      self.refreshVerifiedFromApi({ loc: null, tier: "all" });
     };
 
     return {
@@ -3104,7 +3139,9 @@ export class KalzoLogic extends DCLogic {
       setLocQ: setLocQ,
       hasLoc: !!loc,
       clearLoc: function () {
-        self.setState({ loc: null, locQ: "", limit: 24 });
+        var patch = { loc: null, locQ: "", tier: "all", limit: 24 };
+        self.setState(patch);
+        self.refreshVerifiedFromApi(patch);
       },
       sugg: sugg,
       hasSugg: sugg.length > 0,
@@ -3190,7 +3227,9 @@ export class KalzoLogic extends DCLogic {
       tierOpts: tierOpts,
       tier: s.tier,
       setTier: function (ev) {
-        self.setState({ tier: ev.target.value, limit: 24 });
+        var patch = { tier: ev.target.value, limit: 24 };
+        self.setState(patch);
+        self.refreshVerifiedFromApi(patch);
       },
       // Seeded states from GET /locations (fallback: bundled India list).
       stateOpts: stateOpts,
@@ -3198,15 +3237,19 @@ export class KalzoLogic extends DCLogic {
       setStateLoc: function (ev) {
         var v = String(ev.target.value || "").trim();
         if (!v) {
-          self.setState({ loc: null, locQ: "", tier: "all", limit: 24 });
+          var cleared = { loc: null, locQ: "", tier: "all", limit: 24 };
+          self.setState(cleared);
+          self.refreshVerifiedFromApi(cleared);
           return;
         }
-        self.setState({
+        var patch = {
           loc: { type: "state", state: v },
           locQ: v,
           tier: "all",
           limit: 24,
-        });
+        };
+        self.setState(patch);
+        self.refreshVerifiedFromApi(patch);
       },
       artOpts: artOpts,
       artVal: arts.length === 1 ? arts[0] : "",
@@ -3379,7 +3422,7 @@ export class KalzoLogic extends DCLogic {
           ? "background: " + INK + "; color: " + CREAM + ";"
           : "background: transparent; color: #A8957F; border-color: #C2B29C; cursor: not-allowed;"),
       clearFilters: function () {
-        self.setState({
+        var patch = {
           loc: null,
           locQ: "",
           arts: [],
@@ -3395,7 +3438,9 @@ export class KalzoLogic extends DCLogic {
           onlyFree: true,
           onlySaved: false,
           limit: 24,
-        });
+        };
+        self.setState(patch);
+        self.refreshVerifiedFromApi(patch);
       },
       showSaved: function () {
         self.setState({ screen: "home", onlySaved: true });
