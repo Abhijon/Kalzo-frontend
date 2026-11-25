@@ -1984,7 +1984,7 @@
                     "c": [
                       {
                         "t": "article",
-                        "a": { "class": "kartist-row", "style": "{{ r.catVars }}" },
+                        "a": { "class": "kartist-row", "style": "{{ r.catVars }}; cursor: pointer", "sc-camel-on-click": "{{ r.open }}" },
                         "c": [
                           {
                             "t": "div",
@@ -1995,16 +1995,43 @@
                                 "a": { "class": "kartist-poster" },
                                 "c": [
                                   {
-                                    "t": "img",
-                                    "a": {
-                                      "src": "{{ r.photo }}",
-                                      "alt": "{{ r.name }}",
-                                      "width": "720",
-                                      "height": "720",
-                                      "loading": "lazy",
-                                      "class": "kartist-art"
-                                    },
-                                    "c": []
+                                    "t": "sc-if",
+                                    "a": { "value": "{{ r.showPhotoMode }}" },
+                                    "c": [
+                                      {
+                                        "t": "img",
+                                        "a": {
+                                          "src": "{{ r.photo }}",
+                                          "alt": "{{ r.name }}",
+                                          "width": "720",
+                                          "height": "720",
+                                          "loading": "lazy",
+                                          "class": "kartist-art"
+                                        },
+                                        "c": []
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "t": "sc-if",
+                                    "a": { "value": "{{ r.showVideoMode }}", "hint-placeholder-val": "{{ false }}" },
+                                    "c": [
+                                      {
+                                        "t": "video",
+                                        "a": {
+                                          "src": "{{ r.reelUrl }}",
+                                          "controls": "true",
+                                          "autoplay": "true",
+                                          "muted": "{{ r.isMuted }}",
+                                          "playsinline": "true",
+                                          "preload": "metadata",
+                                          "class": "kartist-art kartist-video",
+                                          "aria-label": "Sample video of {{ r.name }}",
+                                          "sc-camel-on-click": "{{ r.stopProp }}"
+                                        },
+                                        "c": []
+                                      }
+                                    ]
                                   },
                                   {
                                     "t": "span",
@@ -2014,9 +2041,10 @@
                                         "t": "button",
                                         "a": {
                                           "class": "kartist-media-tool kartist-camera",
-                                          "sc-camel-on-click": "{{ r.open }}",
+                                          "sc-camel-on-click": "{{ r.showPhoto }}",
                                           "aria-label": "View photo of {{ r.name }}",
-                                          "title": "Photo"
+                                          "title": "Photo",
+                                          "aria-pressed": "{{ r.showPhotoMode }}"
                                         },
                                         "c": [
                                           {
@@ -2048,9 +2076,10 @@
                                         "t": "button",
                                         "a": {
                                           "class": "kartist-media-tool kartist-video-tool",
-                                          "sc-camel-on-click": "{{ r.watch }}",
+                                          "sc-camel-on-click": "{{ r.showVideo }}",
                                           "aria-label": "Watch sample reel of {{ r.name }}",
-                                          "title": "Sample video"
+                                          "title": "Sample video",
+                                          "aria-pressed": "{{ r.showVideoMode }}"
                                         },
                                         "c": [
                                           {
@@ -2071,6 +2100,73 @@
                                                 "t": "path",
                                                 "a": { "d": "M3 6h13v12H3z M16 10l5-3v10l-5-3" },
                                                 "c": []
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "t": "sc-if",
+                                        "a": { "value": "{{ r.showVideoMode }}", "hint-placeholder-val": "{{ false }}" },
+                                        "c": [
+                                          {
+                                            "t": "button",
+                                            "a": {
+                                              "class": "kartist-media-tool kartist-audio-tool",
+                                              "sc-camel-on-click": "{{ r.toggleMute }}",
+                                              "aria-label": "{{ r.audioLabel }}",
+                                              "title": "{{ r.audioTitle }}"
+                                            },
+                                            "c": [
+                                              {
+                                                "t": "sc-if",
+                                                "a": { "value": "{{ r.isMuted }}" },
+                                                "c": [
+                                                  {
+                                                    "t": "svg",
+                                                    "a": {
+                                                      "aria-hidden": "true",
+                                                      "width": "15",
+                                                      "height": "15",
+                                                      "sc-camel-view-box": "0 0 24 24",
+                                                      "fill": "none",
+                                                      "stroke": "#F2E7D3",
+                                                      "stroke-width": "1.8",
+                                                      "stroke-linecap": "round",
+                                                      "stroke-linejoin": "round"
+                                                    },
+                                                    "c": [
+                                                      { "t": "polygon", "a": { "points": "11 5 6 9 2 9 2 15 6 15 11 19 11 5" }, "c": [] },
+                                                      { "t": "line", "a": { "x1": "23", "y1": "9", "x2": "17", "y2": "15" }, "c": [] },
+                                                      { "t": "line", "a": { "x1": "17", "y1": "9", "x2": "23", "y2": "15" }, "c": [] }
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "t": "sc-if",
+                                                "a": { "value": "{{ r.isUnmuted }}" },
+                                                "c": [
+                                                  {
+                                                    "t": "svg",
+                                                    "a": {
+                                                      "aria-hidden": "true",
+                                                      "width": "15",
+                                                      "height": "15",
+                                                      "sc-camel-view-box": "0 0 24 24",
+                                                      "fill": "none",
+                                                      "stroke": "#F2E7D3",
+                                                      "stroke-width": "1.8",
+                                                      "stroke-linecap": "round",
+                                                      "stroke-linejoin": "round"
+                                                    },
+                                                    "c": [
+                                                      { "t": "polygon", "a": { "points": "11 5 6 9 2 9 2 15 6 15 11 19 11 5" }, "c": [] },
+                                                      { "t": "path", "a": { "d": "M15.54 8.46a5 5 0 0 1 0 7.07" }, "c": [] },
+                                                      { "t": "path", "a": { "d": "M19.07 4.93a10 10 0 0 1 0 14.14" }, "c": [] }
+                                                    ]
+                                                  }
+                                                ]
                                               }
                                             ]
                                           }
@@ -2958,8 +3054,8 @@
                               {
                                 "t": "img",
                                 "a": {
-                                  "src": "{{ sel.photo }}",
-                                  "alt": "{{ sel.name }} — sample artist portrait",
+                                  "src": "{{ sel.art }}",
+                                  "alt": "{{ sel.name }} — art photography",
                                   "width": "768",
                                   "height": "1024",
                                   "class": "kartist-profile-photo"
@@ -2978,13 +3074,15 @@
                               {
                                 "t": "video",
                                 "a": {
-                                  "src": "{{ sel.video }}",
+                                  "src": "{{ sel.primaryReelVideo }}",
                                   "poster": "{{ sel.videoPoster }}",
                                   "controls": "{{ mediaControls }}",
                                   "playsinline": "{{ mediaControls }}",
+                                  "autoplay": "true",
+                                  "muted": "true",
                                   "preload": "metadata",
                                   "class": "kartist-profile-video",
-                                  "aria-label": "Sample performer reel"
+                                  "aria-label": "{{ sel.name }} — primary showreel"
                                 },
                                 "c": []
                               }
@@ -3142,7 +3240,7 @@
                                   {
                                     "t": "video",
                                     "a": {
-                                      "src": "{{ sel.video }}",
+                                      "src": "{{ sel.liveVideo }}",
                                       "poster": "{{ sel.videoPoster }}",
                                       "controls": "{{ mediaControls }}",
                                       "playsinline": "{{ mediaControls }}",

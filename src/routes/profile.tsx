@@ -22,7 +22,7 @@ function Profile() {
       if (authError) throw authError;
       // Navigate based on role from /me — no extra API calls needed
       const role = (data.user.role as string | undefined)?.toUpperCase();
-      const dest = role === "ARTIST" ? "/artist" : "/account";
+      const dest = role === "ARTIST" ? "/artist/profile" : "/account";
       if (active) await navigate({ to: dest });
     };
     void resolve().catch(e => setError(e.message));
