@@ -187,6 +187,17 @@ export function Kalzo() {
     return () => data.subscription.unsubscribe();
   }, []);
   const vals = ref.current.renderVals() as Scope;
+  const currentScreen = String(vals["screen"] || ref.current?.state?.screen || "");
+  const prevScreenRef = useRef(currentScreen);
+  useEffect(() => {
+    if (currentScreen && currentScreen !== prevScreenRef.current) {
+      if (currentScreen === "profile" || currentScreen === "book" || currentScreen === "pay") {
+        window.scrollTo(0, 0);
+        requestAnimationFrame(() => window.scrollTo(0, 0));
+      }
+      prevScreenRef.current = currentScreen;
+    }
+  }, [currentScreen]);
   const profileArtistId =
     vals["isProfile"] && !vals["selectedIsSample"] ? String(vals["selectedArtistId"] ?? "") : "";
   // Watch Reel / profile: load full GET /artists/:id so live video, reels, and photo are complete.

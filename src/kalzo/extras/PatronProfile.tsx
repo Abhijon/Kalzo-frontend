@@ -239,7 +239,7 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
       })()}
       <div className="kl-actions">
         <Link to="/support">Support & help →</Link>
-        <Link to="/artist">Become a Kalzo artist →</Link>
+        <Link to="/for-artists">Become a Kalzo artist →</Link>
       </div>
     </>
   );
