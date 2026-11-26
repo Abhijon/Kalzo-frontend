@@ -76,7 +76,13 @@ function render(n: Node, scope: Scope, key: string | number): ReactNode {
     return v == null || typeof v === "boolean" ? null : (v as ReactNode);
   }
   if (n.t === "kalzo-contact")
-    return <ArtistContact key={key} artist={String(scope["selectedArtistId"] ?? "")} />;
+    return (
+      <ArtistContact
+        key={key}
+        artist={String(scope["selectedArtistId"] ?? "")}
+        signed={Boolean(scope["isSigned"])}
+      />
+    );
   if (n.t === "kalzo-profile-entry") return <ProfileEntry key={key} />;
   if (n.t === "kalzo-menu") return <MobileMenu key={key} />;
   if (n.t === "kalzo-patron")
@@ -186,6 +192,27 @@ export function Kalzo() {
     const { data } = api.auth.onAuthStateChange((_e, s) => setSigned(!!s));
     return () => data.subscription.unsubscribe();
   }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncFromUrl = () => {
+      const p = new URLSearchParams(window.location.search);
+      const aid = p.get("artist");
+      if (aid && ref.current) {
+        ref.current.setState({
+          screen: "profile",
+          artistId: aid,
+          media: "photo",
+        });
+        window.scrollTo(0, 0);
+      } else if (ref.current && ref.current.state?.screen === "profile") {
+        ref.current.setState({ screen: "home" });
+      }
+    };
+    syncFromUrl();
+    window.addEventListener("popstate", syncFromUrl);
+    return () => window.removeEventListener("popstate", syncFromUrl);
+  }, []);
+  ref.current.isSigned = signed;
   const vals = ref.current.renderVals() as Scope;
   const currentScreen = String(vals["screen"] || ref.current?.state?.screen || "");
   const prevScreenRef = useRef(currentScreen);
@@ -243,51 +270,63 @@ export function Kalzo() {
     };
   }, [profileArtistId]);
   const liveVideoUrl =
-    vals["isProfile"] && vals["sel"] && typeof (vals["sel"] as Scope)["video"] === "string"
-      ? String((vals["sel"] as Scope)["video"] ?? "")
+    vals["isProfile"] && vals["sel"] && typeof (vals["sel"] as Scope)["liveVideo"] === "string"
+      ? String((vals["sel"] as Scope)["liveVideo"] ?? "")
       : "";
-  // Read actual showreel / live-video duration for "SHOWREEL · 19 secs · …".
+  const primaryVideoUrl =
+    vals["isProfile"] && vals["sel"] && typeof (vals["sel"] as Scope)["primaryReelVideo"] === "string"
+      ? String((vals["sel"] as Scope)["primaryReelVideo"] ?? "")
+      : "";
+  // Read actual showreel / live-video duration for "SHOWREEL · 0:09 · …".
   useEffect(() => {
-    if (!liveVideoUrl || !ref.current) return;
-    const cached = ref.current.mediaDurations?.[liveVideoUrl];
-    if (cached) return;
+    const urls = [liveVideoUrl, primaryVideoUrl].filter(Boolean);
+    if (!urls.length || !ref.current) return;
     let cancelled = false;
-    const video = document.createElement("video");
-    video.preload = "metadata";
-    video.src = liveVideoUrl;
-    const onMeta = () => {
-      if (cancelled || !ref.current) return;
-      const secs = Math.round(Number(video.duration));
-      if (!Number.isFinite(secs) || secs <= 0) return;
-      ref.current.mediaDurations = {
-        ...(ref.current.mediaDurations || {}),
-        [liveVideoUrl]: `${secs} secs`,
+
+    urls.forEach((url) => {
+      if (ref.current?.mediaDurations?.[url]) return;
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.src = url;
+      const onMeta = () => {
+        if (cancelled || !ref.current) return;
+        const totalSecs = Math.floor(Number(video.duration));
+        if (!Number.isFinite(totalSecs) || totalSecs <= 0) return;
+        const m = Math.floor(totalSecs / 60);
+        const s = totalSecs % 60;
+        const formatted = `${m}:${s < 10 ? "0" : ""}${s}`;
+        ref.current.mediaDurations = {
+          ...(ref.current.mediaDurations || {}),
+          [url]: formatted,
+        };
+        force();
       };
-      force();
-    };
-    video.addEventListener("loadedmetadata", onMeta);
+      video.addEventListener("loadedmetadata", onMeta);
+    });
+
     return () => {
       cancelled = true;
-      video.removeEventListener("loadedmetadata", onMeta);
-      video.removeAttribute("src");
-      video.load();
     };
-  }, [liveVideoUrl]);
+  }, [liveVideoUrl, primaryVideoUrl]);
   if (
     !signed &&
-    (vals["isProfile"] || vals["isBook"] || vals["isPay"]) &&
+    (vals["isBook"] || vals["isPay"] || vals["isAuthGate"] || ref.current?.state?.authPrompt) &&
     !vals["selectedIsSample"]
   )
     return (
       <main className="kl-account">
         <PatronGate
           onBack={() => {
-            ref.current?.setState({ screen: "home" });
+            ref.current?.setState({
+              screen: ref.current?.state?.artistId ? "profile" : "home",
+              authPrompt: false,
+            });
           }}
         />
       </main>
     );
-  return <>{(template as Node[]).map((n, i) => render(n, vals, i))}</>;
+  const scopeVals: Scope = { ...vals, isSigned: signed };
+  return <>{(template as Node[]).map((n, i) => render(n, scopeVals, i))}</>;
 }
 
 /** Share the original imported welcome artwork across artist entry screens. */
