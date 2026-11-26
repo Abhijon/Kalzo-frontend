@@ -68,7 +68,7 @@ export function ConversationList() {
     </>
   );
 }
-export function ConversationRoom({ id }: { id: string }) {
+export function ConversationRoom({ id, onBack }: { id: string; onBack?: () => void }) {
   const read = useServerFn(conversationData),
     send = useServerFn(sendArtistMessage),
     schedule = useServerFn(scheduleMeeting),

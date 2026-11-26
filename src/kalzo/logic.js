@@ -983,7 +983,7 @@ export class KalzoLogic extends DCLogic {
     };
     function freeSlots(a, d, tod) {
       if (a.weekAvailability && a.weekAvailability.length) {
-        return dayOff(a, d) ? [] : ["Available"];
+        return dayOff(a, d) ? [] : ["Open"];
       }
       var r = TODR[tod || "Any"];
       return a.slots.filter(function (t, si) {
@@ -1843,7 +1843,7 @@ export class KalzoLogic extends DCLogic {
         week.push({
           dow: wi === 0 ? "TODAY" : DOW[day.d],
           num: String(day.num),
-          word: ok ? "OPEN" : "CLOSED",
+          word: ok ? "OPEN" : "BOOKED",
           cls: "kweek-day " + (ok ? "kweek-open" : "kweek-full") + (onDay ? " kweek-on" : ""),
         });
       }
@@ -1859,7 +1859,7 @@ export class KalzoLogic extends DCLogic {
         photo: artistPhoto(a),
         status: a.sample
           ? "SAMPLE PROFILE · NOT BOOKABLE"
-          : "VERIFIED ARTIST · BOOKINGS OPENING SOON",
+          : "VERIFIED ARTIST",
         instr: a.sample ? INSTR[a.icon] || a.craft : a.craft || a.cat,
         bio: a.bio,
         // CURRENT from profile currentCity; BASE from base city — not the same field.
@@ -1954,6 +1954,11 @@ export class KalzoLogic extends DCLogic {
           if (ev && ev.stopPropagation) ev.stopPropagation();
           if (typeof window !== "undefined") {
             window.scrollTo(0, 0);
+            try {
+              var u = new URL(window.location.href);
+              u.searchParams.set("artist", a.id);
+              window.history.pushState({}, "", u.toString());
+            } catch (e) {}
           }
           self.setState({
             screen: "profile",
@@ -1988,7 +1993,7 @@ export class KalzoLogic extends DCLogic {
         rateText: rupees(pc.rate || a.rate),
         unit: unitWord(a),
         openLabel: "View " + a.name,
-        avail: "SAMPLE · NOT BOOKABLE",
+        avail: a.sample ? "SAMPLE · NOT BOOKABLE" : (free ? "OPEN" : "BOOKED"),
         availStyle:
           "font-family: DM Mono, monospace; font-size: 10px; letter-spacing: 0.1em; border-radius: 999px; padding: 3px 9px; white-space: nowrap; " +
           (free
@@ -2018,6 +2023,11 @@ export class KalzoLogic extends DCLogic {
           if (ev && ev.stopPropagation) ev.stopPropagation();
           if (typeof window !== "undefined") {
             window.scrollTo(0, 0);
+            try {
+              var u = new URL(window.location.href);
+              u.searchParams.set("artist", a.id);
+              window.history.pushState({}, "", u.toString());
+            } catch (e) {}
           }
           self.setState({
             screen: "profile",
@@ -2047,7 +2057,7 @@ export class KalzoLogic extends DCLogic {
         " " +
         whatWord +
         (s.onlyFree
-          ? " available " +
+          ? " open " +
             (fd === 0
               ? "tonight"
               : fd === 1
@@ -2060,8 +2070,8 @@ export class KalzoLogic extends DCLogic {
       list.length +
       (list.length === 1 ? " profile" : " profiles") +
       (realArtists.length
-        ? " · verified artists and one sample"
-        : " · one sample, real artists joining soon");
+        ? " · verified artists"
+        : " · real artists joining soon");
     var resSub =
       (s.tod !== "Any" ? s.tod.toUpperCase() + " · " : "") +
       "SORTED BY " +
@@ -2308,7 +2318,7 @@ export class KalzoLogic extends DCLogic {
         ? "every city and district in the state"
         : loc.state
       : STATES.length + " states & union territories";
-    var castleCap = "INDIA’S LIVE ARTS · SAMPLE PREVIEW";
+    var castleCap = "INDIA’S LIVE ARTS · HOUSE OF ARTISTS";
     var isMetro = {},
       isCap = {};
     METROS.forEach(function (m) {
@@ -2383,7 +2393,7 @@ export class KalzoLogic extends DCLogic {
       return {
         label: p[0].toUpperCase(),
         sub: (kind ? kind + " · " : "") + h.total + " artists",
-        badge: h.free + " AVAILABLE",
+        badge: h.free + " OPEN",
         body: "M10 " + bt + "H110V150H10Z",
         roof: "M8 " + bt + "Q60 " + (bt - 24) + " 112 " + bt + "Z",
         dark: dk,
@@ -2407,7 +2417,7 @@ export class KalzoLogic extends DCLogic {
     var litLine =
       "Showing " +
       locFreeTonight +
-      " available artists " +
+      " open artists " +
       (loc
         ? "in " +
           (loc.type === "state" ? loc.state : loc.city) +
@@ -2576,7 +2586,7 @@ export class KalzoLogic extends DCLogic {
       // ["rating", "Highest star rating"], // ratings not live yet
       ["priceLo", "Rate: low to high"],
       ["priceHi", "Rate: high to low"],
-      ["soonest", "Soonest available"],
+      ["soonest", "Soonest open"],
     ]);
     // Ratings not live yet — keep opts empty so the control can stay hidden.
     var starOpts = [];
@@ -2662,7 +2672,9 @@ export class KalzoLogic extends DCLogic {
     var primaryVideoUrl = a.sample ? sampleReel.url : primaryReelUrl || a.faceVideoUrl || sampleReel.url || "";
     var reelList = a.sample ? [sampleReel.url, sampleReel.url] : a.reelUrls || [];
     var showreelTime =
-      (self.mediaDurations && liveFaceVideoUrl && self.mediaDurations[liveFaceVideoUrl]) || "";
+      (self.mediaDurations && liveFaceVideoUrl && self.mediaDurations[liveFaceVideoUrl]) ||
+      (self.mediaDurations && primaryVideoUrl && self.mediaDurations[primaryVideoUrl]) ||
+      "";
     var catIdx = CATS.indexOf(a.cat);
     var artImg =
       a.artPhoto ||
@@ -2680,9 +2692,24 @@ export class KalzoLogic extends DCLogic {
       showreelTime: showreelTime,
       showreelCaption:
         "SHOWREEL · " +
-        (showreelTime || "3:12") +
+        (showreelTime || (a.sample ? "3:12" : "0:09")) +
         " · RECORDED BY " +
         aFirst.toUpperCase(),
+      onLiveMeta: function (ev) {
+        if (ev && ev.currentTarget && ev.currentTarget.duration) {
+          var totalSecs = Math.floor(ev.currentTarget.duration);
+          if (totalSecs > 0) {
+            var m = Math.floor(totalSecs / 60);
+            var s = totalSecs % 60;
+            var formatted = m + ":" + (s < 10 ? "0" : "") + s;
+            if (!self.mediaDurations) self.mediaDurations = {};
+            if (self.mediaDurations[liveFaceVideoUrl] !== formatted) {
+              self.mediaDurations[liveFaceVideoUrl] = formatted;
+              self.setState({});
+            }
+          }
+        }
+      },
       name: a.name,
       first: aFirst,
       firstUp: aFirst.toUpperCase(),
@@ -3112,10 +3139,13 @@ export class KalzoLogic extends DCLogic {
       isBook: s.screen === "book",
       isPay: s.screen === "pay",
       isDone: s.screen === "done",
+      isAuthGate: !!s.authPrompt,
       inFlow: s.screen === "book" || s.screen === "pay" || s.screen === "done",
       statesText: "DISCOVER LIVE ARTS ACROSS INDIA",
       houseTotal: all.length.toLocaleString("en-IN"),
-      houseLine: realArtists.length + " VERIFIED ARTISTS · ONE SAMPLE PROFILE",
+      houseLine: realArtists.length
+        ? realArtists.length + (realArtists.length === 1 ? " VERIFIED ARTIST" : " VERIFIED ARTISTS")
+        : "LIVE ARTS DIRECTORY",
       carousel: carousel,
       trackStyle: trackStyle,
       ciNum: (ci < 9 ? "0" : "") + (ci + 1),
@@ -3158,7 +3188,7 @@ export class KalzoLogic extends DCLogic {
       hrsFil: hrsFil,
       sorts: sorts,
       onlyFree: s.onlyFree,
-      freeLabel: s.onlyFree ? "✓ Only available artists" : "Show booked artists too",
+      freeLabel: s.onlyFree ? "✓ Only open artists" : "Show booked artists too",
       freeStyle: pill(s.onlyFree),
       toggleFree: function () {
         self.setState({ onlyFree: !s.onlyFree });
@@ -3446,9 +3476,20 @@ export class KalzoLogic extends DCLogic {
         self.setState({ screen: "home", onlySaved: true });
       },
       selFav: function () {
+        if (!self.isSigned) {
+          self.setState({ authPrompt: true });
+          return;
+        }
         setSaved(a.id, "look");
       },
       goHome: function () {
+        if (typeof window !== "undefined") {
+          try {
+            var u = new URL(window.location.href);
+            u.searchParams.delete("artist");
+            window.history.pushState({}, "", u.toString());
+          } catch (e) {}
+        }
         self.setState({ screen: "home", onlySaved: false });
       },
       tabAvail: function () {
