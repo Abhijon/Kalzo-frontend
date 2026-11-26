@@ -39,19 +39,33 @@ export function ArtistAvailability() {
   }, []);
 
   const toggle = async (day: Day, isActive: boolean) => {
+    // Optimistic toggle: update UI immediately without reloading or flickering the table
+    const prevDays = days;
+    setDays((current) =>
+      current.map((d) => (d.weekday === day.weekday ? { ...d, isActive } : d)),
+    );
     setBusyDay(day.weekday);
     setErr("");
-    const res = await api.availability.setDay({
-      weekday: day.weekday,
-      day: day.day.toLowerCase(),
-      isActive,
-    });
-    setBusyDay(null);
-    if (res.error) {
-      setErr(res.error.message);
-      return;
+
+    try {
+      const res = await api.availability.setDay({
+        weekday: day.weekday,
+        day: day.day.toLowerCase(),
+        isActive,
+      });
+
+      if (res.error) {
+        // Revert on error
+        setDays(prevDays);
+        setErr(res.error.message || "Failed to update availability.");
+      }
+    } catch (e) {
+      // Revert on error
+      setDays(prevDays);
+      setErr(e instanceof Error ? e.message : "Failed to update availability.");
+    } finally {
+      setBusyDay(null);
     }
-    await load();
   };
 
   return (
@@ -61,7 +75,7 @@ export function ArtistAvailability() {
         <h2>Weekly availability</h2>
       </div>
       <p className="kl-note">
-        Recurring weekly schedule — days marked available are bookable by customers across all future dates.
+        Recurring weekly schedule — days marked open are bookable by customers across all future dates.
       </p>
       {err && <p className="kl-error">{err}</p>}
 
@@ -76,7 +90,7 @@ export function ArtistAvailability() {
             <tr>
               <th scope="col">Day</th>
               <th scope="col">Status</th>
-              <th scope="col">Available</th>
+              <th scope="col">Availability</th>
             </tr>
           </thead>
           <tbody>
@@ -90,7 +104,7 @@ export function ArtistAvailability() {
                 </td>
                 <td>
                   <span className={d.isActive ? "ka-avail-pill open" : "ka-avail-pill closed"}>
-                    {d.isActive ? "Available" : "Unavailable"}
+                    {d.isActive ? "Open" : "Booked"}
                   </span>
                 </td>
                 <td>
@@ -98,7 +112,7 @@ export function ArtistAvailability() {
                     <Switch
                       checked={d.isActive}
                       disabled={busyDay === d.weekday}
-                      aria-label={`${d.day} ${d.isActive ? "available" : "unavailable"}`}
+                      aria-label={`${d.day} ${d.isActive ? "open" : "booked"}`}
                       onCheckedChange={(checked) => void toggle(d, checked)}
                     />
                   </div>
