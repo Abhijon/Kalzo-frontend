@@ -67,14 +67,19 @@ function ArtistBookingReview() {
         audience="artist"
         foot={null}
         actions={
-          <div className="kb-detail-actions">
+          <div className="kb-detail-actions ki-invite-actions">
             {pending && (
               <>
-                <Button disabled={busy} onClick={() => void setStatus("accepted")}>
-                  Accept
+                <Button
+                  className="ki-invite-accept"
+                  disabled={busy}
+                  onClick={() => void setStatus("accepted")}
+                >
+                  Accept invitation
                 </Button>
                 <Button
                   variant="outline"
+                  className="ki-invite-reject"
                   disabled={busy}
                   onClick={() => void setStatus("rejected")}
                 >

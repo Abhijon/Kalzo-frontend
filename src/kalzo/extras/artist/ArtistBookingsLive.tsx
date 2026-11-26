@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { api, unwrapData } from "@/lib/api";
+import "./invitation-card.css";
 
 type Filter = "all" | string;
 
@@ -171,7 +172,7 @@ export function ArtistBookingsLive({ requestsOnly = false }: { requestsOnly?: bo
       </div>
       <p className="kl-note">
         {requestsOnly
-          ? "Open a request to review full details, then accept or reject."
+          ? "Each scroll holds a half-open invitation. Open one to read the full card, then accept or reject."
           : "Open a booking to review details and update it."}
       </p>
       {!requestsOnly && (
@@ -222,33 +223,71 @@ export function ArtistBookingsLive({ requestsOnly = false }: { requestsOnly?: bo
           </p>
         )}
 
-        <ul className="kb-row-list">
-          {list.map((b) => (
-            <li key={b.id} className="kb-row-card">
-              <div className="kb-row-main">
-                <div className="kb-row-top">
-                  <strong>{b.customer?.fullName || b.customer?.email || "Patron"}</strong>
-                  <span className={`kb-detail-status kb-status-${b.status}`}>
-                    {b.status.replace(/_/g, " ")}
-                  </span>
+        <ul className={requestsOnly ? "ki-invite-list" : "kb-row-list"}>
+          {list.map((b) =>
+            requestsOnly ? (
+              <li key={b.id} className="ki-invite ki-invite-half">
+                <div className="ki-invite-roller ki-invite-roller-top" aria-hidden="true" />
+                <div className="ki-invite-shell ki-invite-paper">
+                  <span className="ki-invite-ornament" aria-hidden="true" />
+                  <div className="ki-invite-body">
+                    <div className="ki-invite-copy">
+                      <p className="ki-invite-eyebrow">Booking invitation</p>
+                      <h3 className="ki-invite-name">
+                        {b.customer?.fullName || b.customer?.email || "Patron"}
+                      </h3>
+                      <span className={`ki-invite-status kb-status-${b.status}`}>
+                        {b.status.replace(/_/g, " ")}
+                      </span>
+                      <p className="ki-invite-meta">
+                        {[b.day, formatShortDate(b.eventDate)].filter(Boolean).join(" · ")}
+                      </p>
+                      {b.address ? <p className="ki-invite-venue">{b.address}</p> : null}
+                      <p className="ki-invite-amount">{inr(b.amountInr)}</p>
+                    </div>
+                    <Link
+                      to="/artist/bookings/$bookingId"
+                      params={{ bookingId: b.id }}
+                      className="ki-invite-open"
+                      aria-label={`Open invitation from ${b.customer?.fullName || "patron"}`}
+                    >
+                      <i className="ki-invite-cord" aria-hidden="true" />
+                      <span className="ki-invite-wax" aria-hidden="true">K</span>
+                      <span>Open</span>
+                    </Link>
+                  </div>
+                  <div className="ki-invite-fade" aria-hidden="true" />
+                  <div className="ki-invite-curl-bot" aria-hidden="true" />
                 </div>
-                <p className="kb-row-meta">
-                  {[b.day, formatShortDate(b.eventDate)].filter(Boolean).join(" · ")}
-                </p>
-                {b.address ? <p className="kb-row-venue">{b.address}</p> : null}
-                <p className="kb-row-amount">{inr(b.amountInr)}</p>
-              </div>
-              <div className="kb-row-action">
-                <Link
-                  to="/artist/bookings/$bookingId"
-                  params={{ bookingId: b.id }}
-                  className="kb-row-review"
-                >
-                  Review
-                </Link>
-              </div>
-            </li>
-          ))}
+                <div className="ki-invite-roller ki-invite-roller-bot" aria-hidden="true" />
+              </li>
+            ) : (
+              <li key={b.id} className="kb-row-card">
+                <div className="kb-row-main">
+                  <div className="kb-row-top">
+                    <strong>{b.customer?.fullName || b.customer?.email || "Patron"}</strong>
+                    <span className={`kb-detail-status kb-status-${b.status}`}>
+                      {b.status.replace(/_/g, " ")}
+                    </span>
+                  </div>
+                  <p className="kb-row-meta">
+                    {[b.day, formatShortDate(b.eventDate)].filter(Boolean).join(" · ")}
+                  </p>
+                  {b.address ? <p className="kb-row-venue">{b.address}</p> : null}
+                  <p className="kb-row-amount">{inr(b.amountInr)}</p>
+                </div>
+                <div className="kb-row-action">
+                  <Link
+                    to="/artist/bookings/$bookingId"
+                    params={{ bookingId: b.id }}
+                    className="kb-row-review"
+                  >
+                    Review
+                  </Link>
+                </div>
+              </li>
+            ),
+          )}
         </ul>
 
         {totalPages > 1 && (

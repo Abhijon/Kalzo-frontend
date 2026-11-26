@@ -43,7 +43,7 @@ import {
   Video as VideoIcon,
   ExternalLink,
 } from "lucide-react";
-import plaque from "@/assets/kalzo-profile-plaque.png.asset.json";
+import { ProfileCard } from "./artist/ProfileCard";
 
 type PendingFiles = {
   photo: File | null;
@@ -326,23 +326,16 @@ function ProfileDetailsOverview({
 
   return (
     <div className="ka-profile-overview" style={{ display: "grid", gap: 24, margin: "16px 0 32px" }}>
-      {/* Plaque Preview */}
-      <section className="kp-plaque" aria-label="Profile preview" style={{ backgroundImage: `url(${plaque.url})` }}>
-        <div className="kp-photo">
-          {photoUrl ? <img src={photoUrl} alt={form.stage_name || "You"} /> : <span>Your photo</span>}
-        </div>
-        <div className="kp-art">
-          {artPhotoUrl ? <img src={artPhotoUrl} alt="Art" /> : <span>Art</span>}
-        </div>
-        <i className="kp-badge">{verification.replaceAll("_", " ")}</i>
-        <div className="kp-text">
-          <small>Stage Name:</small>
-          <strong>{form.stage_name || "Your stage name"}</strong>
-          <p><span>Art:</span><em>{form.subcategory || form.discipline}</em></p>
-          <p><span>Base City:</span><em>{form.base_city || "Base city"}</em></p>
-          <p><span>Rate:</span><b>{form.rate_inr ? `₹${form.rate_inr.toLocaleString("en-IN")}` : "—"} / {form.pricing_unit || "hour"}</b></p>
-        </div>
-      </section>
+      <ProfileCard
+        photoUrl={photoUrl || undefined}
+        artUrl={artPhotoUrl || undefined}
+        stageName={form.stage_name}
+        art={form.subcategory || form.discipline || "Musicians"}
+        baseCity={form.base_city}
+        rateInr={form.rate_inr || undefined}
+        pricingUnit={form.pricing_unit || "hour"}
+        status={verification}
+      />
 
       {/* Who you are */}
       <fieldset className="ka-card">
@@ -1903,22 +1896,16 @@ export function ArtistProfileEditor() {
         </div>
       )}
      
-      <section className="kp-plaque" aria-label="Profile preview" style={{ backgroundImage: `url(${plaque.url})` }}>
-        <div className="kp-photo">
-          {previewSrc(form.photo_path) ? <img src={previewSrc(form.photo_path)} alt="You" /> : <span>Your photo</span>}
-        </div>
-        <div className="kp-art">
-          {previewSrc(form.art_photo_path) ? <img src={previewSrc(form.art_photo_path)} alt="Your art" /> : <span>Art</span>}
-        </div>
-        <i className="kp-badge">{verification.replaceAll("_", " ")}</i>
-        <div className="kp-text">
-          <small>Stage Name:</small>
-          <strong>{form.stage_name || "Your stage name"}</strong>
-          <p><span>Art:</span><em>{form.subcategory || form.discipline}</em></p>
-          <p><span>Base City:</span><em>{form.base_city || "Base city"}</em></p>
-          <p><span>Rate:</span><b>{form.rate_inr ? `₹${form.rate_inr.toLocaleString("en-IN")}` : "—"} / {form.pricing_unit || "hour"}</b></p>
-        </div>
-      </section>
+      <ProfileCard
+        photoUrl={previewSrc(form.photo_path) || undefined}
+        artUrl={previewSrc(form.art_photo_path) || undefined}
+        stageName={form.stage_name}
+        art={form.subcategory || form.discipline || "Musicians"}
+        baseCity={form.base_city}
+        rateInr={form.rate_inr || undefined}
+        pricingUnit={form.pricing_unit || "hour"}
+        status={verification}
+      />
 
       <fieldset className="ka-card" disabled={locked}>
         <legend>Who you are</legend>
