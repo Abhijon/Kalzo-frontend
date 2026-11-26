@@ -2,6 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { CalendarDays, Info, MapPin, NotebookPen, Users } from "lucide-react";
 import { api, unwrapData } from "@/lib/api";
+import flourishTop from "@/assets/invitation-flourish-top.png.asset.json";
+import flourishBottom from "@/assets/invitation-flourish-bottom.png.asset.json";
+import "./artist/invitation-card.css";
+
+const FLOURISH_TOP = `https://kalzo.in${flourishTop.url}`;
+const FLOURISH_BOTTOM = `https://kalzo.in${flourishBottom.url}`;
 
 export type BookingDto = {
   id: string;
@@ -146,7 +152,7 @@ export function BookingDetailView({
   // Patrons have no profile photo — artist review header is text-only.
   const showPhoto = audience === "patron";
 
-  return (
+  const detail = (
     <article className="kb-detail" aria-labelledby="kb-detail-title">
       <header className={showPhoto ? "kb-detail-head" : "kb-detail-head kb-detail-head-solo"}>
         {showPhoto ? (
@@ -235,5 +241,40 @@ export function BookingDetailView({
 
       {footer ? <footer className="kb-detail-foot">{footer}</footer> : null}
     </article>
+  );
+
+  if (audience !== "artist") return detail;
+
+  return (
+    <div className="ki-invite ki-invite-full">
+      <div className="ki-invite-roller ki-invite-roller-top" aria-hidden="true" />
+      <div className="ki-invite-frame ki-invite-paper">
+        <span className="ki-invite-ornament" aria-hidden="true" />
+        <img
+          className="ki-invite-flourish"
+          src={FLOURISH_TOP}
+          alt=""
+          width={535}
+          height={143}
+          loading="lazy"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+        {detail}
+        <img
+          className="ki-invite-flourish ki-invite-flourish-bot"
+          src={FLOURISH_BOTTOM}
+          alt=""
+          width={535}
+          height={153}
+          loading="lazy"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+      </div>
+      <div className="ki-invite-roller ki-invite-roller-bot" aria-hidden="true" />
+    </div>
   );
 }
