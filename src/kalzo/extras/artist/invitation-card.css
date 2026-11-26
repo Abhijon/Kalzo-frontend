@@ -348,6 +348,17 @@
   margin-top: -2px;
 }
 
+/* All bookings: same scroll, fully unfurled (no half-open fade) */
+.ki-invite-listed .ki-invite-shell {
+  max-height: none;
+  padding-bottom: 20px;
+}
+
+.ki-invite-listed .ki-invite-fade,
+.ki-invite-listed .ki-invite-curl-bot {
+  display: none;
+}
+
 /* —— Full invitation (review) —— */
 .ki-invite-full {
   position: relative;

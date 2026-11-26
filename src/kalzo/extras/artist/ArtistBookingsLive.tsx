@@ -34,8 +34,7 @@ type Pagination = {
 };
 
 const PAGE_SIZE = 10;
-const FALLBACK_STATUSES = ["accepted", "job_started", "completed"];
-const HIDDEN_STATUSES = new Set(["all", "pending", "rejected"]);
+const FALLBACK_STATUSES = ["pending", "accepted", "rejected", "job_started", "completed"];
 
 const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 
@@ -47,7 +46,7 @@ function formatShortDate(raw: string) {
 }
 
 function label(status: Filter) {
-  if (status === "all") return "all";
+  if (status === "all") return "All";
   return String(status).replace(/_/g, " ");
 }
 
@@ -56,13 +55,24 @@ function normalizeStatuses(raw: unknown): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const item of raw) {
-    const value = String(item || "")
+    const value = String(
+      typeof item === "string"
+        ? item
+        : item && typeof item === "object"
+          ? (item as { status?: string; value?: string; name?: string }).status ??
+            (item as { value?: string }).value ??
+            (item as { name?: string }).name ??
+            ""
+          : "",
+    )
       .trim()
       .toLowerCase();
-    if (!value || HIDDEN_STATUSES.has(value) || seen.has(value)) continue;
+    if (!value || value === "all" || seen.has(value)) continue;
     seen.add(value);
     out.push(value);
   }
+  // Always expose pending even if the catalog endpoint omits it.
+  if (!seen.has("pending")) out.unshift("pending");
   return out.length ? out : FALLBACK_STATUSES;
 }
 
@@ -170,11 +180,7 @@ export function ArtistBookingsLive({ requestsOnly = false }: { requestsOnly?: bo
         {requestsOnly ? <MailOpen size={26} /> : <CalendarDays size={26} />}
         <h2>{requestsOnly ? "Booking requests" : "Your bookings"}</h2>
       </div>
-      <p className="kl-note">
-        {requestsOnly
-          ? "Each scroll holds a half-open invitation. Open one to read the full card, then accept or reject."
-          : "Open a booking to review details and update it."}
-      </p>
+      <p className="kl-note">Open to read the full invitation.</p>
       {!requestsOnly && (
         <div className="ka-bookings-filters">
           <DropdownMenu modal={false}>
@@ -189,10 +195,13 @@ export function ArtistBookingsLive({ requestsOnly = false }: { requestsOnly?: bo
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="ka-filter-menu" collisionPadding={12}>
+              <p className="ka-filter-menu-label">Filter by status</p>
               <DropdownMenuRadioGroup value={filter} onValueChange={changeFilter}>
-                <DropdownMenuRadioItem value="all">all</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="all" className="ka-filter-option">
+                  All
+                </DropdownMenuRadioItem>
                 {statusOptions.map((status) => (
-                  <DropdownMenuRadioItem key={status} value={status}>
+                  <DropdownMenuRadioItem key={status} value={status} className="ka-filter-option">
                     {label(status)}
                   </DropdownMenuRadioItem>
                 ))}
@@ -223,71 +232,53 @@ export function ArtistBookingsLive({ requestsOnly = false }: { requestsOnly?: bo
           </p>
         )}
 
-        <ul className={requestsOnly ? "ki-invite-list" : "kb-row-list"}>
-          {list.map((b) =>
-            requestsOnly ? (
-              <li key={b.id} className="ki-invite ki-invite-half">
-                <div className="ki-invite-roller ki-invite-roller-top" aria-hidden="true" />
-                <div className="ki-invite-shell ki-invite-paper">
-                  <span className="ki-invite-ornament" aria-hidden="true" />
-                  <div className="ki-invite-body">
-                    <div className="ki-invite-copy">
-                      <p className="ki-invite-eyebrow">Booking invitation</p>
-                      <h3 className="ki-invite-name">
-                        {b.customer?.fullName || b.customer?.email || "Patron"}
-                      </h3>
-                      <span className={`ki-invite-status kb-status-${b.status}`}>
-                        {b.status.replace(/_/g, " ")}
-                      </span>
-                      <p className="ki-invite-meta">
-                        {[b.day, formatShortDate(b.eventDate)].filter(Boolean).join(" · ")}
-                      </p>
-                      {b.address ? <p className="ki-invite-venue">{b.address}</p> : null}
-                      <p className="ki-invite-amount">{inr(b.amountInr)}</p>
-                    </div>
-                    <Link
-                      to="/artist/bookings/$bookingId"
-                      params={{ bookingId: b.id }}
-                      className="ki-invite-open"
-                      aria-label={`Open invitation from ${b.customer?.fullName || "patron"}`}
-                    >
-                      <i className="ki-invite-cord" aria-hidden="true" />
-                      <span className="ki-invite-wax" aria-hidden="true">K</span>
-                      <span>Open</span>
-                    </Link>
-                  </div>
-                  <div className="ki-invite-fade" aria-hidden="true" />
-                  <div className="ki-invite-curl-bot" aria-hidden="true" />
-                </div>
-                <div className="ki-invite-roller ki-invite-roller-bot" aria-hidden="true" />
-              </li>
-            ) : (
-              <li key={b.id} className="kb-row-card">
-                <div className="kb-row-main">
-                  <div className="kb-row-top">
-                    <strong>{b.customer?.fullName || b.customer?.email || "Patron"}</strong>
-                    <span className={`kb-detail-status kb-status-${b.status}`}>
+        <ul className="ki-invite-list">
+          {list.map((b) => (
+            <li
+              key={b.id}
+              className={`ki-invite ki-invite-half${requestsOnly ? "" : " ki-invite-listed"}`}
+            >
+              <div className="ki-invite-roller ki-invite-roller-top" aria-hidden="true" />
+              <div className="ki-invite-shell ki-invite-paper">
+                <span className="ki-invite-ornament" aria-hidden="true" />
+                <div className="ki-invite-body">
+                  <div className="ki-invite-copy">
+                    <p className="ki-invite-eyebrow">Booking invitation</p>
+                    <h3 className="ki-invite-name">
+                      {b.customer?.fullName || b.customer?.email || "Patron"}
+                    </h3>
+                    <span className={`ki-invite-status kb-status-${b.status}`}>
                       {b.status.replace(/_/g, " ")}
                     </span>
+                    <p className="ki-invite-meta">
+                      {[b.day, formatShortDate(b.eventDate)].filter(Boolean).join(" · ")}
+                    </p>
+                    {b.address ? <p className="ki-invite-venue">{b.address}</p> : null}
+                    <p className="ki-invite-amount">{inr(b.amountInr)}</p>
                   </div>
-                  <p className="kb-row-meta">
-                    {[b.day, formatShortDate(b.eventDate)].filter(Boolean).join(" · ")}
-                  </p>
-                  {b.address ? <p className="kb-row-venue">{b.address}</p> : null}
-                  <p className="kb-row-amount">{inr(b.amountInr)}</p>
-                </div>
-                <div className="kb-row-action">
                   <Link
                     to="/artist/bookings/$bookingId"
                     params={{ bookingId: b.id }}
-                    className="kb-row-review"
+                    className="ki-invite-open"
+                    aria-label={`Open invitation from ${b.customer?.fullName || "patron"}`}
                   >
-                    Review
+                    <i className="ki-invite-cord" aria-hidden="true" />
+                    <span className="ki-invite-wax" aria-hidden="true">
+                      K
+                    </span>
+                    <span>Open</span>
                   </Link>
                 </div>
-              </li>
-            ),
-          )}
+                {requestsOnly ? (
+                  <>
+                    <div className="ki-invite-fade" aria-hidden="true" />
+                    <div className="ki-invite-curl-bot" aria-hidden="true" />
+                  </>
+                ) : null}
+              </div>
+              <div className="ki-invite-roller ki-invite-roller-bot" aria-hidden="true" />
+            </li>
+          ))}
         </ul>
 
         {totalPages > 1 && (
