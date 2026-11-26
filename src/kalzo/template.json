@@ -1211,7 +1211,7 @@
                                     },
                                     "c": []
                                   },
-                                  "AVAILABLE {{ dayWord }}"
+                                  "OPEN {{ dayWord }}"
                                 ]
                               },
                               {
@@ -3904,6 +3904,7 @@
                                       "controls": "{{ mediaControls }}",
                                       "playsinline": "{{ mediaControls }}",
                                       "preload": "metadata",
+                                      "sc-camel-on-loadedmetadata": "{{ sel.onLiveMeta }}",
                                       "class": "kartist-live-video",
                                       "style": "width: 100%; height: 100%; object-fit: cover; display: block",
                                       "aria-label": "Live verification video of {{ sel.name }}"
@@ -4289,7 +4290,7 @@
                                   "style": "font-style: italic; color: #9C3A22"
                                 },
                                 "c": [
-                                  "The diary is Unavailable on this date. Kindly choose another."
+                                  "The diary is booked on this date. Kindly choose another."
                                 ]
                               }
                             ]
@@ -5743,7 +5744,7 @@
                       "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.2em; color: #9C3A22"
                     },
                     "c": [
-                      "FOLLOW YOUR FEE · TRY THE DEMO"
+                      "FOLLOW YOUR FEE · TRANSPARENT PRICING"
                     ]
                   },
                   {
@@ -6195,7 +6196,7 @@
                       "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #6B5246; line-height: 1.7"
                     },
                     "c": [
-                      "A DEMONSTRATION. ALL ARTISTS, RATINGS AND FEES ARE SAMPLES; THE SILHOUETTES STAND IN FOR REAL PORTRAITS."
+                      "LIVE ARTS MARKETPLACE. DISCOVER AND INSCRIBE CERTIFIED PERFORMERS FOR PRIVATE MEHFILS ACROSS INDIA."
                     ]
                   }
                 ]
