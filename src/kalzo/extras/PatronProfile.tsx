@@ -17,6 +17,9 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
     [tab, setTab] = useState(initialTab ?? "Bookings"),
     [group, setGroup] = useState<BookingGroup>("current"),
     [message, setMessage] = useState(""),
+    [userEmail, setUserEmail] = useState(""),
+    [isEditing, setIsEditing] = useState(false),
+    [saving, setSaving] = useState(false),
     [form, setForm] = useState({
       full_name: "",
       phone: "",
@@ -29,6 +32,9 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
   const load = async () => {
     try {
       const { data } = await api.auth.getUser();
+      if (data?.user?.email) {
+        setUserEmail(data.user.email);
+      }
       if (data?.profile) {
         const p = data.profile;
         const profileData = {
@@ -45,7 +51,7 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
       if (data?.user?.role === "ADMIN") {
         setB((prev) => ({ ...(prev ?? {}), isAdmin: true }));
       }
-    } catch {}
+    } catch { }
 
     // Load bookings from GET /api/v1/bookings (paginated; high limit keeps ledger groups intact)
     try {
@@ -62,7 +68,7 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
           bookings: rows.map(normalizePatronBooking).filter((x: { id: string }) => x.id),
         }));
       }
-    } catch {}
+    } catch { }
   };
 
   useEffect(() => {
@@ -71,19 +77,28 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage("Saving...");
-    const res = await api.auth.updateProfile({
-      fullName: form.full_name,
-      mobileNumber: form.phone,
-      location: form.city,
-      customerType: form.patron_type,
-      businessName: form.industry,
-      reasonForBooking: form.reason,
-    });
-    if (res.error) {
-      setMessage("Your account details are saved locally.");
-    } else {
-      setMessage("Your account details are saved.");
+    setSaving(true);
+    setMessage("");
+    try {
+      const res = await api.auth.updateProfile({
+        fullName: form.full_name,
+        mobileNumber: form.phone,
+        location: form.city,
+        customerType: form.patron_type,
+        businessName: form.industry,
+        reasonForBooking: form.reason,
+      });
+      if (res.error) {
+        setMessage(res.error.message || "Your account details are saved locally.");
+      } else {
+        setMessage("Your profile details have been saved.");
+        setIsEditing(false);
+        setD((prev) => ({ ...(prev ?? {}), profile: form }));
+      }
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Error saving profile.");
+    } finally {
+      setSaving(false);
     }
   };
   return (
@@ -106,38 +121,158 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
           </Button>
         ))}
       </nav>
-      {message && <p role="status">{message}</p>}
+      {message && (
+        <div className="kv-status-banner" role="status">
+          <Sparkles size={16} color="#8A6D3B" />
+          <span>{message}</span>
+        </div>
+      )}
       {b?.isAdmin && <Link to="/admin">Open admin dashboard →</Link>}
       {tab === "My profile" && (
-        <form
-          className="kl-form"
-          onSubmit={handleSave}
-        >
-          {(["full_name", "phone", "city", "patron_type", "industry", "reason"] as const).map(
-            (k) => (
-              <label key={k}>
-                {
-                  {
-                    full_name: "Full name",
-                    phone: "Mobile number",
-                    city: "City",
-                    patron_type: "Account type",
-                    industry: "Business / industry",
-                    reason: "Reason for booking",
-                  }[k]
-                }
-                <input
-                  value={form[k]}
-                  onChange={(e) => setForm({ ...form, [k]: e.target.value })}
-                />
-              </label>
-            ),
-          )}
-          <Button type="submit">
-            <Save size={16} />
-            Save profile
-          </Button>
-        </form>
+        <div className="kv-profile-wrap">
+          <div className="kv-card">
+            {!isEditing ? (
+              <>
+                {/* Profile Details Grid */}
+                <div className="kv-ledger">
+                  <div className="kv-ledger-row">
+                    <span className="kv-label">FULL NAME</span>
+                    <span className="kv-value">{form.full_name.trim() || "—"}</span>
+                  </div>
+                  <div className="kv-ledger-row">
+                    <span className="kv-label">REGISTERED EMAIL</span>
+                    <span className="kv-value">{userEmail.trim() || "—"}</span>
+                  </div>
+                  <div className="kv-ledger-row">
+                    <span className="kv-label">CONTACT NUMBER</span>
+                    <span className="kv-value">{form.phone.trim() || "—"}</span>
+                  </div>
+                  <div className="kv-ledger-row">
+                    <span className="kv-label">CITY / RESIDENCE</span>
+                    <span className="kv-value">{form.city.trim() || "—"}</span>
+                  </div>
+                  <div className="kv-ledger-row">
+                    <span className="kv-label">ACCOUNT CATEGORY</span>
+                    <span className="kv-value">{form.patron_type.trim() || "—"}</span>
+                  </div>
+                  <div className="kv-ledger-row">
+                    <span className="kv-label">BUSINESS / ESTABLISHMENT</span>
+                    <span className="kv-value">{form.industry.trim() || "—"}</span>
+                  </div>
+                  <div className="kv-ledger-row kv-full">
+                    <span className="kv-label">PURPOSE OF INVITATION</span>
+                    <span className="kv-value">{form.reason.trim() || "—"}</span>
+                  </div>
+                </div>
+
+                <div className="kv-divider" />
+
+                {/* Bottom: Update Profile Action */}
+                <div className="kv-footer-action">
+                  <button
+                    type="button"
+                    className="kv-btn-vintage"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    UPDATE PROFILE
+                  </button>
+                </div>
+              </>
+            ) : (
+              <form className="kv-edit-section" onSubmit={handleSave}>
+                <div className="kv-edit-grid">
+                  <label className="kv-field">
+                    <span className="kv-field-label">FULL NAME</span>
+                    <input
+                      className="kv-input"
+                      value={form.full_name}
+                      onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                      placeholder="e.g. Aarti Sharma"
+                      required
+                    />
+                  </label>
+
+                  <label className="kv-field">
+                    <span className="kv-field-label">MOBILE NUMBER</span>
+                    <input
+                      className="kv-input"
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      placeholder="10-digit mobile number"
+                      required
+                    />
+                  </label>
+
+                  <label className="kv-field">
+                    <span className="kv-field-label">CITY</span>
+                    <input
+                      className="kv-input"
+                      value={form.city}
+                      onChange={(e) => setForm({ ...form, city: e.target.value })}
+                      placeholder="e.g. Jaipur, Mumbai"
+                      required
+                    />
+                  </label>
+
+                  <label className="kv-field">
+                    <span className="kv-field-label">ACCOUNT TYPE</span>
+                    <select
+                      className="kv-input kv-select"
+                      value={form.patron_type}
+                      onChange={(e) => setForm({ ...form, patron_type: e.target.value })}
+                    >
+                      <option value="Individual / family">Individual / family</option>
+                      <option value="Hotel or resort">Hotel or resort</option>
+                      <option value="Corporate">Corporate</option>
+                      <option value="Café or restaurant">Café or restaurant</option>
+                      <option value="Event company">Event company</option>
+                      <option value="Other business">Other business</option>
+                    </select>
+                  </label>
+
+                  <label className="kv-field">
+                    <span className="kv-field-label">BUSINESS / INDUSTRY</span>
+                    <input
+                      className="kv-input"
+                      value={form.industry}
+                      onChange={(e) => setForm({ ...form, industry: e.target.value })}
+                      placeholder="Optional (for corporate/business)"
+                    />
+                  </label>
+
+                  <label className="kv-field">
+                    <span className="kv-field-label">REASON FOR BOOKING</span>
+                    <input
+                      className="kv-input"
+                      value={form.reason}
+                      onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                      placeholder="e.g. Wedding, Birthday, House gathering"
+                    />
+                  </label>
+                </div>
+
+                <div className="kv-divider" />
+
+                <div className="kv-edit-actions">
+                  <button type="submit" className="kv-btn-vintage" disabled={saving}>
+                    {saving ? "SAVING..." : "SAVE CHANGES"}
+                  </button>
+                  <button
+                    type="button"
+                    className="kv-btn-ghost"
+                    onClick={() => {
+                      setIsEditing(false);
+                      if (d?.profile) setForm(d.profile);
+                    }}
+                    disabled={saving}
+                  >
+                    CANCEL
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
       )}
       {tab === "Favourite artists" && <FavouriteSalon favorites={d?.favorites ?? []} />}
       {tab === "Chats & calls" && (
