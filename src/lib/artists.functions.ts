@@ -11,6 +11,8 @@ export type VerifiedArtistQuery = {
   discipline?: string;
   subcategory?: string;
   maxRate?: number;
+  /** At least one active weekday */
+  anyDay?: boolean;
   date?: string;
   weekday?: number;
   day?: string;
@@ -81,9 +83,10 @@ export async function loadVerifiedArtistsList(params: VerifiedArtistQuery = {}) 
     ...(params.discipline ? { discipline: params.discipline } : {}),
     ...(params.subcategory ? { subcategory: params.subcategory } : {}),
     ...(params.maxRate != null ? { maxRate: params.maxRate } : {}),
-    ...(params.date ? { date: params.date } : {}),
-    ...(params.weekday != null ? { weekday: params.weekday } : {}),
-    ...(params.day ? { day: params.day } : {}),
+    ...(params.anyDay ? { anyDay: true } : {}),
+    ...(!params.anyDay && params.date ? { date: params.date } : {}),
+    ...(!params.anyDay && params.weekday != null ? { weekday: params.weekday } : {}),
+    ...(!params.anyDay && params.day ? { day: params.day } : {}),
   });
   if (res.error) throw new Error(res.error.message);
 

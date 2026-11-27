@@ -122,8 +122,8 @@ export class KalzoLogic extends DCLogic {
   }
 
   /**
-   * Refetch GET /artists/verified with city/state + location tier.
-   * Called when the finder location or tier changes.
+   * Refetch GET /artists/verified with city/state + location tier + day availability.
+   * Called when the finder location, tier, or day filter changes.
    */
   refreshVerifiedFromApi(overrides) {
     var s = Object.assign({}, this.state, overrides || {});
@@ -135,6 +135,16 @@ export class KalzoLogic extends DCLogic {
     } else if (loc && loc.type === "state" && loc.state) {
       params.state = loc.state;
       params.tier = s.tier || "all";
+    }
+    // Availability day: -1 = Any day (at least one open weekday)
+    if (s.fDay === -1) {
+      params.anyDay = true;
+    } else if (typeof s.fDay === "number" && s.fDay >= 0) {
+      var today0 = new Date(Date.now() + 330 * 60000);
+      var dt = new Date(
+        Date.UTC(today0.getUTCFullYear(), today0.getUTCMonth(), today0.getUTCDate() + s.fDay),
+      );
+      params.date = dt.toISOString().slice(0, 10);
     }
     var reqId = ++this._verifiedReqId;
     var self = this;
@@ -981,7 +991,21 @@ export class KalzoLogic extends DCLogic {
       Evening: [16, 20],
       Night: [20, 24],
     };
+    function hasAnyOpenDay(a) {
+      if (a.sample) return true;
+      var week = a.weekAvailability || [];
+      if (week.length) {
+        return week.some(function (v) {
+          return !!v.isActive;
+        });
+      }
+      // No schedule loaded — don't hide the card.
+      return true;
+    }
     function freeSlots(a, d, tod) {
+      if (d === -1) {
+        return hasAnyOpenDay(a) ? ["Available"] : [];
+      }
       if (a.weekAvailability && a.weekAvailability.length) {
         return dayOff(a, d) ? [] : ["Open"];
       }
@@ -992,6 +1016,7 @@ export class KalzoLogic extends DCLogic {
       });
     }
     function freeOn(a, d) {
+      if (d === -1) return hasAnyOpenDay(a);
       return !dayOff(a, d);
     }
     function maxHrs(a) {
@@ -1016,6 +1041,7 @@ export class KalzoLogic extends DCLogic {
       });
     }
     function dayLong(d) {
+      if (d === -1) return "Any day";
       return (
         (d === 0 ? "Tonight, " : d === 1 ? "Tomorrow, " : "") +
         DOWL[dates[d].d] +
@@ -1026,6 +1052,7 @@ export class KalzoLogic extends DCLogic {
       );
     }
     function dayShort(d) {
+      if (d === -1) return "Any day";
       return d === 0
         ? "Tonight"
         : d === 1
@@ -1808,7 +1835,13 @@ export class KalzoLogic extends DCLogic {
         loc ? (loc.type === "state" ? loc.state : loc.city) : vv ? vv.city || a.city : a.city
       ).toUpperCase();
       var dw =
-        fd === 0 ? "TODAY" : fd === 1 ? "TOMORROW" : "ON " + DOW[dates[fd].d] + " " + dates[fd].num;
+        fd === -1
+          ? "ANY DAY"
+          : fd === 0
+            ? "TODAY"
+            : fd === 1
+              ? "TOMORROW"
+              : "ON " + DOW[dates[fd].d] + " " + dates[fd].num;
       var stat =
         mm === "current" || mm === "visiting"
           ? "CURRENTLY IN " + plc + " " + dw
@@ -2042,7 +2075,13 @@ export class KalzoLogic extends DCLogic {
     });
     var where = loc ? (loc.type === "state" ? loc.state : loc.city) : "all of India";
     var dayWord =
-      fd === 0 ? "TONIGHT" : fd === 1 ? "TOMORROW" : "ON " + DOW[dates[fd].d] + " " + dates[fd].num;
+      fd === -1
+        ? "ANY DAY"
+        : fd === 0
+          ? "TONIGHT"
+          : fd === 1
+            ? "TOMORROW"
+            : "ON " + DOW[dates[fd].d] + " " + dates[fd].num;
     var whatWord =
       arts.length === 1
         ? arts[0].toLowerCase()
@@ -2057,12 +2096,14 @@ export class KalzoLogic extends DCLogic {
         " " +
         whatWord +
         (s.onlyFree
-          ? " open " +
-            (fd === 0
-              ? "tonight"
-              : fd === 1
-                ? "tomorrow"
-                : "on " + DOWL[dates[fd].d] + " " + dates[fd].num)
+          ? " available " +
+            (fd === -1
+              ? "any day"
+              : fd === 0
+                ? "tonight"
+                : fd === 1
+                  ? "tomorrow"
+                  : "on " + DOWL[dates[fd].d] + " " + dates[fd].num)
           : "") +
         " in " +
         where;
@@ -2452,25 +2493,48 @@ export class KalzoLogic extends DCLogic {
           },
         };
       });
-    var fDates = dates.map(function (d, i) {
-      var on = fd === i;
-      return {
-        dow: i === 0 ? "TONIGHT" : i === 1 ? "TMRW" : DOW[d.d],
-        num: d.num,
-        on: on,
-        aria: dayLong(i),
+    var fDates = [
+      {
+        dow: "ANY",
+        num: "DAY",
+        on: fd === -1,
+        aria: "Any day — artists with at least one open weekday",
         pick: function () {
-          self.setState({ fDay: i, limit: 24 });
+          var patch = { fDay: -1, limit: 24 };
+          self.setState(patch);
+          self.refreshVerifiedFromApi(patch);
         },
         style:
           "flex: none; width: 56px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0; border-radius: 28px 28px 4px 4px; border: 1px solid " +
           INK +
           "; background: " +
-          (on ? INK : "transparent") +
+          (fd === -1 ? INK : "transparent") +
           "; color: " +
-          (on ? CREAM : INK),
-      };
-    });
+          (fd === -1 ? CREAM : INK),
+      },
+    ].concat(
+      dates.map(function (d, i) {
+        var on = fd === i;
+        return {
+          dow: i === 0 ? "TONIGHT" : i === 1 ? "TMRW" : DOW[d.d],
+          num: d.num,
+          on: on,
+          aria: dayLong(i),
+          pick: function () {
+            var patch = { fDay: i, limit: 24 };
+            self.setState(patch);
+            self.refreshVerifiedFromApi(patch);
+          },
+          style:
+            "flex: none; width: 56px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0; border-radius: 28px 28px 4px 4px; border: 1px solid " +
+            INK +
+            "; background: " +
+            (on ? INK : "transparent") +
+            "; color: " +
+            (on ? CREAM : INK),
+        };
+      }),
+    );
     var tods = ["Any", "Morning", "Afternoon", "Evening", "Night"].map(function (t) {
       var on = s.tod === t;
       return {
@@ -2534,7 +2598,7 @@ export class KalzoLogic extends DCLogic {
       };
     });
     var placeN = loc ? (loc.type === "state" ? loc.state : loc.city) : "your city",
-      dayTxt = fd === 0 ? "today" : "that day";
+      dayTxt = fd === -1 ? "any open day" : fd === 0 ? "today" : "that day";
     function opts(arr) {
       return arr.map(function (p) {
         return { v: String(p[0]), label: p[1] };
@@ -2563,16 +2627,18 @@ export class KalzoLogic extends DCLogic {
       ),
     );
     var dayOpts = opts(
-      dates.map(function (d, i) {
-        return [
-          i,
-          i === 0
-            ? "Tonight"
-            : i === 1
-              ? "Tomorrow"
-              : DOWL[d.d] + ", " + d.num + " " + (MON[i] || ""),
-        ];
-      }),
+      [["-1", "Any day"]].concat(
+        dates.map(function (d, i) {
+          return [
+            i,
+            i === 0
+              ? "Tonight"
+              : i === 1
+                ? "Tomorrow"
+                : DOWL[d.d] + ", " + d.num + " " + (MON[i] || ""),
+          ];
+        }),
+      ),
     );
     var todOpts = opts([
       ["Any", "Any time"],
@@ -3290,7 +3356,9 @@ export class KalzoLogic extends DCLogic {
       dayOpts: dayOpts,
       fDayV: String(fd),
       setDayF: function (ev) {
-        self.setState({ fDay: +ev.target.value, limit: 24 });
+        var patch = { fDay: +ev.target.value, limit: 24 };
+        self.setState(patch);
+        self.refreshVerifiedFromApi(patch);
       },
       todOpts: todOpts,
       todV: s.tod,

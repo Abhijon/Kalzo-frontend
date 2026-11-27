@@ -39,6 +39,7 @@ export function PatronGate({ onBack, audience: initialAudience = "patron", initi
   useEffect(() => { if (sent) codeRef.current?.focus(); }, [sent]);
   if (ready !== false) return null;
 
+  const portalRole = audience === "artist" ? "ARTIST" : "CUSTOMER";
   const business = !!p.type && p.type !== TYPES[0];
   const set = (k: keyof Patron) => (e: { target: { value: string } }) => { setP({ ...p, [k]: e.target.value }); setErr(""); };
 
@@ -80,8 +81,8 @@ export function PatronGate({ onBack, audience: initialAudience = "patron", initi
         return;
       }
     } else {
-      // ── Login: POST /api/v1/login ─────────────────────────────────────────────
-      const res = await api.auth.login(p.email.trim());
+      // ── Login: POST /api/v1/login (role-gated portal) ─────────────────────────
+      const res = await api.auth.login(p.email.trim(), portalRole);
       setBusy(false);
       if (res.error) {
         setErr(res.error.message?.trim() || "Could not log in. Please try again.");
@@ -95,16 +96,24 @@ export function PatronGate({ onBack, audience: initialAudience = "patron", initi
   const resend = async () => {
     // POST /api/v1/resend-otp
     setBusy(true);
-    await api.auth.resendOtp(p.email.trim());
+    const res = await api.auth.resendOtp(p.email.trim(), portalRole);
     setBusy(false);
+    if (res.error) {
+      setErr(res.error.message?.trim() || "Could not resend the code.");
+      return;
+    }
     setWait(60);
   };
 
   const verify = async () => {
     if (code.length !== 6) return setErr("Enter the 6-digit code from your email.");
     setBusy(true); setErr("");
-    // POST /api/v1/verify-otp
-    const { error } = await api.auth.verifyOtp({ email: p.email.trim(), otp: code });
+    // POST /api/v1/verify-otp — role required so wrong portal cannot get a JWT
+    const { error } = await api.auth.verifyOtp({
+      email: p.email.trim(),
+      otp: code,
+      role: portalRole,
+    });
     setBusy(false);
     if (error) setErr(error.message);
   };
