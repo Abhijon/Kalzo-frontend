@@ -1,4 +1,5 @@
 import { api, unwrapData } from "@/lib/api";
+import { openRazorpayCheckout } from "./razorpay";
 
 export type BookRequest = {
   artist_id: string;
@@ -16,9 +17,17 @@ export type BookRequest = {
 const emit = (type: string, detail?: Record<string, unknown>) =>
   window.dispatchEvent(new CustomEvent(type, { detail }));
 
+function newIdempotencyKey(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `bk_${crypto.randomUUID().replace(/-/g, "")}`;
+  }
+  return `bk_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`;
+}
+
 /**
- * Direct booking (no payment, no time slots).
- * Uses event_date; artist must have that weekday marked available.
+ * Invitation seal → create booking → Razorpay order → Checkout → verify.
+ * Idempotency-Key is stable for the life of one seal attempt so retries
+ * reuse the same Razorpay order instead of double-charging.
  */
 export function startDirectBooking() {
   const onBook = async (e: Event) => {
@@ -30,13 +39,19 @@ export function startDirectBooking() {
         return;
       }
 
+      const amountInr = Math.round(Number(d.expected_total) || 0);
+      if (amountInr < 1) {
+        emit("kalzo:book-failed", { reason: "Booking amount must be at least ₹1." });
+        return;
+      }
+
       const createRes = await api.bookings.create({
         artistId: d.artist_id,
         eventDate: d.event_date,
         address: d.address,
         guests: d.guests || undefined,
         note: d.note || undefined,
-        amountInr: d.expected_total || 0,
+        amountInr,
       });
 
       if (createRes.error) {
@@ -44,10 +59,80 @@ export function startDirectBooking() {
         return;
       }
 
-      const payload = unwrapData(createRes.data) as { booking?: { id?: string } } | null;
-      const bookingId = payload?.booking?.id;
+      const created = unwrapData(createRes.data) as { booking?: { id?: string }; id?: string } | null;
+      const bookingId = created?.booking?.id ?? created?.id;
       if (!bookingId) {
         emit("kalzo:book-failed", { reason: "Booking was created but no id was returned." });
+        return;
+      }
+
+      const idempotencyKey = newIdempotencyKey();
+      const orderRes = await api.payments.createOrder(bookingId, idempotencyKey);
+      if (orderRes.error) {
+        emit("kalzo:book-failed", {
+          reason: orderRes.error.message || "Could not start payment. Your booking was saved — try again from My bookings.",
+          booking_id: bookingId,
+        });
+        return;
+      }
+
+      const order = unwrapData(orderRes.data) as {
+        orderId?: string;
+        keyId?: string | null;
+        amountPaise?: number;
+        paymentStatus?: string;
+      } | null;
+
+      if (order?.paymentStatus === "paid") {
+        emit("kalzo:booked", { booking_id: bookingId });
+        window.location.assign(`/bookings/${bookingId}`);
+        return;
+      }
+
+      if (!order?.orderId || !order?.keyId) {
+        emit("kalzo:book-failed", {
+          reason: "Payment order was incomplete. Try again from My bookings.",
+          booking_id: bookingId,
+        });
+        return;
+      }
+
+      const amountPaise = order.amountPaise ?? amountInr * 100;
+      let checkout;
+      try {
+        checkout = await openRazorpayCheckout({
+          keyId: order.keyId,
+          orderId: order.orderId,
+          amountPaise,
+          artistName: d.artist_name,
+          description: `Kalzo booking · ${d.event_date}`,
+        });
+      } catch (err) {
+        emit("kalzo:book-failed", {
+          reason:
+            err instanceof Error && err.message === "Payment cancelled."
+              ? "Payment cancelled. Your invitation is saved — open it from My bookings to pay."
+              : err instanceof Error
+                ? err.message
+                : "Payment window failed to open.",
+          booking_id: bookingId,
+        });
+        return;
+      }
+
+      const verifyRes = await api.payments.verifyPayment(bookingId, {
+        razorpay_order_id: checkout.razorpay_order_id,
+        razorpay_payment_id: checkout.razorpay_payment_id,
+        razorpay_signature: checkout.razorpay_signature,
+      });
+
+      if (verifyRes.error) {
+        emit("kalzo:book-failed", {
+          reason:
+            verifyRes.error.message ||
+            "Payment received but verification failed. Contact support with your booking id.",
+          booking_id: bookingId,
+        });
         return;
       }
 
