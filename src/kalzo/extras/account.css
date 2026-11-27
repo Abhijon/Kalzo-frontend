@@ -1441,6 +1441,12 @@
   background: rgba(185, 138, 74, .12)
 }
 
+.kb-status-payment_pending {
+  border-color: rgba(156, 58, 34, .45);
+  color: #9c3a22;
+  background: rgba(156, 58, 34, .1)
+}
+
 .kb-status-accepted,
 .kb-status-job_started {
   border-color: rgba(47, 107, 66, .4);

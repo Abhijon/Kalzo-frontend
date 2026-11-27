@@ -3471,8 +3471,8 @@ export class KalzoLogic extends DCLogic {
       payLabel: a.sample
         ? "SAMPLE ONLY · BOOKING DISABLED"
         : s.payBusy
-          ? "SENDING BOOKING…"
-          : "BOOK " + a.name.toUpperCase(),
+          ? "OPENING PAYMENT…"
+          : "PAY " + rupees(totalAmt) + " · SEAL INVITATION",
       payErr: s.payErr,
       hasPayErr: !!s.payErr,
       flowBackLabel:
@@ -3571,36 +3571,17 @@ export class KalzoLogic extends DCLogic {
           screen: s.screen === "book" ? "profile" : s.screen === "pay" ? "book" : "home",
         });
       },
-      // Skip payment screen — book immediately on click (payment later).
+      // Invitation form → safe-keeping / pay screen.
       toPay: function () {
         if (!ready) return;
         if (a.sample) {
           self.setState({ payErr: "This is a sample profile and cannot be booked." });
           return;
         }
-        if (s.payBusy) return;
-        self.setState({ payBusy: true, payErr: "" });
-        window.dispatchEvent(
-          new CustomEvent("kalzo:book", {
-            detail: {
-              artist_id: a.id,
-              artist_name: a.name,
-              event_date: dates[s.bDay].iso,
-              slot: s.slot || "",
-              quantity: qty,
-              city: loc && loc.type === "city" ? loc.city : "",
-              address: [s.address.trim(), s.area.trim(), s.landmark.trim()].filter(Boolean).join(", "),
-              guests: String(s.guests || "").trim(),
-              note: [s.event ? "Occasion: " + s.event : "", String(s.note || "").trim()]
-                .filter(Boolean)
-                .join(" · "),
-              expected_total: totalAmt,
-            },
-          }),
-        );
+        self.setState({ screen: "pay", payErr: "" });
       },
+      // Pay screen → create booking + Razorpay Checkout + verify.
       pay: function () {
-        // Template may still bind "pay" — same direct book, no payment.
         if (!ready || a.sample || s.payBusy) return;
         self.setState({ payBusy: true, payErr: "" });
         window.dispatchEvent(

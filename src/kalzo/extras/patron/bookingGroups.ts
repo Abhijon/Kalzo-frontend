@@ -13,6 +13,10 @@ const DONE = new Set(["completed", "cancelled", "rejected", "declined", "expired
 /** Normalize API booking rows (camelCase or snake_case) for the patron ledger. */
 export function normalizePatronBooking(raw: any) {
   const artist = raw?.artist ?? {};
+  const paymentStatus = String(
+    raw?.paymentStatus ?? raw?.payment_status ?? "unpaid",
+  ).toLowerCase();
+  const workflow_stage = String(raw?.status ?? raw?.workflow_stage ?? "pending");
   return {
     id: String(raw?.id ?? ""),
     artist_name:
@@ -26,7 +30,14 @@ export function normalizePatronBooking(raw: any) {
     slot: String(raw?.slot ?? raw?.day ?? ""),
     address: String(raw?.address ?? ""),
     amount_inr: Number(raw?.amountInr ?? raw?.amount_inr ?? 0),
-    workflow_stage: String(raw?.status ?? raw?.workflow_stage ?? "pending"),
+    workflow_stage,
+    payment_status: paymentStatus,
+    /** Badge for patrons: unpaid → payment pending; else booking status. */
+    display_status: paymentStatus === "paid" ? workflow_stage : "payment_pending",
+    display_status_label:
+      paymentStatus === "paid"
+        ? workflow_stage.replaceAll("_", " ")
+        : "payment pending",
     note: raw?.note ?? null,
     guests: raw?.guests ?? null,
   };

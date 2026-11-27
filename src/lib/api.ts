@@ -674,8 +674,29 @@ export const api = {
   },
 
   payments: {
-    createOrder:   (data: any) => req(`${API_V1}/payments/create-order`, { method: "POST", body: data }),
-    verifyPayment: (data: any) => req(`${API_V1}/payments/verify`,       { method: "POST", body: data }),
+    /** Create/reuse Razorpay order — POST /bookings/:id/payment/order */
+    createOrder: (bookingId: string, idempotencyKey: string) =>
+      req(`${API_V1}/bookings/${encodeURIComponent(bookingId)}/payment/order`, {
+        method: "POST",
+        headers: { "Idempotency-Key": idempotencyKey },
+        body: {},
+      }),
+    /** Verify Checkout signature — POST /bookings/:id/payment/verify */
+    verifyPayment: (
+      bookingId: string,
+      data: {
+        razorpay_order_id: string;
+        razorpay_payment_id: string;
+        razorpay_signature: string;
+      },
+    ) =>
+      req(`${API_V1}/bookings/${encodeURIComponent(bookingId)}/payment/verify`, {
+        method: "POST",
+        body: data,
+      }),
+    /** GET /bookings/:id/payment */
+    getStatus: (bookingId: string) =>
+      req(`${API_V1}/bookings/${encodeURIComponent(bookingId)}/payment`),
   },
 
   admin: {
