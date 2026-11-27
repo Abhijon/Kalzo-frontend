@@ -326,8 +326,11 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
                     <div className="kb-row-main">
                       <div className="kb-row-top">
                         <strong>{x.artist_name}</strong>
-                        <span className={`kb-detail-status kb-status-${x.workflow_stage}`}>
-                          {String(x.workflow_stage).replaceAll("_", " ")}
+                        <span
+                          className={`kb-detail-status kb-status-${(x as { display_status?: string }).display_status ?? x.workflow_stage}`}
+                        >
+                          {(x as { display_status_label?: string }).display_status_label ??
+                            String(x.workflow_stage).replaceAll("_", " ")}
                         </span>
                       </div>
                       <p className="kb-row-meta">
