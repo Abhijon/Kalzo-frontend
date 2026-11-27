@@ -18,6 +18,7 @@ export type BookingDto = {
   note: string | null;
   amountInr: number;
   status: string;
+  paymentStatus: string;
   artist?: { stageName?: string | null; photoUrl?: string | null };
   customer?: {
     fullName?: string | null;
@@ -41,6 +42,7 @@ export function normalizeBookingDetail(raw: any): BookingDto | null {
     note: raw.note ?? null,
     amountInr: Number(raw.amountInr ?? raw.amount_inr ?? 0),
     status: String(raw.status ?? "pending"),
+    paymentStatus: String(raw.paymentStatus ?? raw.payment_status ?? "unpaid").toLowerCase(),
     artist: {
       stageName: artist.stageName ?? artist.stage_name ?? null,
       photoUrl: artist.photoUrl ?? artist.photo_url ?? null,
@@ -59,6 +61,7 @@ export function normalizeBookingDetail(raw: any): BookingDto | null {
 }
 
 const PATRON_NOTES: Record<string, string> = {
+  payment_pending: "Payment is pending. Complete payment to send this invitation to the artist.",
   pending: "Waiting for the artist to accept your request.",
   accepted: "Your artist accepted. They will mark the job as started on the day.",
   rejected: "This booking was rejected by the artist.",
@@ -88,6 +91,13 @@ export function formatBookingDate(raw: string) {
 
 function statusLabel(status: string) {
   return status.replace(/_/g, " ");
+}
+
+function patronBadge(b: BookingDto) {
+  if (b.paymentStatus !== "paid") {
+    return { classKey: "payment_pending", label: "payment pending" };
+  }
+  return { classKey: b.status, label: statusLabel(b.status) };
 }
 
 /** Load one booking via GET /bookings/:id — same payload for patron and artist. */
@@ -130,6 +140,10 @@ export function BookingDetailView({
   foot?: ReactNode | null;
 }) {
   const notes = audience === "patron" ? PATRON_NOTES : ARTIST_NOTES;
+  const badge = audience === "patron" ? patronBadge(b) : { classKey: b.status, label: statusLabel(b.status) };
+  const leadKey =
+    audience === "patron" && b.paymentStatus !== "paid" ? "payment_pending" : b.status;
+  const paid = b.paymentStatus === "paid";
   const footer =
     foot !== undefined
       ? foot
@@ -178,11 +192,11 @@ export function BookingDetailView({
               ) : null}
             </p>
           ) : null}
-          <span className={`kb-detail-status kb-status-${b.status}`}>{statusLabel(b.status)}</span>
+          <span className={`kb-detail-status kb-status-${badge.classKey}`}>{badge.label}</span>
         </div>
       </header>
 
-      <p className="kb-detail-lead">{notes[b.status] ?? "This booking is in progress."}</p>
+      <p className="kb-detail-lead">{notes[leadKey] ?? "This booking is in progress."}</p>
 
       <dl className="kb-detail-facts">
         <div>
@@ -231,8 +245,12 @@ export function BookingDetailView({
           <Info size={15} aria-hidden />
           <span>
             {audience === "patron"
-              ? "No payment collected yet — Kalzo will guide the next step once the artist responds."
-              : "No payment collected yet."}
+              ? paid
+                ? "Held in Kalzo safe-keeping until the show is done. Full refund if the artist declines."
+                : "Payment pending — the artist will see this invitation only after you pay."
+              : paid
+                ? "Payment received and held by Kalzo until the show is done."
+                : "No payment collected yet."}
           </span>
         </p>
       </div>
