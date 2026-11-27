@@ -281,29 +281,37 @@ const authModule = {
   },
 
   /**
-   * Login (request OTP for existing account) → POST /api/v1/login
-   * Body: { email }
-   * Response: { success, data: { message } }
+   * Login (request OTP) → POST /api/v1/login
+   * Body: { email, role: CUSTOMER | ARTIST } — role must match the account.
    */
-  async login(email: string): Promise<ApiResponse<{ message: string }>> {
-    return req(`${API_V1}/login`, { method: "POST", body: { email } as any });
+  async login(
+    email: string,
+    role: "CUSTOMER" | "ARTIST",
+  ): Promise<ApiResponse<{ message: string }>> {
+    return req(`${API_V1}/login`, { method: "POST", body: { email, role } as any });
   },
 
   /**
    * Resend OTP → POST /api/v1/resend-otp
-   * Body: { email }
+   * Body: { email, role: CUSTOMER | ARTIST }
    */
-  async resendOtp(email: string): Promise<ApiResponse<{ message: string }>> {
-    return req(`${API_V1}/resend-otp`, { method: "POST", body: { email } as any });
+  async resendOtp(
+    email: string,
+    role: "CUSTOMER" | "ARTIST",
+  ): Promise<ApiResponse<{ message: string }>> {
+    return req(`${API_V1}/resend-otp`, { method: "POST", body: { email, role } as any });
   },
 
   /**
    * Verify OTP → POST /api/v1/verify-otp
-   * Body: { email, otp }
-   * Response: { success, data: { token, user } }
+   * Body: { email, otp, role: CUSTOMER | ARTIST }
    * Saves JWT + user to localStorage and fires SIGNED_IN.
    */
-  async verifyOtp(params: { email: string; otp: string }): Promise<ApiResponse<{ token: string; user: any }>> {
+  async verifyOtp(params: {
+    email: string;
+    otp: string;
+    role: "CUSTOMER" | "ARTIST";
+  }): Promise<ApiResponse<{ token: string; user: any }>> {
     const res = await req<{ success: boolean; data: { token: string; user: any } }>(
       `${API_V1}/verify-otp`,
       { method: "POST", body: params as any }
@@ -590,6 +598,7 @@ export const api = {
       discipline?: string;
       subcategory?: string;
       maxRate?: number;
+      anyDay?: boolean;
       date?: string;
       weekday?: number;
       day?: string;
