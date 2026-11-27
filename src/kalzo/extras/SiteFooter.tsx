@@ -1,7 +1,19 @@
 import { Link } from "@tanstack/react-router";
 import { Phone, Mail, MessageCircle, Headset } from "lucide-react";
 import { KALZO_CONTACT } from "@/lib/contacts";
+import { openJoinArtistModal } from "./JoinArtistModal";
+
 export function SiteFooter() {
+  const handleEmailClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const isMobile =
+      typeof navigator !== "undefined" &&
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+    if (isMobile) {
+      e.preventDefault();
+      window.location.href = `mailto:${KALZO_CONTACT.email.toLowerCase()}`;
+    }
+  };
+
   return (
     <footer className="kf">
       <div className="kf-grid">
@@ -12,7 +24,13 @@ export function SiteFooter() {
         <div>
           <h4>Your Kalzo</h4>
           <Link to="/account">My bookings</Link>
-          <Link to="/for-artists">Join as an artist</Link>
+          <button
+            type="button"
+            onClick={() => openJoinArtistModal()}
+            className="kf-link"
+          >
+            Join as an artist
+          </button>
         </div>
         <div>
           <h4>Help</h4>
@@ -25,9 +43,16 @@ export function SiteFooter() {
             <Phone size={14} className="inline mr-2" />
             {KALZO_CONTACT.displayPhone}
           </a>
-          <a href={`mailto:${KALZO_CONTACT.email}`}>
-            <Mail size={14} className="inline mr-2" />
-            {KALZO_CONTACT.email}
+          <a
+            href={`https://mail.google.com/mail/?view=cm&fs=1&to=${KALZO_CONTACT.email.toLowerCase()}`}
+            target="_blank"
+            rel="noreferrer"
+            onClick={handleEmailClick}
+            title="Open in Gmail"
+            className="inline-flex items-center flex-wrap cursor-pointer"
+          >
+            <Mail size={14} className="inline mr-2 shrink-0" />
+            <span>{KALZO_CONTACT.email.toLowerCase()}</span>
           </a>
         </div>
       </div>
