@@ -53,6 +53,16 @@ function Issues() {
   const [threads, setThreads] = useState<Awaited<ReturnType<typeof accountData>>["threads"]>([]),
     [err, setErr] = useState(""),
     [busy, setBusy] = useState(false);
+
+  const handleEmailClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const isMobile =
+      typeof navigator !== "undefined" &&
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+    if (isMobile) {
+      e.preventDefault();
+      window.location.href = `mailto:${KALZO_CONTACT.email.toLowerCase()}`;
+    }
+  };
   useEffect(() => {
     read()
       .then((d) => setThreads(d.threads))
@@ -141,9 +151,15 @@ function Issues() {
           <Phone size={16} />
           {KALZO_CONTACT.displayPhone}
         </a>
-        <a href={`mailto:${KALZO_CONTACT.email}`}>
+        <a
+          href={`https://mail.google.com/mail/?view=cm&fs=1&to=${KALZO_CONTACT.email.toLowerCase()}`}
+          target="_blank"
+          rel="noreferrer"
+          onClick={handleEmailClick}
+          title="Open in Gmail"
+        >
           <Mail size={16} />
-          {KALZO_CONTACT.email}
+          {KALZO_CONTACT.email.toLowerCase()}
         </a>
       </footer>
     </div>
