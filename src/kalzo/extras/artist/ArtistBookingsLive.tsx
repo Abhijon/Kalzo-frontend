@@ -1,6 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { CalendarDays, ListFilter, MailOpen } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  ChevronUp,
+  Circle,
+  Clock3,
+  ListFilter,
+  MailOpen,
+  Play,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -34,7 +44,8 @@ type Pagination = {
 };
 
 const PAGE_SIZE = 10;
-const FALLBACK_STATUSES = ["pending", "accepted", "rejected", "job_started", "completed"];
+const PREFERRED_STATUSES = ["pending", "accepted", "rejected", "job_started", "completed"];
+const FALLBACK_STATUSES = PREFERRED_STATUSES;
 
 const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 
@@ -50,30 +61,51 @@ function label(status: Filter) {
   return String(status).replace(/_/g, " ");
 }
 
+function statusIcon(status: string): ReactNode {
+  if (status === "all") return <Circle className="ka-filter-status-icon is-all" size={16} />;
+  if (status === "pending") return <Clock3 className="ka-filter-status-icon" size={16} />;
+  if (status === "accepted") return <CheckCircle2 className="ka-filter-status-icon is-accepted" size={16} />;
+  if (status === "rejected") return <XCircle className="ka-filter-status-icon is-rejected" size={16} />;
+  if (status === "job_started") return <Play className="ka-filter-status-icon" size={16} />;
+  if (status === "completed") return <CheckCircle2 className="ka-filter-status-icon" size={16} />;
+  return <Circle className="ka-filter-status-icon" size={16} />;
+}
+
 function normalizeStatuses(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return FALLBACK_STATUSES;
   const seen = new Set<string>();
-  const out: string[] = [];
-  for (const item of raw) {
-    const value = String(
-      typeof item === "string"
-        ? item
-        : item && typeof item === "object"
-          ? (item as { status?: string; value?: string; name?: string }).status ??
-            (item as { value?: string }).value ??
-            (item as { name?: string }).name ??
-            ""
-          : "",
-    )
-      .trim()
-      .toLowerCase();
-    if (!value || value === "all" || seen.has(value)) continue;
-    seen.add(value);
-    out.push(value);
+  const collected: string[] = [];
+
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      const value = String(
+        typeof item === "string"
+          ? item
+          : item && typeof item === "object"
+            ? (item as { status?: string; value?: string; name?: string }).status ??
+              (item as { value?: string }).value ??
+              (item as { name?: string }).name ??
+              ""
+            : "",
+      )
+        .trim()
+        .toLowerCase();
+      if (!value || value === "all" || seen.has(value)) continue;
+      seen.add(value);
+      collected.push(value);
+    }
   }
-  // Always expose pending even if the catalog endpoint omits it.
-  if (!seen.has("pending")) out.unshift("pending");
-  return out.length ? out : FALLBACK_STATUSES;
+
+  // Always include pending + preferred order, then any extra API statuses.
+  for (const status of PREFERRED_STATUSES) {
+    if (!seen.has(status)) {
+      seen.add(status);
+      collected.push(status);
+    }
+  }
+
+  const preferred = PREFERRED_STATUSES.filter((status) => seen.has(status));
+  const extras = collected.filter((status) => !PREFERRED_STATUSES.includes(status));
+  return preferred.length || extras.length ? [...preferred, ...extras] : FALLBACK_STATUSES;
 }
 
 export function ArtistBookingsLive({ requestsOnly = false }: { requestsOnly?: boolean }) {
@@ -195,17 +227,33 @@ export function ArtistBookingsLive({ requestsOnly = false }: { requestsOnly?: bo
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="ka-filter-menu" collisionPadding={12}>
-              <p className="ka-filter-menu-label">Filter by status</p>
+              <p className="ka-filter-menu-label">
+                <Clock3 size={16} aria-hidden="true" />
+                <span>Filter by status</span>
+                <ChevronUp className="ka-filter-menu-chevron" size={16} aria-hidden="true" />
+              </p>
+              <div className="ka-filter-flourish" aria-hidden="true">
+                ❦
+              </div>
               <DropdownMenuRadioGroup value={filter} onValueChange={changeFilter}>
-                <DropdownMenuRadioItem value="all" className="ka-filter-option">
+                <DropdownMenuRadioItem value="all" className="ka-filter-option ka-filter-status">
+                  {statusIcon("all")}
                   All
                 </DropdownMenuRadioItem>
                 {statusOptions.map((status) => (
-                  <DropdownMenuRadioItem key={status} value={status} className="ka-filter-option">
+                  <DropdownMenuRadioItem
+                    key={status}
+                    value={status}
+                    className="ka-filter-option ka-filter-status"
+                  >
+                    {statusIcon(status)}
                     {label(status)}
                   </DropdownMenuRadioItem>
                 ))}
               </DropdownMenuRadioGroup>
+              <div className="ka-filter-flourish" aria-hidden="true">
+                ❦
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
           <button

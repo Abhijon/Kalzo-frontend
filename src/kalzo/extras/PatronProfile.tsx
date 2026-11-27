@@ -10,6 +10,8 @@ import {
 } from "./patron/bookingGroups";
 import { ConversationList } from "./conversations/Conversations";
 import { FavouriteSalon } from "./patron/FavouriteSalon";
+import { VintageFilterSelect } from "./VintageFilterSelect";
+import "./vintage-dropdowns.css";
 
 export function PatronProfile({ initialTab }: { initialTab?: string | undefined } = {}) {
   const [d, setD] = useState<{ profile?: any; favorites?: any[]; reviews?: any[] } | null>(null),
@@ -216,18 +218,21 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
 
                   <label className="kv-field">
                     <span className="kv-field-label">ACCOUNT TYPE</span>
-                    <select
+                    <VintageFilterSelect
+                      variant="field"
                       className="kv-input kv-select"
+                      aria-label="Account type"
                       value={form.patron_type}
+                      options={[
+                        "Individual / family",
+                        "Hotel or resort",
+                        "Corporate",
+                        "Café or restaurant",
+                        "Event company",
+                        "Other business",
+                      ].map((v) => ({ value: v, label: v }))}
                       onChange={(e) => setForm({ ...form, patron_type: e.target.value })}
-                    >
-                      <option value="Individual / family">Individual / family</option>
-                      <option value="Hotel or resort">Hotel or resort</option>
-                      <option value="Corporate">Corporate</option>
-                      <option value="Café or restaurant">Café or restaurant</option>
-                      <option value="Event company">Event company</option>
-                      <option value="Other business">Other business</option>
-                    </select>
+                    />
                   </label>
 
                   <label className="kv-field">
@@ -396,17 +401,13 @@ function ReviewForm({ onSave }: { onSave: (rating: number, body: string) => Prom
       <h3>Your rating and written review are required to finish your booking ledger.</h3>
       <label>
         Your rating
-        <select
+        <VintageFilterSelect
+          variant="field"
           aria-label="Performance rating"
-          value={r}
+          value={String(r)}
+          options={[1, 2, 3, 4, 5].map((n) => ({ value: String(n), label: `${n}/5` }))}
           onChange={(e) => setR(Number(e.target.value))}
-        >
-          {[1, 2, 3, 4, 5].map((n) => (
-            <option key={n} value={n}>
-              {n}/5
-            </option>
-          ))}
-        </select>
+        />
       </label>
       <label>
         Your review

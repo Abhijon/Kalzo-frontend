@@ -5,6 +5,7 @@ import { PatronGate } from "./PatronGate";
 import type { AccountAudience } from "./signupRules";
 import "./account.css";
 import "./artist/panels.css";
+import "./vintage-dropdowns.css";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import ArtistPanelBackground from "./artist/ArtistPanelBackground";

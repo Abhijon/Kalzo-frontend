@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VintageFilterSelect } from "../VintageFilterSelect";
+import "../vintage-dropdowns.css";
 import {
   patronData,
   conversationData,
@@ -256,38 +258,39 @@ export function ConversationRoom({ id, onBack }: { id: string; onBack?: () => vo
           <div className="kl-actions">
             <label>
               Hour
-              <select
+              <VintageFilterSelect
+                variant="field"
                 aria-label="Meeting hour"
                 value={hour}
+                options={Array.from({ length: 12 }, (_, i) => {
+                  const h = String(i + 1);
+                  return { value: h, label: h };
+                })}
                 onChange={(e) => setHour(e.target.value)}
-              >
-                {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
-                  <option key={h}>{h}</option>
-                ))}
-              </select>
+              />
             </label>
             <label>
               Minutes
-              <select
+              <VintageFilterSelect
+                variant="field"
                 aria-label="Meeting minute"
                 value={minute}
+                options={["00", "15", "30", "45"].map((m) => ({ value: m, label: m }))}
                 onChange={(e) => setMinute(e.target.value)}
-              >
-                {["00", "15", "30", "45"].map((m) => (
-                  <option key={m}>{m}</option>
-                ))}
-              </select>
+              />
             </label>
             <label>
               AM / PM
-              <select
+              <VintageFilterSelect
+                variant="field"
                 aria-label="AM or PM"
                 value={period}
+                options={[
+                  { value: "AM", label: "AM" },
+                  { value: "PM", label: "PM" },
+                ]}
                 onChange={(e) => setPeriod(e.target.value)}
-              >
-                <option>AM</option>
-                <option>PM</option>
-              </select>
+              />
             </label>
           </div>
           <p>All times are India Standard Time (IST).</p>

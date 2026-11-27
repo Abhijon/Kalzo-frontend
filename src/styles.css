@@ -8,6 +8,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "./kalzo/extras/vintage-dropdowns.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -204,6 +205,13 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+
+  /* Radix Select/Dialog scroll-lock padding fights scrollbar-gutter and
+     shoves the whole page sideways when a menu opens. Keep layout fixed. */
+  body[data-scroll-locked] {
+    margin-right: 0 !important;
+    padding-right: 0 !important;
   }
 }
 

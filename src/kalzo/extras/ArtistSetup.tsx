@@ -5,6 +5,8 @@ import { Link } from "@tanstack/react-router";
 import { serviceFee, FEE_TIERS } from "./fees";
 import { isAccountNumber, isIFSC } from "./validate";
 import { isValidAadhaar, maskAadhaar } from "./aadhaar";
+import { VintageFilterSelect } from "./VintageFilterSelect";
+import "./vintage-dropdowns.css";
 
 const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 type Travel = "including" | "excluding" | "none";
@@ -87,10 +89,16 @@ export function ArtistSetup() {
       <section className="kx-panel ka-sec ka-mustard">
         <p className="kx-eyebrow">I · YOUR RATE</p>
         <div className="kx-row">
-          <select value={kind} onChange={(e) => setKind(e.target.value as "hour" | "start")} aria-label="Pricing type">
-            <option value="hour">Per hour (performers)</option>
-            <option value="start">Starting from (caterers, décor, planners)</option>
-          </select>
+          <VintageFilterSelect
+            variant="field"
+            aria-label="Pricing type"
+            value={kind}
+            options={[
+              { value: "hour", label: "Per hour (performers)" },
+              { value: "start", label: "Starting from (caterers, décor, planners)" },
+            ]}
+            onChange={(e) => setKind(e.target.value as "hour" | "start")}
+          />
           <input
             className="kx-input"
             type="number"
