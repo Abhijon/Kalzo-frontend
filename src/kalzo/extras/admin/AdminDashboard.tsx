@@ -35,6 +35,8 @@ import { canPublishArtist } from "../launchRules";
 import { awaitingVerification, dailyCounts, inLastDays, paidRevenue, needsRefundReview } from "./metrics";
 import "../account.css";
 import "./admin.css";
+import "../vintage-dropdowns.css";
+import { VintageFilterSelect } from "../VintageFilterSelect";
 import logoImg from "@/assets/kalzo-logo.png";
 import ledger from "@/assets/admin-ledger.png";
 import paper from "@/assets/vintage-panel-paper.png.asset.json";
@@ -478,10 +480,16 @@ export function AdminDashboard() {
                         </div>
                         <label className="kd-tools">
                           <span className="sr-only">Activity period</span>
-                          <select value={days} onChange={(e) => setDays(Number(e.target.value))}>
-                            <option value={7}>Last 7 days</option>
-                            <option value={30}>Last 30 days</option>
-                          </select>
+                          <VintageFilterSelect
+                            variant="field"
+                            aria-label="Activity period"
+                            value={String(days)}
+                            options={[
+                              { value: "7", label: "Last 7 days" },
+                              { value: "30", label: "Last 30 days" },
+                            ]}
+                            onChange={(e) => setDays(Number(e.target.value))}
+                          />
                         </label>
                       </div>
                       <ActivityChart artists={data.artists} threads={data.threads} patrons={data.patrons.filter(p => !data.artists.some(a => a.owner_id === p.id))} bookings={data.bookings} days={days} />
@@ -623,30 +631,28 @@ export function AdminDashboard() {
                     />
                   </label>
                   {tab !== "Patrons" && (
-                    <select
+                    <VintageFilterSelect
+                      variant="field"
                       aria-label="Filter status"
                       value={filter}
+                      options={[
+                        { value: "all", label: "All statuses" },
+                        ...(tab === "Artists" || tab === "Verification"
+                          ? ["unverified", "verified", "rejected"]
+                          : tab === "Bookings"
+                            ? [
+                                "paid",
+                                "awaiting_payment",
+                                "completed",
+                                "cancellation_requested",
+                                "declined",
+                                "refund_review",
+                              ]
+                            : ["open", "closed"]
+                        ).map((v) => ({ value: v, label: human(v) })),
+                      ]}
                       onChange={(e) => setFilter(e.target.value)}
-                    >
-                      <option value="all">All statuses</option>
-                      {(tab === "Artists" || tab === "Verification"
-                        ? ["unverified", "verified", "rejected"]
-                        : tab === "Bookings"
-                          ? [
-                              "paid",
-                              "awaiting_payment",
-                              "completed",
-                              "cancellation_requested",
-                              "declined",
-                              "refund_review",
-                            ]
-                          : ["open", "closed"]
-                      ).map((v) => (
-                        <option key={v} value={v}>
-                          {human(v)}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   )}
                 </div>
               )}

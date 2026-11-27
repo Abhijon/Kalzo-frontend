@@ -19,6 +19,8 @@ import { ProfileEntry } from "./extras/ProfileEntry";
 import { MobileMenu } from "./extras/MobileMenu";
 import { loadArtForms } from "./extras/artist/artFormsCatalog";
 import { loadLocations } from "./extras/artist/locationsCatalog";
+import { VintageFilterSelect, type VintageOption } from "./extras/VintageFilterSelect";
+import "./extras/vintage-dropdowns.css";
 
 type Node = string | { t: string; a: Record<string, string>; c: Node[] };
 type Scope = Record<string, unknown>;
@@ -70,6 +72,35 @@ function styleObj(s: string) {
 }
 const SKIP = new Set(["hint-placeholder-val", "hint-placeholder-count"]);
 
+function collectSelectOptions(nodes: Node[], scope: Scope): VintageOption[] {
+  const out: VintageOption[] = [];
+  for (const child of nodes) {
+    if (typeof child === "string") continue;
+    if (child.t === "sc-for") {
+      const list = (val(child.a["list"] ?? "", scope) as unknown[]) || [];
+      const as = String(child.a["as"] ?? "o");
+      for (const item of list) {
+        out.push(...collectSelectOptions(child.c, { ...scope, [as]: item }));
+      }
+      continue;
+    }
+    if (child.t === "option") {
+      const labelNode = child.c[0];
+      const label =
+        typeof labelNode === "string"
+          ? String(val(labelNode, scope) ?? "")
+          : child.c.map((c) => (typeof c === "string" ? String(val(c, scope) ?? "") : "")).join("");
+      out.push({
+        value: String(val(child.a["value"] ?? "", scope) ?? ""),
+        label,
+      });
+      continue;
+    }
+    if (child.c?.length) out.push(...collectSelectOptions(child.c, scope));
+  }
+  return out;
+}
+
 function render(n: Node, scope: Scope, key: string | number): ReactNode {
   if (typeof n === "string") {
     const v = val(n, scope);
@@ -120,7 +151,27 @@ function render(n: Node, scope: Scope, key: string | number): ReactNode {
       <Fragment key={`${key}-${i}`}>{kids({ ...scope, [as]: item, index: i })}</Fragment>
     ));
   }
-  const tag = n.t === "sc-raw-select" ? "select" : n.t;
+  if (n.t === "sc-raw-select") {
+    const options = collectSelectOptions(n.c, scope);
+    const rawChange = val(n.a["sc-camel-on-change"] ?? "", scope);
+    const onChange =
+      typeof rawChange === "function"
+        ? (rawChange as (ev: { target: { value: string } }) => void)
+        : undefined;
+    const style = n.a["style"] ? styleObj(String(val(n.a["style"], scope) ?? "")) : undefined;
+    return (
+      <VintageFilterSelect
+        key={key}
+        value={String(val(n.a["value"] ?? "", scope) ?? "")}
+        options={options}
+        onChange={onChange}
+        style={style}
+        className={n.a["class"]}
+        aria-label={n.a["aria-label"]}
+      />
+    );
+  }
+  const tag = n.t;
   const props: Record<string, unknown> = { key };
   for (const [k, raw] of Object.entries(n.a)) {
     if (SKIP.has(k)) continue;

@@ -20,6 +20,8 @@ import {
 import { OTHER } from "./artist/rules";
 import { getCachedArtForms, loadArtForms } from "./artist/artFormsCatalog";
 import { LocationSelect, PreferredCities, stateForCity } from "./artist/LocationFields";
+import { VintageFilterSelect } from "./VintageFilterSelect";
+import "./vintage-dropdowns.css";
 import { loadLocations } from "./artist/locationsCatalog";
 import { CityPricing } from "./artist/CityPricing";
 import { normalizedCityRate, cityRateSchema, type CityRate } from "./artist/flowRules";
@@ -1990,41 +1992,39 @@ export function ArtistProfileEditor() {
           </label>
           <label data-field="discipline" className={err("discipline") ? "ka-field-invalid" : undefined}>
             Art form *
-            <select
+            <VintageFilterSelect
+              variant="field"
+              aria-label="Art form"
               value={form.discipline}
-              aria-invalid={!!err("discipline")}
               className={err("discipline") ? "ka-input-invalid" : undefined}
+              options={Object.keys(artForms).map((c) => ({ value: c, label: c }))}
               onChange={(e) => {
                 set("discipline", e.target.value);
                 set("subcategory", "");
                 setCustomSub(false);
               }}
-            >
-              {Object.keys(artForms).map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
+            />
             <FieldError message={err("discipline")} />
           </label>
           <label data-field="subcategory" className={err("subcategory") ? "ka-field-invalid" : undefined}>
             What kind of {form.discipline.toLowerCase()}? *
             {subs.length > 0 && !customSub ? (
-              <select
+              <VintageFilterSelect
+                variant="field"
+                aria-label={`What kind of ${form.discipline.toLowerCase()}`}
                 value={form.subcategory}
-                aria-invalid={!!err("subcategory")}
                 className={err("subcategory") ? "ka-input-invalid" : undefined}
+                options={[
+                  { value: "", label: "Choose…" },
+                  ...subs.map((s) => ({ value: s, label: s })),
+                  { value: OTHER, label: OTHER },
+                ]}
                 onChange={(e) =>
                   e.target.value === OTHER
                     ? (setCustomSub(true), set("subcategory", ""))
                     : set("subcategory", e.target.value)
                 }
-              >
-                <option value="">Choose…</option>
-                {subs.map((s) => (
-                  <option key={s}>{s}</option>
-                ))}
-                <option>{OTHER}</option>
-              </select>
+              />
             ) : (
               <input
                 placeholder="Describe the art you perform"

@@ -87,8 +87,16 @@ input:focus {
   transform: translateY(-8px)
 }
 
-.ksug:hover {
-  background: #E9DECA !important
+.ksug:hover,
+.ksug:focus-visible {
+  background: linear-gradient(180deg, #e8c46a 0%, #c9892a 48%, #a66f1a 100%) !important;
+  color: #fff8ec !important
+}
+
+.ksug:hover span,
+.ksug:focus-visible span {
+  color: inherit !important;
+  opacity: 1 !important
 }
 
 @keyframes knote {

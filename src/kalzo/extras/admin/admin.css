@@ -395,6 +395,10 @@
   border-radius: 4px;
   color: inherit;
 }
+.kd-controls .kv-field-select-trigger,
+.kd-tools .kv-field-select-trigger {
+  width: auto;
+}
 .kd-empty {
   padding: 46px 16px;
   text-align: center;

@@ -4,8 +4,9 @@ import { api } from "@/lib/api";
 import { isEmail } from "./validate";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Music, UsersRound } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { VintageFilterSelect } from "./VintageFilterSelect";
 import "./gate.css";
+import "./vintage-dropdowns.css";
 import { cleanEmailCode, signupError, type AccountAudience } from "./signupRules";
 
 type Patron = { name: string; email: string; phone: string; city: string; type: string; industry: string; reason: string };
@@ -184,8 +185,40 @@ export function PatronGate({ onBack, audience: initialAudience = "patron", initi
                   {audience === "patron" && <>
                   <label>Full name<input className="kx-input" value={p.name} onChange={set("name")} /></label>
                   <label>Your location<input className="kx-input" value={p.city} onChange={set("city")} placeholder="City" /></label>
-                  <label>You are<Select value={p.type} onValueChange={(type) => { setP({ ...p, type }); setErr(""); }}><SelectTrigger className="kp-select-trigger" aria-label="You are"><SelectValue placeholder="Choose your profile" /></SelectTrigger><SelectContent className="kp-select-menu">{TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></label>
-                  <label>Reason for booking<Select value={p.reason} onValueChange={(reason) => { setP({ ...p, reason }); setErr(""); }}><SelectTrigger className="kp-select-trigger" aria-label="Reason for booking"><SelectValue placeholder="Choose the category" /></SelectTrigger><SelectContent className="kp-select-menu">{REASONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></label>
+                  <label>
+                    You are
+                    <VintageFilterSelect
+                      variant="field"
+                      className="kp-select-trigger"
+                      aria-label="You are"
+                      value={p.type}
+                      options={[
+                        { value: "", label: "Choose your profile" },
+                        ...TYPES.map((t) => ({ value: t, label: t })),
+                      ]}
+                      onChange={(e) => {
+                        setP({ ...p, type: e.target.value });
+                        setErr("");
+                      }}
+                    />
+                  </label>
+                  <label>
+                    Reason for booking
+                    <VintageFilterSelect
+                      variant="field"
+                      className="kp-select-trigger"
+                      aria-label="Reason for booking"
+                      value={p.reason}
+                      options={[
+                        { value: "", label: "Choose the category" },
+                        ...REASONS.map((t) => ({ value: t, label: t })),
+                      ]}
+                      onChange={(e) => {
+                        setP({ ...p, reason: e.target.value });
+                        setErr("");
+                      }}
+                    />
+                  </label>
                   {business && <label className="kp-wide">{p.type === "Other business" ? "What kind of business or individual are you?" : "Business name"}<input className="kx-input" maxLength={120} value={p.industry} onChange={set("industry")} placeholder={p.type === "Other business" ? "e.g. Wedding planner, college society, individual host" : ""} /></label>}
                   {p.reason === "Other" && <label className="kp-wide">What are you booking for?<textarea className="kx-input" rows={3} maxLength={200} value={reasonOther} onChange={(e) => { setReasonOther(e.target.value); setErr(""); }} placeholder="Tell us exactly what you're looking for" /></label>}
                   </>}
