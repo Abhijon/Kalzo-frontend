@@ -13,6 +13,7 @@ import { Headset } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { JoinArtistModal } from "@/kalzo/extras/JoinArtistModal";
 
 function NotFoundComponent() {
   return (
@@ -132,6 +133,7 @@ function RootComponent() {
       <Link to="/support" className="kf-fab" aria-label="AI help and support" title="AI help & support">
         <Headset size={26} />
       </Link>
+      <JoinArtistModal />
     </QueryClientProvider>
   );
 }

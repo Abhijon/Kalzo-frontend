@@ -260,3 +260,27 @@
     animation: none;
   }
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+.kf-grid button.kf-link {
+  display: block;
+  color: #f3e6cf;
+  text-decoration: none;
+  font-size: 14px;
+  margin: 0 0 8px;
+  opacity: .85;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.kf-grid button.kf-link:hover {
+  opacity: 1;
+  color: #d9a35f;
+}

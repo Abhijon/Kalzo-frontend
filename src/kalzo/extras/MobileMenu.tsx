@@ -6,7 +6,7 @@ const LINKS = [
   { href: "#finder", label: "Find artists" },
   { href: "#artforms", label: "Art forms" },
   { href: "#promise", label: "The Promise" },
-  { href: "/for-artists", label: "For Artists" },
+  { href: "#for-artists", label: "For Artists" },
 ] as const;
 
 export function MobileMenu() {

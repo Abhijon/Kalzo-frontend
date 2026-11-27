@@ -5,12 +5,17 @@ import { PatronGate } from "@/kalzo/extras/PatronGate";
 import { kalzoHead } from "@/lib/routeHead";
 export const Route = createFileRoute("/profile")({
   staticData: { sitemap: false },
-  validateSearch: (s: Record<string, unknown>): { mode?: "create" | "login" } => ({ mode: s["mode"] === "login" ? "login" : "create" }),
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): { mode?: "create" | "login"; audience?: "artist" | "patron" } => ({
+    mode: s["mode"] === "login" ? "login" : "create",
+    audience: s["audience"] === "artist" ? "artist" : s["audience"] === "patron" ? "patron" : undefined,
+  }),
   head: () => kalzoHead("Your profile", "Sign up or log in to your Kalzo artist or client account.", true),
   component: Profile,
 });
 function Profile() {
-  const { mode } = Route.useSearch();
+  const { mode, audience } = Route.useSearch();
   const navigate = useNavigate();
   const [ready, setReady] = useState(false), [error, setError] = useState("");
   useEffect(() => {
@@ -33,6 +38,13 @@ function Profile() {
   }, [navigate]);
   return <main className="kl-account"><div className="kl-inner"><h1>Your Kalzo profile</h1>
     {error && <p role="alert">{error}</p>}
-    {ready ? <PatronGate initialMode={mode ?? "create"} chooseAudience onBack={() => navigate({ to: "/" })} /> : <p>Opening your account…</p>}
+    {ready ? (
+      <PatronGate
+        initialMode={mode ?? "create"}
+        audience={audience ?? "patron"}
+        chooseAudience={!audience}
+        onBack={() => navigate({ to: "/" })}
+      />
+    ) : <p>Opening your account…</p>}
   </div></main>;
 }

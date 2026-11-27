@@ -21,6 +21,7 @@ import { loadArtForms } from "./extras/artist/artFormsCatalog";
 import { loadLocations } from "./extras/artist/locationsCatalog";
 import { VintageFilterSelect, type VintageOption } from "./extras/VintageFilterSelect";
 import "./extras/vintage-dropdowns.css";
+import { JoinArtistButton } from "./extras/JoinArtistModal";
 
 type Node = string | { t: string; a: Record<string, string>; c: Node[] };
 type Scope = Record<string, unknown>;
@@ -141,6 +142,15 @@ function render(n: Node, scope: Scope, key: string | number): ReactNode {
   if (n.t === "kalzo-saved")
     return <SavedList key={key} items={(scope["savedItems"] as SavedItem[]) ?? []} />;
   if (n.t === "kalzo-bookingroom") return <BookingRoom key={key} />;
+  if (n.t === "kalzo-join-artist")
+    return (
+      <JoinArtistButton
+        key={key}
+        className={n.a["class"]}
+        style={styleObj(n.a["style"] || "")}
+        label={(n.c?.[0] as string) || "JOIN THE HOUSE →"}
+      />
+    );
   const kids = (s: Scope) => n.c.map((c, i) => render(c, s, i));
   if (n.t === "sc-if")
     return val(n.a["value"] ?? "", scope) ? <Fragment key={key}>{kids(scope)}</Fragment> : null;
@@ -200,7 +210,7 @@ function render(n: Node, scope: Scope, key: string | number): ReactNode {
     !props["onChange"]
   )
     props["readOnly"] = true;
-  if (tag === "select" && !props["onChange"]) props["onChange"] = () => {};
+  if (tag === "select" && !props["onChange"]) props["onChange"] = () => { };
   if (tag === "input" || n.c.length === 0) return createElement(tag, props);
   return createElement(tag, props, ...kids(scope));
 }
@@ -219,7 +229,7 @@ export function Kalzo() {
           force();
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [readArtists]);
   // Finder filters: GET /art-forms (main types) + GET /locations (states/cities).
   useEffect(() => {
@@ -231,7 +241,7 @@ export function Kalzo() {
         ref.current.catalogLocations = locs;
         force();
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       cancelled = true;
     };

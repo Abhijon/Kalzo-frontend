@@ -272,7 +272,7 @@
                   {
                     "t": "a",
                     "a": {
-                      "href": "/for-artists",
+                      "href": "#for-artists",
                       "class": "klink knav",
                       "style": "padding: 10px 10px; text-decoration: none"
                     },
@@ -3354,8 +3354,9 @@
           {
             "t": "section",
             "a": {
+              "id": "for-artists",
               "aria-label": "Become a Kalzo artist",
-              "style": "max-width: 1180px; margin: 0 auto; padding: 70px 24px 24px"
+              "style": "max-width: 1180px; margin: 0 auto; padding: 70px 24px 24px; scroll-margin-top: 80px"
             },
             "c": [
               {
@@ -3617,11 +3618,10 @@
                         ]
                       },
                       {
-                        "t": "a",
+                        "t": "kalzo-join-artist",
                         "a": {
-                          "href": "/artist",
                           "class": "kbtn",
-                          "style": "flex: none; border-radius: 999px; padding: 16px 30px; min-height: 54px; box-sizing: border-box; background: #E7A042; color: #2A1D18; border: 1px solid #E7A042; font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.16em; text-decoration: none; display: inline-flex; align-items: center; animation: kglow 3s ease-in-out infinite"
+                          "style": "flex: none; border-radius: 999px; padding: 16px 30px; min-height: 54px; box-sizing: border-box; background: #E7A042; color: #2A1D18; border: 1px solid #E7A042; font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.16em; text-decoration: none; display: inline-flex; align-items: center; animation: kglow 3s ease-in-out infinite; cursor: pointer"
                         },
                         "c": [
                           "JOIN THE HOUSE →"
@@ -5295,43 +5295,137 @@
                       {
                         "t": "div",
                         "a": {
-                          "style": "width: 100%; border-top: 1px solid rgba(138,109,59,.45); padding-top: 18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; text-align: left"
+                          "style": "width: 100%; border-top: 1px solid rgba(138,109,59,.45); padding-top: 20px; display: flex; flex-direction: column; gap: 18px; text-align: left"
                         },
                         "c": [
                           {
                             "t": "div",
                             "a": {
-                              "style": "display: flex; flex-direction: column"
+                              "style": "display: flex; flex-direction: column; gap: 10px; width: 100%; padding: 14px 18px; background: rgba(247,239,220,.5); border: 1px dashed rgba(176,141,87,.45); border-radius: 4px"
                             },
                             "c": [
                               {
-                                "t": "span",
+                                "t": "div",
                                 "a": {
-                                  "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.1em; opacity: .85"
+                                  "style": "display: flex; justify-content: space-between; align-items: baseline; gap: 12px"
                                 },
                                 "c": [
-                                  "{{ sel.rateText }} × {{ hoursText }} + TRAVEL & STAY {{ sel.travelText }} = {{ subtotalText }} · TAXES & FEES {{ feeText }}"
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "style": "font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #6B5246"
+                                    },
+                                    "c": [
+                                      "{{ perfLabel }}"
+                                    ]
+                                  },
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "style": "font-family: Newsreader, serif; font-size: 19px; color: #2A1D18; font-weight: 500"
+                                    },
+                                    "c": [
+                                      "{{ perfText }}"
+                                    ]
+                                  }
                                 ]
                               },
                               {
-                                "t": "span",
+                                "t": "div",
                                 "a": {
-                                  "style": "font-family: Newsreader, serif; font-size: 44px; line-height: 1"
+                                  "style": "display: flex; justify-content: space-between; align-items: baseline; gap: 12px"
                                 },
                                 "c": [
-                                  "Total {{ totalText }}"
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "style": "font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #6B5246"
+                                    },
+                                    "c": [
+                                      "TRAVEL & STAY ALLOWANCE"
+                                    ]
+                                  },
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "style": "font-family: Newsreader, serif; font-size: 19px; color: #2A1D18; font-weight: 500"
+                                    },
+                                    "c": [
+                                      "{{ sel.travelText }}"
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "t": "div",
+                                "a": {
+                                  "style": "display: flex; justify-content: space-between; align-items: baseline; gap: 12px"
+                                },
+                                "c": [
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "style": "font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #6B5246"
+                                    },
+                                    "c": [
+                                      "TAXES & PLATFORM FEES"
+                                    ]
+                                  },
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "style": "font-family: Newsreader, serif; font-size: 19px; color: #2A1D18; font-weight: 500"
+                                    },
+                                    "c": [
+                                      "{{ feeText }}"
+                                    ]
+                                  }
                                 ]
                               }
                             ]
                           },
                           {
-                            "t": "button",
+                            "t": "div",
                             "a": {
-                              "sc-camel-on-click": "{{ toPay }}",
-                              "style": "{{ continueStyle }}"
+                              "style": "display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; padding-top: 4px"
                             },
                             "c": [
-                              "{{ continueLabel }}"
+                              {
+                                "t": "div",
+                                "a": {
+                                  "style": "display: flex; align-items: baseline; gap: 12px"
+                                },
+                                "c": [
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "style": "font-family: Newsreader, serif; font-size: 40px; line-height: 1; font-style: italic; color: #2A1D18"
+                                    },
+                                    "c": [
+                                      "Total"
+                                    ]
+                                  },
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "style": "font-family: Newsreader, serif; font-size: 44px; line-height: 1; font-weight: 600; color: #2A1D18"
+                                    },
+                                    "c": [
+                                      "{{ totalText }}"
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "t": "button",
+                                "a": {
+                                  "sc-camel-on-click": "{{ toPay }}",
+                                  "style": "{{ continueStyle }}"
+                                },
+                                "c": [
+                                  "{{ continueLabel }}"
+                                ]
+                              }
                             ]
                           }
                         ]

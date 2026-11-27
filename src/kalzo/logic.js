@@ -3434,6 +3434,11 @@ export class KalzoLogic extends DCLogic {
       note: s.note,
       hoursText: qtyText,
       showStepper: a.unit !== "event",
+      perfLabel:
+        a.unit === "event"
+          ? "PERFORMANCE (FOR THE OCCASION)"
+          : "PERFORMANCE (" + sel.rateText + " × " + qtyText + ")",
+      perfText: rupees(bpc.rate * qty),
       subtotalText: rupees(subtotal),
       feeText: rupees(fee),
       totalText: rupees(totalAmt),
