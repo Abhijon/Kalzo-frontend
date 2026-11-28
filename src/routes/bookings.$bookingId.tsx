@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { AccountShell } from "@/kalzo/extras/AccountShell";
 import { BookingDetailView, useBookingById } from "@/kalzo/extras/BookingDetailView";
+import { CompletionReview } from "@/kalzo/extras/patron/CompletionReview";
 import { kalzoHead } from "@/lib/routeHead";
 
 export const Route = createFileRoute("/bookings/$bookingId")({
@@ -43,5 +44,18 @@ function Room() {
     return <p className="kl-note">Loading your booking…</p>;
   }
 
-  return <BookingDetailView booking={b} audience="patron" />;
+  const needsReview =
+    b.paymentStatus === "paid" && b.status === "completed" && !b.review;
+
+  return (
+    <BookingDetailView
+      booking={b}
+      audience="patron"
+      actions={
+        needsReview ? (
+          <CompletionReview booking={b.id} onSaved={() => void reload()} />
+        ) : undefined
+      }
+    />
+  );
 }

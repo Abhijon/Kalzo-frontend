@@ -84,6 +84,7 @@ export class KalzoLogic extends DCLogic {
       otpErr: false,
       stars: 0,
       rTags: {},
+      customTag: "",
       rated: false,
       hrs: 0,
       media: "",
@@ -105,6 +106,7 @@ export class KalzoLogic extends DCLogic {
           otpErr: false,
           stars: 0,
           rTags: {},
+          customTag: "",
           rated: false,
           payBusy: false,
           payErr: "",
@@ -179,6 +181,28 @@ export class KalzoLogic extends DCLogic {
         o = "";
       for (var k = 1; k <= 5; k++) o += k <= r ? "★" : "☆";
       return o;
+    }
+    /** One entry per star — fill 0/50/100 so 4.5 is four full + one half. */
+    function starItems(rating, hasReviews) {
+      var n = hasReviews ? Math.max(0, Math.min(5, Number(rating) || 0)) : 0;
+      var out = [];
+      for (var i = 1; i <= 5; i++) {
+        var fill = 0;
+        if (n >= i) fill = 100;
+        else if (n > i - 1) fill = Math.round((n - (i - 1)) * 100);
+        out.push({
+          fill: fill,
+          // CSS var on the star shell; clip width is applied in CSS (glyph stays full-size).
+          style: "--kstar-fill: " + fill + "%",
+          aria: fill === 100 ? "full" : fill > 0 ? "half" : "empty",
+        });
+      }
+      return out;
+    }
+    /** Legacy overlay width (home cards). */
+    function starFillStyle(rating, hasReviews) {
+      var pct = hasReviews ? Math.max(0, Math.min(100, Math.round((Number(rating) / 5) * 100))) : 0;
+      return "width: " + pct + "%";
     }
     function pad(n) {
       return n < 10 ? "00" + n : n < 100 ? "0" + n : "" + n;
@@ -909,8 +933,30 @@ export class KalzoLogic extends DCLogic {
         travels: detail.preferred_cities || p.preferred_cities || [],
         preferredStates: detail.preferred_states || p.preferred_states || [],
         rate: Number(detail.rate_inr != null ? detail.rate_inr : p.rate_inr) || 0,
-        rating: 0,
-        reviews: 0,
+        rating: Number(
+          detail.avg_rating != null
+            ? detail.avg_rating
+            : detail.rating != null
+              ? detail.rating
+              : p.avg_rating != null
+                ? p.avg_rating
+                : p.rating != null
+                  ? p.rating
+                  : 0,
+        ),
+        reviews: Number(
+          detail.review_count != null
+            ? detail.review_count
+            : detail.reviews != null
+              ? detail.reviews
+              : p.review_count != null
+                ? p.review_count
+                : p.reviews != null
+                  ? p.reviews
+                  : 0,
+        ),
+        reviewList: detail.reviewList || p.reviewList || [],
+        ratingBreakdown: detail.ratingBreakdown || p.ratingBreakdown || null,
         seed: i + 100,
         slots: REAL_SLOTS,
         pricing: detail.pricing || p.pricing || {
@@ -950,6 +996,8 @@ export class KalzoLogic extends DCLogic {
     }
     function dayOff(a, d) {
       if (a.sample) return false;
+      // Finder "Any day" (-1) or out-of-range index — not a concrete diary day.
+      if (!dates || typeof d !== "number" || d < 0 || !dates[d]) return false;
       var week = a.weekAvailability || [];
       if (week.length) {
         var wd = weekdayFromIso(dates[d].iso);
@@ -1887,7 +1935,8 @@ export class KalzoLogic extends DCLogic {
         desc: desc,
         skills: skills,
         week: week,
-        starPct: "width: " + Math.round((a.rating / 5) * 100) + "%",
+        starPct: starFillStyle(a.rating, !!a.reviews),
+        starItems: starItems(a.rating, !!a.reviews),
         reviewsText: a.reviews + (a.reviews === 1 ? " review" : " reviews"),
         photo: artistPhoto(a),
         status: a.sample
@@ -1997,7 +2046,7 @@ export class KalzoLogic extends DCLogic {
             screen: "profile",
             artistId: a.id,
             tab: "about",
-            bDay: fd,
+            bDay: fd >= 0 ? fd : 0,
             slot: null,
             media: "video",
           });
@@ -2007,7 +2056,12 @@ export class KalzoLogic extends DCLogic {
           if (typeof window !== "undefined") {
             window.scrollTo(0, 0);
           }
-          self.setState({ screen: "book", artistId: a.id, bDay: fd, slot: free ? x.fs[0] : null });
+          self.setState({
+            screen: "book",
+            artistId: a.id,
+            bDay: fd >= 0 ? fd : 0,
+            slot: free ? x.fs[0] : null,
+          });
         },
         match: mt(a),
         hasMatch: !!loc && !!mt(a),
@@ -2066,7 +2120,7 @@ export class KalzoLogic extends DCLogic {
             screen: "profile",
             artistId: a.id,
             tab: "about",
-            bDay: fd,
+            bDay: fd >= 0 ? fd : 0,
             slot: null,
             media: "photo",
           });
@@ -2686,44 +2740,25 @@ export class KalzoLogic extends DCLogic {
         return x.id === s.artistId;
       })[0] || all[0];
     if (!a.photo) assignArtistPhotos([a], self.artistPortraits);
-    var share5 = Math.min(0.95, Math.max(0.3, (a.rating - 4) * 0.95 + 0.05)),
-      rest = 1 - share5;
-    var shares = [share5, rest * 0.7, rest * 0.2, rest * 0.07, rest * 0.03];
     var sp = a.name.lastIndexOf(" "),
       aFirst = sp < 0 ? a.name : a.name.slice(0, sp),
       aLast = sp < 0 ? "" : a.name.slice(sp + 1);
-    var TAGS = [
-        "Professional",
-        "Punctual",
-        "A fine performance",
-        "Commands the room",
-        "Good value",
-        "Courteous",
-      ],
-      tf = [0.82, 0.71, 0.76, 0.62, 0.55, 0.6];
-    var top3 = TAGS.map(function (t, i) {
-      return {
-        label: t,
-        count: Math.max(
-          1,
-          Math.round(a.reviews * tf[i] * (0.75 + ((a.seed >>> (i * 2)) % 5) / 10)),
-        ),
-      };
-    }).sort(function (x, y) {
-      return y.count - x.count;
+    var reviewTotal = Math.max(0, Number(a.reviews) || 0);
+    var breakdown = a.ratingBreakdown || {};
+    var sharesFromApi = [5, 4, 3, 2, 1].map(function (n) {
+      var c = Number(breakdown[String(n)] || 0);
+      return reviewTotal > 0 ? c / reviewTotal : 0;
     });
-    var who = [
-      ["ANKIT S.", "BIRTHDAY", "2 WEEKS AGO"],
-      ["POOJA M.", "SANGEET", "LAST MONTH"],
-      ["RAHUL & TEAM", "OFFICE EVENING", "2 MONTHS AGO"],
-    ];
-    var texts = [
-      "We invited " +
-        aFirst +
-        " for my mother’s sixtieth. Arrived early, set up without fuss, and had the whole family gathered round within minutes.",
-      "The guests speak of it still. Thoroughly professional, held the room beautifully, and stayed on a little longer than agreed.",
-      "Faultless from invitation to performance, and exactly as the reels promised. We shall invite again.",
-    ];
+    var share5 =
+      reviewTotal > 0
+        ? sharesFromApi[0]
+        : Math.min(0.95, Math.max(0.3, (a.rating - 4) * 0.95 + 0.05));
+    var rest = 1 - share5;
+    var shares =
+      reviewTotal > 0
+        ? sharesFromApi
+        : [share5, rest * 0.7, rest * 0.2, rest * 0.07, rest * 0.03];
+    var top3 = [];
     var PH = [
       "radial-gradient(ellipse at 50% 35%, #F6E9CC 0%, #DCC49A 58%, #B39168 100%)",
       "radial-gradient(ellipse at 50% 35%, #F8DCA8 0%, #E2A75A 60%, #B87634 100%)",
@@ -2796,12 +2831,19 @@ export class KalzoLogic extends DCLogic {
       rating: a.reviews ? a.rating.toFixed(1) : "Not rated",
       reviews: a.reviews,
       starStr: starStr(a.rating),
+      starPct: starFillStyle(a.rating, a.reviews),
+      starItems: starItems(a.rating, a.reviews),
       facts: [
         { k: "DISCIPLINE", v: a.cat.replace(/s$/, "") + " — " + a.craft },
         { k: "BASED IN", v: a.city + ", " + a.state },
         { k: "TRAVELS TO", v: a.travels.length ? a.travels.join(", ") : "Anywhere in " + a.state },
         { k: "LANGUAGES", v: a.langs },
-        { k: "RATING", v: a.rating.toFixed(1) + " ★ from " + a.reviews + " patrons" },
+        {
+          k: "RATING",
+          v: a.reviews
+            ? a.rating.toFixed(1) + " ★ from " + a.reviews + " patrons"
+            : "Not rated yet",
+        },
         {
           k: "IDENTITY",
           v: a.sample ? "Sample only · not identity verified" : "Identity verified",
@@ -2812,13 +2854,51 @@ export class KalzoLogic extends DCLogic {
       }),
       tagCounts: top3,
       dist: shares.map(function (p, i) {
+        var star = 5 - i;
+        var count =
+          reviewTotal > 0
+            ? Number(breakdown[String(star)] || 0)
+            : Math.round(a.reviews * p);
         return {
-          n: 5 - i,
-          count: Math.round(a.reviews * p),
+          n: star,
+          count: count,
           bar: "height: 100%; width: " + Math.round(p * 100) + "%; background: " + INK,
         };
       }),
-      reviewList: [],
+      reviewList: (Array.isArray(a.reviewList) ? a.reviewList : []).map(function (r) {
+        if (!r) return r;
+        var stars = r.stars || "";
+        var who = r.who || "PATRON";
+        var when = r.when || "";
+        var eventRaw = String(r.event || "").trim();
+        var event =
+          eventRaw && eventRaw.toUpperCase() !== "BOOKING" ? eventRaw.toUpperCase() : "";
+        var tags = Array.isArray(r.tags)
+          ? r.tags
+              .map(function (t) {
+                return String(t || "").trim();
+              })
+              .filter(Boolean)
+          : [];
+        var hasTags = !!r.hasTags || tags.length > 0;
+        var tagItems =
+          Array.isArray(r.tagItems) && r.tagItems.length
+            ? r.tagItems
+            : tags.map(function (label) {
+                return { label: label };
+              });
+        var byline =
+          r.byline || [who, event, when].filter(Boolean).join(" · ");
+        var meta = r.meta || stars + " — " + byline;
+        return Object.assign({}, r, {
+          event: event,
+          tags: tags,
+          hasTags: hasTags,
+          tagItems: tagItems,
+          byline: byline,
+          meta: meta,
+        });
+      }),
       demos: reelList.map(function (url, i) {
         return {
           video: url,
@@ -2875,9 +2955,11 @@ export class KalzoLogic extends DCLogic {
       };
     });
     // Booking date picker keeps calendar dates (separate from the finder THIS WEEK strip).
+    // Clamp: finder "Any day" uses fDay=-1; booking always needs a real calendar index.
+    var bookDay = typeof s.bDay === "number" && s.bDay >= 0 ? s.bDay : 0;
     function dateList(dark) {
       return dates.map(function (d, i) {
-        var on = s.bDay === i,
+        var on = bookDay === i,
           free = freeOn(a, i),
           fg = dark ? CREAM : INK,
           bgOn = dark ? CREAM : INK,
@@ -2907,12 +2989,12 @@ export class KalzoLogic extends DCLogic {
         };
       });
     }
-    var bOff = dayOff(a, s.bDay);
+    var bOff = dayOff(a, bookDay);
     function slotList(dark) {
       return bOff
         ? []
         : a.slots.map(function (t, si) {
-            var free = slotFree(a, s.bDay, si),
+            var free = slotFree(a, bookDay, si),
               on = s.slot === t,
               fg = dark ? CREAM : INK;
             return {
@@ -2936,7 +3018,7 @@ export class KalzoLogic extends DCLogic {
             };
           });
     }
-    var picked = dayShort(s.bDay) + (s.slot ? ", " + s.slot : " · hour not chosen");
+    var picked = dayShort(bookDay) + (s.slot ? ", " + s.slot : " · hour not chosen");
     var events = [
       "birthday",
       "wedding or sangeet",
@@ -3114,6 +3196,13 @@ export class KalzoLogic extends DCLogic {
           (on ? "#C27E1E" : "#C2B29C"),
       };
     });
+    var TAGS = [
+      "Professional",
+      "Punctual",
+      "A fine performance",
+      "Commands the room",
+      "Good value",
+    ];
     var rateTags = TAGS.map(function (t) {
       var on = !!s.rTags[t];
       return {
@@ -3421,7 +3510,7 @@ export class KalzoLogic extends DCLogic {
       slotL: slotList(false),
       slotD: slotList(false),
       bDayOff: bOff,
-      bDayLong: dayLong(s.bDay),
+      bDayLong: dayLong(bookDay),
       pickedText: picked,
       selIsFav: !!s.saved[a.id],
       selFavLabel: s.saved[a.id] ? "♥ on your list" : "♡ keep to look later",
@@ -3486,7 +3575,7 @@ export class KalzoLogic extends DCLogic {
           : s.screen === "pay"
             ? "BACK TO THE INVITATION"
             : "BACK TO THE SEARCH",
-      bookingId: "Nº KZ-" + (48210 + qty * 13 + s.bDay * 7),
+      bookingId: "Nº KZ-" + (48210 + qty * 13 + bookDay * 7),
       escSteps: escSteps,
       released: e >= 6,
       selectedArtistId: a.id,
@@ -3516,7 +3605,25 @@ export class KalzoLogic extends DCLogic {
       notRated: !s.rated,
       rated: s.rated,
       myStars: starStr(s.stars),
-      myTags: Object.keys(s.rTags).join(", ") || "no particular remarks",
+      myTags: (function () {
+        var tags = Object.keys(s.rTags);
+        var custom = String(s.customTag || "")
+          .trim()
+          .replace(/\s+/g, " ")
+          .slice(0, 40);
+        if (custom) {
+          var key = custom.toLowerCase();
+          var has = tags.some(function (t) {
+            return t.toLowerCase() === key;
+          });
+          if (!has) tags.push(custom);
+        }
+        return tags.join(", ") || "no particular remarks";
+      })(),
+      customTag: s.customTag || "",
+      setCustomTag: function (ev) {
+        self.setState({ customTag: String(ev.target.value || "").slice(0, 40) });
+      },
       rateBtnStyle:
         "align-self: flex-start; border-radius: 999px; padding: 10px 22px; font-family: DM Mono, monospace; font-size: 12px; letter-spacing: 0.14em; min-height: 44px; border: 1px solid " +
         INK +
@@ -3594,7 +3701,7 @@ export class KalzoLogic extends DCLogic {
             detail: {
               artist_id: a.id,
               artist_name: a.name,
-              event_date: dates[s.bDay].iso,
+              event_date: dates[bookDay].iso,
               slot: s.slot || "",
               quantity: qty,
               city: loc && loc.type === "city" ? loc.city : "",
@@ -3625,6 +3732,7 @@ export class KalzoLogic extends DCLogic {
           rated: false,
           stars: 0,
           rTags: {},
+          customTag: "",
         });
       },
       lessHours: function () {

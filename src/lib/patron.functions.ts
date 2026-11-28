@@ -121,6 +121,7 @@ export const saveReview = createServerFn({ method: "POST" })
       artist_owner_id: b.artist_owner_id,
       rating: data.rating,
       body: data.body,
+      tags: data.tags ?? [],
     });
     if (error) throw new Error(error.message);
     return { ok: true };

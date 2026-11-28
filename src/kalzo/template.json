@@ -2828,27 +2828,38 @@
                                   {
                                     "t": "span",
                                     "a": {
-                                      "class": "kstars",
-                                      "aria-label": "{{ r.rating }} out of 5 stars"
+                                      "class": "kstars-row",
+                                      "aria-label": "{{ r.rating }} out of 5 stars",
+                                      "style": "font-size: 18px"
                                     },
                                     "c": [
                                       {
-                                        "t": "span",
+                                        "t": "sc-for",
                                         "a": {
-                                          "class": "kstars-base"
+                                          "list": "{{ r.starItems }}",
+                                          "as": "st",
+                                          "hint-placeholder-count": "5"
                                         },
                                         "c": [
-                                          "★★★★★"
-                                        ]
-                                      },
-                                      {
-                                        "t": "span",
-                                        "a": {
-                                          "class": "kstars-fill",
-                                          "style": "{{ r.starPct }}"
-                                        },
-                                        "c": [
-                                          "★★★★★"
+                                          {
+                                            "t": "span",
+                                            "a": {
+                                              "class": "kstar",
+                                              "aria-hidden": "true",
+                                              "style": "{{ st.style }}"
+                                            },
+                                            "c": [
+                                              {
+                                                "t": "span",
+                                                "a": {
+                                                  "class": "kstar-empty"
+                                                },
+                                                "c": [
+                                                  "★"
+                                                ]
+                                              }
+                                            ]
+                                          }
                                         ]
                                       }
                                     ]
@@ -3749,10 +3760,40 @@
                           {
                             "t": "span",
                             "a": {
-                              "style": "color: #C27E1E; font-size: 18px; letter-spacing: 2px"
+                              "class": "kstars-row",
+                              "aria-label": "{{ sel.rating }} out of 5 stars",
+                              "style": "font-size: 20px"
                             },
                             "c": [
-                              "{{ sel.starStr }}"
+                              {
+                                "t": "sc-for",
+                                "a": {
+                                  "list": "{{ sel.starItems }}",
+                                  "as": "st",
+                                  "hint-placeholder-count": "5"
+                                },
+                                "c": [
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "class": "kstar",
+                                      "aria-hidden": "true",
+                                      "style": "{{ st.style }}"
+                                    },
+                                    "c": [
+                                      {
+                                        "t": "span",
+                                        "a": {
+                                          "class": "kstar-empty"
+                                        },
+                                        "c": [
+                                          "★"
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
                             ]
                           },
                           "{{ sel.rating }} ({{ sel.reviews }})"
@@ -3979,10 +4020,40 @@
                           {
                             "t": "span",
                             "a": {
-                              "style": "color: #C27E1E; font-size: 20px; letter-spacing: 2px"
+                              "class": "kstars-row",
+                              "aria-label": "{{ sel.rating }} out of 5 stars",
+                              "style": "font-size: 22px"
                             },
                             "c": [
-                              "{{ sel.starStr }}"
+                              {
+                                "t": "sc-for",
+                                "a": {
+                                  "list": "{{ sel.starItems }}",
+                                  "as": "st",
+                                  "hint-placeholder-count": "5"
+                                },
+                                "c": [
+                                  {
+                                    "t": "span",
+                                    "a": {
+                                      "class": "kstar",
+                                      "aria-hidden": "true",
+                                      "style": "{{ st.style }}"
+                                    },
+                                    "c": [
+                                      {
+                                        "t": "span",
+                                        "a": {
+                                          "class": "kstar-empty"
+                                        },
+                                        "c": [
+                                          "★"
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
                             ]
                           },
                           "{{ sel.rating }} · {{ sel.reviews }} REVIEWS"
@@ -4375,10 +4446,40 @@
                                   {
                                     "t": "span",
                                     "a": {
-                                      "style": "letter-spacing: 3px; color: #9C3A22"
+                                      "class": "kstars-row",
+                                      "aria-label": "{{ sel.rating }} out of 5 stars",
+                                      "style": "font-size: 32px"
                                     },
                                     "c": [
-                                      "{{ sel.starStr }}"
+                                      {
+                                        "t": "sc-for",
+                                        "a": {
+                                          "list": "{{ sel.starItems }}",
+                                          "as": "st",
+                                          "hint-placeholder-count": "5"
+                                        },
+                                        "c": [
+                                          {
+                                            "t": "span",
+                                            "a": {
+                                              "class": "kstar",
+                                              "aria-hidden": "true",
+                                              "style": "{{ st.style }}"
+                                            },
+                                            "c": [
+                                              {
+                                                "t": "span",
+                                                "a": {
+                                                  "class": "kstar-empty"
+                                                },
+                                                "c": [
+                                                  "★"
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
                                     ]
                                   },
                                   {
@@ -4519,12 +4620,65 @@
                                         ]
                                       },
                                       {
-                                        "t": "span",
+                                        "t": "sc-if",
                                         "a": {
-                                          "style": "font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
+                                          "value": "{{ r.hasTags }}",
+                                          "hint-placeholder-val": "{{ false }}"
                                         },
                                         "c": [
-                                          "{{ r.stars }} — {{ r.who }} · {{ r.event }} · {{ r.when }}"
+                                          {
+                                            "t": "div",
+                                            "a": {
+                                              "class": "kreview-tags",
+                                              "aria-label": "Review tags"
+                                            },
+                                            "c": [
+                                              {
+                                                "t": "sc-for",
+                                                "a": {
+                                                  "list": "{{ r.tagItems }}",
+                                                  "as": "tg",
+                                                  "hint-placeholder-count": "3"
+                                                },
+                                                "c": [
+                                                  {
+                                                    "t": "span",
+                                                    "a": {
+                                                      "class": "kpill kreview-tag"
+                                                    },
+                                                    "c": [
+                                                      "{{ tg.label }}"
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "t": "span",
+                                        "a": {
+                                          "style": "display: flex; align-items: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6B5246"
+                                        },
+                                        "c": [
+                                          {
+                                            "t": "span",
+                                            "a": {
+                                              "aria-hidden": "true",
+                                              "style": "color: var(--artist-gold-deep); font-size: 18px; letter-spacing: 2px; line-height: 1"
+                                            },
+                                            "c": [
+                                              "{{ r.stars }}"
+                                            ]
+                                          },
+                                          {
+                                            "t": "span",
+                                            "a": {},
+                                            "c": [
+                                              "— {{ r.byline }}"
+                                            ]
+                                          }
                                         ]
                                       }
                                     ]
@@ -6169,6 +6323,35 @@
                                             ]
                                           }
                                         ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "t": "label",
+                                    "a": {
+                                      "style": "display: flex; flex-direction: column; gap: 4px"
+                                    },
+                                    "c": [
+                                      {
+                                        "t": "span",
+                                        "a": {
+                                          "style": "font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.18em; opacity: .8"
+                                        },
+                                        "c": [
+                                          "YOUR OWN TAG"
+                                        ]
+                                      },
+                                      {
+                                        "t": "input",
+                                        "a": {
+                                          "type": "text",
+                                          "value": "{{ customTag }}",
+                                          "sc-camel-on-change": "{{ setCustomTag }}",
+                                          "placeholder": "Add a custom tag",
+                                          "maxlength": "40",
+                                          "style": "border: none; border-bottom: 1px solid #2A1D18; background: transparent; font-size: 20px; font-style: italic; padding: 6px 0; color: #2A1D18; min-height: 40px"
+                                        },
+                                        "c": []
                                       }
                                     ]
                                   },

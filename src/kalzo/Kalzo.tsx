@@ -292,8 +292,11 @@ export function Kalzo() {
   useEffect(() => {
     if (!profileArtistId) return;
     let cancelled = false;
-    Promise.all([api.artists.getById(profileArtistId), api.availability.forArtist(profileArtistId)]).then(
-      ([res, availRes]) => {
+    Promise.all([
+      api.artists.getById(profileArtistId),
+      api.availability.forArtist(profileArtistId),
+      api.reviews.forArtist(profileArtistId, { page: 1, limit: 20 }),
+    ]).then(([res, availRes, reviewsRes]) => {
         if (cancelled || res.error || !ref.current) return;
         const detail = artistFrom(res.data);
         if (!detail?.id) return;
@@ -301,6 +304,56 @@ export function Kalzo() {
         const weekAvailability = Array.isArray((availData as { days?: unknown[] } | null)?.days)
           ? (availData as { days: unknown[] }).days
           : [];
+        const reviewsPayload = !reviewsRes.error ? unwrapData(reviewsRes.data) : null;
+        const reviewRows = Array.isArray((reviewsPayload as { reviews?: unknown[] } | null)?.reviews)
+          ? (reviewsPayload as { reviews: any[] }).reviews
+          : [];
+        const reviewList = reviewRows.map((r) => {
+          const ratingN = Math.max(0, Math.min(5, Number(r.rating) || 0));
+          const stars =
+            r.stars ||
+            `${"★".repeat(Math.round(ratingN))}${"☆".repeat(5 - Math.round(ratingN))}`;
+          const who = r.who || "PATRON";
+          const when = r.when || "";
+          // Booking occasion from API (what the patron picked) — not rating tags.
+          const eventRaw = String(r.event || "").trim();
+          const event =
+            eventRaw && eventRaw.toUpperCase() !== "BOOKING" ? eventRaw.toUpperCase() : "";
+          // Rating tags only from API `tags`.
+          const tags = Array.isArray(r.tags)
+            ? r.tags.map((t: unknown) => String(t || "").trim()).filter(Boolean)
+            : [];
+          const hasTags = tags.length > 0;
+          const tagItems = tags.map((label: string) => ({ label }));
+          const byline = [who, event, when].filter(Boolean).join(" · ");
+          const meta = `${stars} — ${byline}`;
+          return {
+            text: r.text || r.body || "",
+            stars,
+            who,
+            event,
+            when,
+            byline,
+            tags,
+            hasTags,
+            tagItems,
+            meta,
+          };
+        });
+        const ratingBreakdown =
+          (reviewsPayload as { breakdown?: Record<string, number> } | null)?.breakdown || null;
+        const avgRating = Number(
+          (reviewsPayload as { avgRating?: number } | null)?.avgRating ??
+            detail.avg_rating ??
+            detail.rating ??
+            0,
+        );
+        const reviewCount = Number(
+          (reviewsPayload as { reviewCount?: number } | null)?.reviewCount ??
+            detail.review_count ??
+            detail.reviews ??
+            0,
+        );
         const enriched = {
           ...detail,
           photo: detail.photo_url || "",
@@ -309,6 +362,18 @@ export function Kalzo() {
           reelUrls: Array.isArray(detail.reel_urls) ? detail.reel_urls : [],
           primary_reel: detail.primary_reel ?? 0,
           weekAvailability,
+          rating: avgRating,
+          reviews: reviewCount,
+          avg_rating: avgRating,
+          review_count: reviewCount,
+          starPct: (() => {
+            const pct = reviewCount
+              ? Math.max(0, Math.min(100, Math.round((avgRating / 5) * 100)))
+              : 0;
+            return `width: 100%; clip-path: inset(0 ${100 - pct}% 0 0)`;
+          })(),
+          reviewList,
+          ratingBreakdown,
         };
         ref.current.artistDetails = {
           ...(ref.current.artistDetails || {}),
