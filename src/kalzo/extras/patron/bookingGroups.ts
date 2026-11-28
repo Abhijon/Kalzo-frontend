@@ -17,6 +17,22 @@ export function normalizePatronBooking(raw: any) {
     raw?.paymentStatus ?? raw?.payment_status ?? "unpaid",
   ).toLowerCase();
   const workflow_stage = String(raw?.status ?? raw?.workflow_stage ?? "pending");
+  const review = raw?.review ?? null;
+  const reviewRating = review ? Number(review.rating ?? 0) : 0;
+  let display_status = paymentStatus === "paid" ? workflow_stage : "payment_pending";
+  let display_status_label =
+    paymentStatus === "paid"
+      ? workflow_stage.replaceAll("_", " ")
+      : "payment pending";
+  if (paymentStatus === "paid" && workflow_stage === "completed") {
+    if (review) {
+      display_status = "completed";
+      display_status_label = `rated ${reviewRating}/5`;
+    } else {
+      display_status = "payment_pending";
+      display_status_label = "review pending";
+    }
+  }
   return {
     id: String(raw?.id ?? ""),
     artist_name:
@@ -32,12 +48,10 @@ export function normalizePatronBooking(raw: any) {
     amount_inr: Number(raw?.amountInr ?? raw?.amount_inr ?? 0),
     workflow_stage,
     payment_status: paymentStatus,
-    /** Badge for patrons: unpaid → payment pending; else booking status. */
-    display_status: paymentStatus === "paid" ? workflow_stage : "payment_pending",
-    display_status_label:
-      paymentStatus === "paid"
-        ? workflow_stage.replaceAll("_", " ")
-        : "payment pending",
+    review_rating: review ? reviewRating : null,
+    has_review: Boolean(review),
+    display_status,
+    display_status_label,
     note: raw?.note ?? null,
     guests: raw?.guests ?? null,
   };

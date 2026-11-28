@@ -362,7 +362,12 @@ export function PatronProfile({ initialTab }: { initialTab?: string | undefined 
                         params={{ bookingId: x.id }}
                         className="kb-row-review"
                       >
-                        Review
+                        {(x as { display_status?: string }).display_status === "payment_pending" &&
+                        x.workflow_stage === "completed"
+                          ? "Rate now"
+                          : (x as { has_review?: boolean }).has_review
+                            ? "View review"
+                            : "Open"}
                       </Link>
                     </div>
                   </li>

@@ -79,6 +79,11 @@ export function normalizeArtist(raw: any) {
     bank_ifsc: pick(raw.bank_ifsc, raw.bankIfsc) ?? "",
     email: pick(raw.email) ?? "",
     availability: pick(raw.availability) ?? [],
+    avg_rating: Number(pick(raw.avg_rating, raw.avgRating) ?? 0),
+    review_count: Number(pick(raw.review_count, raw.reviewCount) ?? 0),
+    // Aliases used by KalzoLogic artist cards / profile.
+    rating: Number(pick(raw.avg_rating, raw.avgRating, raw.rating) ?? 0),
+    reviews: Number(pick(raw.review_count, raw.reviewCount, raw.reviews) ?? 0),
     created_at: pick(raw.created_at, raw.createdAt) ?? "",
     updated_at: pick(raw.updated_at, raw.updatedAt) ?? "",
   };
@@ -697,6 +702,21 @@ export const api = {
     /** GET /bookings/:id/payment */
     getStatus: (bookingId: string) =>
       req(`${API_V1}/bookings/${encodeURIComponent(bookingId)}/payment`),
+  },
+
+  reviews: {
+    /** POST /bookings/:id/review — after job completed */
+    create: (bookingId: string, data: { rating: number; body: string; tags?: string[] }) =>
+      req(`${API_V1}/bookings/${encodeURIComponent(bookingId)}/review`, {
+        method: "POST",
+        body: data,
+      }),
+    /** GET /bookings/:id/review */
+    forBooking: (bookingId: string) =>
+      req(`${API_V1}/bookings/${encodeURIComponent(bookingId)}/review`),
+    /** GET /artists/:id/reviews */
+    forArtist: (artistId: string, params?: { page?: number; limit?: number }) =>
+      req(`${API_V1}/artists/${encodeURIComponent(artistId)}/reviews`, { params }),
   },
 
   admin: {

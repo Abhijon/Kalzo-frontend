@@ -1387,7 +1387,8 @@ video.kartist-art {
 }
 
 .kstars-base {
-  color: var(--artist-border)
+  color: var(--artist-border);
+  opacity: .45
 }
 
 .kstars-fill {
@@ -1396,7 +1397,41 @@ video.kartist-art {
   top: 0;
   overflow: hidden;
   white-space: nowrap;
-  color: var(--artist-gold-deep)
+  color: var(--artist-gold-deep);
+  pointer-events: none
+}
+
+/* Discrete stars — --kstar-fill paints left→right gold (50% = clean half cut) */
+.kstars-row {
+  display: inline-flex;
+  align-items: center;
+  gap: .1em;
+  line-height: 1
+}
+
+.kstar {
+  --kstar-fill: 0%;
+  display: inline-block;
+  font-size: inherit;
+  line-height: 1;
+  vertical-align: top
+}
+
+.kstar-empty {
+  display: inline-block;
+  line-height: 1;
+  /* Gold through fill %, then muted — cuts through the ★ glyph itself */
+  background: linear-gradient(
+    90deg,
+    var(--artist-gold-deep) 0,
+    var(--artist-gold-deep) var(--kstar-fill, 0%),
+    #C2B29C var(--kstar-fill, 0%),
+    #C2B29C 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent
 }
 
 .kartist-score {
@@ -4662,4 +4697,35 @@ video.kartist-art {
   .kart-bg {
     animation: none
   }
+}
+
+/* Profile Reviews tab — vintage tag chips (same language as rating pills) */
+.kreview-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 2px;
+}
+
+.kreview-tag.kpill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #2A1D18;
+  background: transparent;
+  color: #2A1D18;
+  padding: 6px 13px;
+  min-height: 32px;
+  font-family: Newsreader, Georgia, serif;
+  font-size: 15px;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  cursor: default;
+  pointer-events: none;
+}
+
+.kreview-tag.kpill:hover {
+  background: transparent !important;
+  color: #2A1D18 !important;
 }

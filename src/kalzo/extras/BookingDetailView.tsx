@@ -9,6 +9,14 @@ import "./artist/invitation-card.css";
 const FLOURISH_TOP = `https://kalzo.in${flourishTop.url}`;
 const FLOURISH_BOTTOM = `https://kalzo.in${flourishBottom.url}`;
 
+export type BookingReview = {
+  id: string;
+  rating: number;
+  body: string;
+  tags: string[];
+  createdAt: string;
+};
+
 export type BookingDto = {
   id: string;
   eventDate: string;
@@ -19,6 +27,7 @@ export type BookingDto = {
   amountInr: number;
   status: string;
   paymentStatus: string;
+  review: BookingReview | null;
   artist?: { stageName?: string | null; photoUrl?: string | null };
   customer?: {
     fullName?: string | null;
@@ -43,6 +52,17 @@ export function normalizeBookingDetail(raw: any): BookingDto | null {
     amountInr: Number(raw.amountInr ?? raw.amount_inr ?? 0),
     status: String(raw.status ?? "pending"),
     paymentStatus: String(raw.paymentStatus ?? raw.payment_status ?? "unpaid").toLowerCase(),
+    review: raw.review
+      ? {
+          id: String(raw.review.id ?? ""),
+          rating: Number(raw.review.rating ?? 0),
+          body: String(raw.review.body ?? ""),
+          tags: Array.isArray(raw.review.tags)
+            ? raw.review.tags.map((t: unknown) => String(t)).filter(Boolean)
+            : [],
+          createdAt: String(raw.review.createdAt ?? raw.review.created_at ?? ""),
+        }
+      : null,
     artist: {
       stageName: artist.stageName ?? artist.stage_name ?? null,
       photoUrl: artist.photoUrl ?? artist.photo_url ?? null,
@@ -96,6 +116,12 @@ function statusLabel(status: string) {
 function patronBadge(b: BookingDto) {
   if (b.paymentStatus !== "paid") {
     return { classKey: "payment_pending", label: "payment pending" };
+  }
+  if (b.status === "completed" && b.review) {
+    return { classKey: "completed", label: `rated ${b.review.rating}/5` };
+  }
+  if (b.status === "completed" && !b.review) {
+    return { classKey: "payment_pending", label: "review pending" };
   }
   return { classKey: b.status, label: statusLabel(b.status) };
 }
@@ -254,6 +280,22 @@ export function BookingDetailView({
           </span>
         </p>
       </div>
+
+      {b.review ? (
+        <div className="kb-detail-review" aria-label="Your review">
+          <p className="kb-detail-review-stars">{"★".repeat(b.review.rating)}{"☆".repeat(5 - b.review.rating)}</p>
+          {b.review.tags.length ? (
+            <div className="kb-detail-review-tags" aria-label="Review tags">
+              {b.review.tags.map((t) => (
+                <span key={t} className="kpill">
+                  {t}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          <p className="kb-detail-review-body">“{b.review.body}”</p>
+        </div>
+      ) : null}
 
       {actions}
 
